@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ChicCanto | Activate</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/assets/css/base.css">
+</head>
+
+<body class="theme-default" data-page="redeem">
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="/activate/"><img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto"></a>
+      <div class="site-actions">
+        <a class="btn ghost" href="/preview/">Preview</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="container">
+      <section class="flow-screen">
+        <div class="flow-layout">
+          <div class="flow-intro">
+            <div class="flow-kicker">Digital scratch card</div>
+            <h1 class="flow-title">Activate your card</h1>
+            <p class="flow-lead muted">Enter your activation code to create your setup link.</p>
+          </div>
+
+          <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Activation controls">
+            <form id="redeemForm" class="control-grid" autocomplete="off">
+              <div class="field">
+                <label class="label" for="code">Activation code</label>
+                <input id="code" class="input" type="text" inputmode="text" spellcheck="false" autocomplete="off" placeholder="Enter your activation code" />
+              </div>
+
+              <div class="sharebar__actions" aria-label="Activation actions">
+                <button id="redeemBtn" class="btn primary" type="submit">Activate</button>
+              </div>
+
+              <p id="msg" class="muted small" role="status" aria-live="polite"></p>
+
+              <div id="result" class="result" hidden></div>
+
+              <p class="muted no-m small">
+                <span>Activation unlocks your setup link.</span>
+                <span class="mt-6 block">Next: choose what they can win, then send the recipient link.</span>
+              </p>
+
+            </form>
+          </section>
+
+          <p class="flow-sub muted small">Tip: you can re-activate with the same code to get your setup link again. <a href="/faq/">Need help? FAQ</a></p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="/assets/js/app.js"></script>
+</body>
+</html>

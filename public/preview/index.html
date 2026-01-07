@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ChicCanto | Preview</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/assets/css/base.css">
+</head>
+
+<body class="theme-default" data-page="preview">
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="/activate/"><img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto"></a>
+      <div class="site-actions">
+        <a class="btn ghost" href="/activate/">Activate</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="container">
+      <section class="flow-screen">
+        <div class="flow-layout">
+          <div class="flow-intro">
+            <div class="flow-kicker">Preview</div>
+            <h1 class="flow-title">Try a sample ChicCanto card</h1>
+            <p class="flow-lead muted">This is a preview experience. To create your own card, use the activation code from your Etsy download.</p>
+          </div>
+
+          <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Preview controls">
+            <div class="control-grid">
+              <div class="sharebar__actions" aria-label="Preview actions">
+                <a
+                  class="btn primary"
+                  href="/card/?preview=1"
+                  onclick="sessionStorage.removeItem('sc:preview_token');"
+                >Open sample card</a>
+                <a class="btn" href="/activate/">Activate card</a>
+              </div>
+
+              <p class="muted small">Try scratching. Activate to create your setup link and recipient link.</p>
+              <p class="muted small">Want the full flow? Activate, choose what they can win, then send the recipient link.</p>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="/assets/js/app.js"></script>
+</body>
+</html>

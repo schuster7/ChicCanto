@@ -1,0 +1,5 @@
+/card/*  /card/index.html  200
+/activate/* /activate/index.html 200
+/preview/* /preview/index.html 200
+/tools/* /tools/index.html 200
+/demo/* /preview/index.html 301

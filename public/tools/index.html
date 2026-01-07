@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ChicCanto | Test tools</title>
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/card.css">
+</head>
+
+<body class="theme-default" data-page="tools">
+  <div class="container">
+    <div class="card stack">
+      <div class="row spread">
+        <div>
+          <div class="kicker">Internal</div>
+          <h1>Test tools</h1>
+        </div>
+        <a class="btn ghost" href="/">Home</a>
+      </div>
+
+      <p class="muted">These tools are available on localhost only.</p>
+
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <button class="btn primary" id="newBtn" type="button" disabled>Create test card</button>
+        <button class="btn" id="sampleBtn" type="button" disabled>Open sample setup</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <p class="small">Sample token: <span class="mono" id="sampleToken">1a2b3c4d-5e6f</span></p>
+      <p class="small muted" id="toolsHint"></p>
+    </div>
+  </div>
+
+  <script type="module" src="/assets/js/app.js"></script>
+</body>
+</html>

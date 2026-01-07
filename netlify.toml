@@ -1,0 +1,17 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[dev]
+  publish = "public"
+  port = 8000
+
+[[redirects]]
+  from = "/redeem"
+  to = "/.netlify/functions/redeem"
+  status = 200
+
+[[redirects]]
+  from = "/token/*"
+  to = "/.netlify/functions/token/:splat"
+  status = 200

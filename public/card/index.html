@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Card</title>
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/card.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+
+  <script>
+    (function () {
+      const m = location.pathname.match(/^\/card\/([^\/]+)$/);
+      if (!m) return;
+
+      const slug = m[1];
+      if (slug.endsWith('.html')) return; // avoids token=404.html accidents
+
+      if (!location.search.includes('token=')) {
+        location.replace('/card/?token=' + encodeURIComponent(slug));
+      }
+    })();
+  </script>
+</head>
+
+<body class="theme-default" data-page="card">
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="/activate/"><img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto"></a>
+
+      <div class="site-actions">
+
+        <div id="cardActions"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="container">
+      <div class="app-stage">
+        <!-- Preview one-liner (JS should show this only when preview=1) -->
+        <p id="previewInlineNote" hidden>
+          Preview mode. Activate to create your setup link and recipient link.
+        </p>
+
+        <div id="app"></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/assets/js/app.js"></script>
+</body>
+</html>

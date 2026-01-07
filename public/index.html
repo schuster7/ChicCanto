@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- /index.html -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ChicCanto</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/assets/css/base.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet" />
+
+</head>
+
+<body class="theme-default" data-page="landing">
+  <main class="landing" aria-label="ChicCanto landing">
+    <div class="landing__logo" aria-hidden="true">
+      <img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto Logo" />
+    </div>
+
+    <section class="landing__stage" aria-label="Landing stage">
+      <div class="landing__word landing__word--unluck" data-anim="word">Unluck</div>
+      <div class="landing__word landing__word--the" data-anim="word">The</div>
+      <div class="landing__word landing__word--moment" data-anim="word">Moment</div>
+
+      <div class="landing__center">
+        <div class="holo-stage" id="holoStage">
+          <div class="holo-card" id="holoCard" aria-label="ChicCanto card preview">
+            <a class="holo-card__link" href="/activate/" aria-label="Activate card">
+            <img class="holo-card__img" src="/assets/img/card1.png" alt="ChicCanto card" />
+          </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+      <div class="landing__cta" data-anim="cta">
+        <a class="btn btn--primary landing__ctaBtn" href="/activate/">Activate card</a>
+      </div>
+  </main>
+
+  <!-- GSAP (for entrances) -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+
+  <!-- App entrypoint -->
+  <script type="module" src="/assets/js/app.js"></script>
+</body>
+</html>
