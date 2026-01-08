@@ -471,6 +471,7 @@ async function exportRevealedPng(card, opts = {}){
 
   // Clone only the card stage (no page UI).
   const clone = stage.cloneNode(true);
+  clone.classList.add('cc-exporting');
   clone.classList.add('is-exporting');
 
   // Ensure no shadow/filters on the clone root, regardless of computed styles.
@@ -533,8 +534,19 @@ clone.style.display = 'block';
 
 const embeddedFontCss = await _embedInterFontCss();
 
+const exportHideCss = `
+.cc-exporting .scratch-fx::before,
+.cc-exporting .scratch-fx::after,
+.cc-exporting .scratch-glow{
+  display: none !important;
+  opacity: 0 !important;
+  animation: none !important;
+  filter: none !important;
+}
+`.trim();
+
 // SVG is authored at on-screen size; canvas handles pixel scaling.
-const svgMarkup = _makeSvgSnapshotMarkup(clone, w0, h0, embeddedFontCss);
+const svgMarkup = _makeSvgSnapshotMarkup(clone, w0, h0, embeddedFontCss + '\n' + exportHideCss);
 const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
 
     const img = new Image();
