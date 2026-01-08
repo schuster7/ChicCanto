@@ -1296,7 +1296,7 @@ function clearLegendState(){
       setRevealed(card.token, { board, scratched_indices });
       // Show Save PNG immediately on reveal (no refresh required)
       renderRevealedActions(getCard(card.token) || card);
-      fireConfettiOnce(card.token);
+      fireFoilBurst(card.token);
       showWinUI();
     }
   }
@@ -1604,107 +1604,255 @@ function prefersReducedMotion(){
   return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-// --- Mobile confetti throttle ---
-// iOS Safari can freeze for several seconds on large particle bursts.
-// Default behavior: throttle on coarse-pointer/small screens.
-// Switches:
-//   - Global override: window.CC_MOBILE_CONFETTI_THROTTLE = true/false
-//   - URL param: ?cc_confetti_throttle=0|1
-//   - localStorage: cc_confetti_throttle_mobile = "0"|"1"
-const CC_MOBILE_CONFETTI_THROTTLE_DEFAULT = true;
 
-function mobileConfettiThrottleEnabled(){
+// --- Foil flake burst (lightweight reveal FX) --------------------------------
+// Replaces the old fireworks lib (which can freeze iOS Safari and fails on repeated runs).
+// Goal: quick, fun "burst" with minimal main-thread work, safe on mobile.
+
+function _ccIsMobile(){
   try{
-    if (typeof window.CC_MOBILE_CONFETTI_THROTTLE === 'boolean') return window.CC_MOBILE_CONFETTI_THROTTLE;
-
-    const sp = new URLSearchParams(window.location.search);
-    const q = sp.get('cc_confetti_throttle');
-    if (q === '0' || q === 'false' || q === 'off') return false;
-    if (q === '1' || q === 'true' || q === 'on') return true;
-
-    const v = localStorage.getItem('cc_confetti_throttle_mobile');
-    if (v === '0') return false;
-    if (v === '1') return true;
-  }catch(_e){}
-  return CC_MOBILE_CONFETTI_THROTTLE_DEFAULT;
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  }catch(_){ return false; }
 }
 
-function scheduleConfetti(fn, throttle){
-  // Always yield at least one frame so the "win" UI can paint first.
-  const start = () => {
-    if (throttle){
-      // Small delay reduces main-thread contention with layout/paint on mobile Safari.
-      setTimeout(fn, 450);
-      return;
+function _ccLowEndHint(){
+  // Conservative: treat unknown as not-low-end.
+  try{
+    const cores = Number(navigator.hardwareConcurrency || 0);
+    const mem = Number(navigator.deviceMemory || 0);
+    return (_ccIsMobile() && ((cores && cores <= 4) || (mem && mem <= 4)));
+  }catch(_){ return false; }
+}
+
+let _ccBurst = null;
+
+function _ccEnsureBurstCanvas(){
+  if (_ccBurst && _ccBurst.canvas && _ccBurst.ctx) return _ccBurst;
+
+  const canvas = document.createElement('canvas');
+  canvas.id = 'cc-burst-canvas';
+  canvas.setAttribute('aria-hidden', 'true');
+  Object.assign(canvas.style, {
+    position: 'fixed',
+    inset: '0',
+    width: '100vw',
+    height: '100vh',
+    pointerEvents: 'none',
+    zIndex: '9999',
+    display: 'none'
+  });
+  document.body.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d', { alpha: true });
+
+  _ccBurst = { canvas, ctx, raf: 0, running: false, particles: [] };
+  _ccResizeBurstCanvas();
+  window.addEventListener('resize', _ccResizeBurstCanvas, { passive: true });
+
+  // Warm-up: avoid "first draw" jank later.
+  try{
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }catch(_){}
+
+  return _ccBurst;
+}
+
+function _ccResizeBurstCanvas(){
+  if (!_ccBurst || !_ccBurst.canvas) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1); // cap DPR for perf
+  const w = Math.max(1, Math.floor(window.innerWidth * dpr));
+  const h = Math.max(1, Math.floor(window.innerHeight * dpr));
+  const c = _ccBurst.canvas;
+  if (c.width !== w) c.width = w;
+  if (c.height !== h) c.height = h;
+  _ccBurst.dpr = dpr;
+}
+
+function _ccGetBurstOrigin(){
+  // Try to burst from the center of the card stage.
+  const el = document.querySelector('.scratch-stage, .cc-card, .cc-card-wrap, .card-shell');
+  if (el){
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+  return { x: window.innerWidth / 2, y: window.innerHeight * 0.58 };
+}
+
+function _ccCreateFoilParticles(px, py, dpr, config){
+  const particles = [];
+  const count = config.count;
+  const spread = config.spread; // radians-ish factor
+  const minSpeed = config.minSpeed;
+  const maxSpeed = config.maxSpeed;
+
+  for (let i = 0; i < count; i++){
+    // Direction roughly upward with wide spread
+    const angle = (-Math.PI / 2) + (Math.random() - 0.5) * spread;
+    const speed = (minSpeed + Math.random() * (maxSpeed - minSpeed)) * dpr;
+
+    const w = (config.minSize + Math.random() * (config.maxSize - config.minSize)) * dpr;
+    const h = (w * (0.4 + Math.random() * 0.9));
+
+    particles.push({
+      x: px,
+      y: py,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      w,
+      h,
+      rot: Math.random() * Math.PI * 2,
+      vr: (Math.random() - 0.5) * config.spin,
+      life: 0,
+      ttl: config.durationMs,
+      // light "metal" palette
+      tone: Math.random()
+    });
+  }
+
+  return particles;
+}
+
+function _ccDrawFoil(ctx, p, alpha){
+  // Color: mostly silver/white with a hint of warm/cool variation
+  let r, g, b;
+  if (p.tone < 0.7){
+    r = 235; g = 235; b = 245; // cool silver
+  } else if (p.tone < 0.9){
+    r = 245; g = 240; b = 230; // warm pearl
+  } else {
+    r = 220; g = 240; b = 255; // icy sparkle
+  }
+
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = `rgb(${r},${g},${b})`;
+
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.rot);
+  ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+  ctx.restore();
+
+  // Tiny sparkle cross (very cheap)
+  if (alpha > 0.4 && p.life < 260){
+    ctx.globalAlpha = alpha * 0.55;
+    ctx.strokeStyle = `rgb(${255},${255},${255})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(p.x - p.w * 0.25, p.y);
+    ctx.lineTo(p.x + p.w * 0.25, p.y);
+    ctx.moveTo(p.x, p.y - p.h * 0.25);
+    ctx.lineTo(p.x, p.y + p.h * 0.25);
+    ctx.stroke();
+  }
+}
+
+function _ccStopBurst(){
+  if (!_ccBurst) return;
+  _ccBurst.running = false;
+  if (_ccBurst.raf) cancelAnimationFrame(_ccBurst.raf);
+  _ccBurst.raf = 0;
+  _ccBurst.particles = [];
+  try{
+    _ccBurst.ctx.clearRect(0, 0, _ccBurst.canvas.width, _ccBurst.canvas.height);
+  }catch(_){}
+  _ccBurst.canvas.style.display = 'none';
+}
+
+function _ccStartFoilBurst(originCssX, originCssY){
+  const b = _ccEnsureBurstCanvas();
+  if (!b.ctx) return;
+
+  // Kill any previous animation cleanly.
+  if (b.running) _ccStopBurst();
+
+  const dpr = b.dpr || 1;
+  const px = originCssX * dpr;
+  const py = originCssY * dpr;
+
+  const isMobile = _ccIsMobile();
+  const lowEnd = _ccLowEndHint();
+
+  const config = {
+    durationMs: lowEnd ? 650 : (isMobile ? 800 : 1000),
+    count: lowEnd ? 18 : (isMobile ? 28 : 56),
+    spread: isMobile ? 2.6 : 3.0,
+    minSpeed: isMobile ? 420 : 520,
+    maxSpeed: isMobile ? 900 : 1200,
+    minSize: isMobile ? 6 : 7,
+    maxSize: isMobile ? 12 : 14,
+    spin: isMobile ? 10 : 14,
+    gravity: (isMobile ? 1350 : 1650) * dpr,
+    drag: isMobile ? 0.975 : 0.982
+  };
+
+  b.particles = _ccCreateFoilParticles(px, py, dpr, config);
+
+  b.canvas.style.display = 'block';
+  b.running = true;
+
+  const ctx = b.ctx;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.filter = 'none'; // important: no blur filters on iOS
+
+  let start = 0;
+  let last = 0;
+
+  function step(t){
+    if (!b.running) return;
+    if (!start){ start = t; last = t; }
+
+    const dt = Math.min(0.033, (t - last) / 1000); // clamp dt
+    last = t;
+
+    const elapsed = t - start;
+    const p = Math.min(1, elapsed / config.durationMs);
+
+    ctx.clearRect(0, 0, b.canvas.width, b.canvas.height);
+
+    for (let i = 0; i < b.particles.length; i++){
+      const part = b.particles[i];
+      part.life = elapsed;
+
+      // Integrate motion
+      part.vx *= Math.pow(config.drag, dt * 60);
+      part.vy = part.vy * Math.pow(config.drag, dt * 60) + config.gravity * dt;
+
+      part.x += part.vx * dt;
+      part.y += part.vy * dt;
+      part.rot += part.vr * dt;
+
+      const alpha = (1 - p) * 0.95;
+      _ccDrawFoil(ctx, part, alpha);
     }
-    fn();
-  };
 
-  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(start);
-  else setTimeout(start, 0);
+    if (elapsed < config.durationMs){
+      b.raf = requestAnimationFrame(step);
+    } else {
+      _ccStopBurst();
+    }
+  }
+
+  b.raf = requestAnimationFrame(step);
 }
 
-function fireConfettiOnce(token){
-  if (!token) return;
+const _ccBurstShown = new Set();
+
+function fireFoilBurst(token){
+  // Public entry point: safe, fast, and repeatable across multiple cards in one session.
   if (prefersReducedMotion()) return;
+  if (typeof window.CC_REVEAL_FX === 'string' && window.CC_REVEAL_FX.toLowerCase() === 'off') return;
+  if (!token) token = 'no-token';
 
-  const confetti = window.confetti;
-  if (typeof confetti !== 'function') return;
+  // Once per token per page-load. (No localStorage, so it won't "break" future cards.)
+  if (_ccBurstShown.has(token)) return;
+  _ccBurstShown.add(token);
 
-  // Run only once per token (even across reloads) in demo/local mode.
-  const key = `cc_confetti_shown:${token}`;
-  if (localStorage.getItem(key) === '1') return;
-  localStorage.setItem(key, '1');
-
-  // Align confetti vertically with the card (center of the card in the viewport).
-  const y = (() => {
-    const stage = document.querySelector('.scratch-stage');
-    if (!stage) return 0.65;
-    const r = stage.getBoundingClientRect();
-    const cy = r.top + (r.height / 2);
-    const denom = window.innerHeight || 1;
-    const v = cy / denom;
-    return Math.max(0.12, Math.min(0.88, v));
-  })();
-
-  const isMobile =
-    (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) ||
-    ((window.innerWidth || 0) < 720);
-
-  const throttleMobile = isMobile && mobileConfettiThrottleEnabled();
-
-  // Heavier on desktop, lighter on mobile, and extra-throttled when the switch is on.
-  const count = throttleMobile ? 26 : (isMobile ? 70 : 120);
-  const ticks = throttleMobile ? 90 : (isMobile ? 150 : 220);
-  const velocity = throttleMobile ? 36 : (isMobile ? 48 : 55);
-  const spread = throttleMobile ? 55 : 65;
-  const gravity = throttleMobile ? 1.2 : 1.1;
-  const scalar = throttleMobile ? 0.85 : 1.0;
-
-  const run = () => {
-    // One-shot: two cannons.
-    confetti({
-      particleCount: count,
-      angle: 60,
-      spread: spread,
-      startVelocity: velocity,
-      gravity: gravity,
-      scalar: scalar,
-      ticks: ticks,
-      origin: { x: 0.06, y }
-    });
-
-    confetti({
-      particleCount: count,
-      angle: 120,
-      spread: spread,
-      startVelocity: velocity,
-      gravity: gravity,
-      scalar: scalar,
-      ticks: ticks,
-      origin: { x: 0.94, y }
-    });
-  };
-
-  scheduleConfetti(run, throttleMobile);
+  const o = _ccGetBurstOrigin();
+  _ccStartFoilBurst(o.x, o.y);
 }
+
+// Warm up canvas after DOM is ready (reduces first-run jank on iOS).
+document.addEventListener('DOMContentLoaded', () => {
+  try{ _ccEnsureBurstCanvas(); }catch(_){}
+}, { once: true });
+
