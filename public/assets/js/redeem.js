@@ -44,8 +44,23 @@ function apiBaseCandidates(){
 }
 
 function getStoreMode(){
-  try{ return String(new URLSearchParams(window.location.search).get('store') || '').trim().toLowerCase(); }
-  catch{ return ''; }
+  // URL param wins (?store=local|memory|api)
+  try{
+    const forced = String(new URLSearchParams(window.location.search).get('store') || '').trim().toLowerCase();
+    if (forced) return forced;
+  }catch{}
+
+  const host = window.location.hostname;
+  const isLocal =
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '[::1]';
+
+  // Local dev defaults to local-only flow unless explicitly forced to API mode.
+  if (isLocal) return '';
+
+  // Live/staging defaults to API so activation creates a server-backed token.
+  return 'api';
 }
 
 

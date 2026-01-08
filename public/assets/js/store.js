@@ -28,10 +28,22 @@ function _getRequestedStoreMode(){
   // - ?store=api
   const fromUrl = _getStoreModeFromUrl();
   if (fromUrl) return fromUrl;
-  // Default: local first, then try API only if local has no record for the token.
-  // This keeps local-only flows fast while still allowing clean, shareable links
-  // for API-backed tokens.
-  return 'auto';
+
+  const host = window.location.hostname;
+  const isLocal =
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '[::1]';
+
+  // Local dev: keep the legacy "auto" behavior (local first, API as fallback).
+  if (isLocal) return 'auto';
+
+  // Keep utility/demo pages local unless explicitly forced.
+  const path = String(window.location.pathname || '').toLowerCase();
+  if (path.startsWith('/preview') || path.startsWith('/demo') || path.startsWith('/tools')) return 'local';
+
+  // Default for live/staging: API-backed links so tokens work cross-device.
+  return 'api';
 }
 
 // API mode is for local dev (Checkpoint 4) and later for real backends.
@@ -54,40 +66,56 @@ function _apiBaseCandidates(){
   return [...new Set(bases.filter(Boolean))];
 }
 
-function _apiRequestSync(method, path, bodyObj){
+async function _apiRequest(method, path, bodyObj, { timeoutMs = 4500 } = {}){
   const bases = _apiBaseCandidates();
   let last = { ok: false, status: 0, data: null };
 
   for (const base of bases){
     const url = base + path;
-    const xhr = new XMLHttpRequest();
-    try{
-      xhr.open(method, url, false); // sync (keeps the app code unchanged for now)
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      try{ xhr.timeout = 800; }catch{}
 
-      xhr.send(bodyObj ? JSON.stringify(bodyObj) : null);
+    const controller = new AbortController();
+    const t = setTimeout(() => {
+      try{ controller.abort(new Error('timeout')); }catch{ controller.abort(); }
+    }, timeoutMs);
+
+    try{
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: bodyObj ? JSON.stringify(bodyObj) : undefined,
+        signal: controller.signal
+      });
+
+      clearTimeout(t);
+
+      const status = res.status || 0;
+
+      let data = null;
+      try{
+        const text = await res.text();
+        if (text){
+          try{ data = JSON.parse(text); }
+          catch{ data = text; }
+        }
+      }catch{ data = null; }
+
+      const r = { ok: status >= 200 && status < 300, status, data };
+      last = r;
+
+      // If the server answered (even 404), don't try another base.
+      if (status) return r;
     }catch(err){
+      clearTimeout(t);
       last = { ok: false, status: 0, data: null };
       continue;
     }
-
-    const status = xhr.status || 0;
-    let data = null;
-    try{ if (xhr.responseText) data = JSON.parse(xhr.responseText); }catch{ data = null; }
-
-    const r = { ok: status >= 200 && status < 300, status, data };
-    last = r;
-
-    // If the server answered (even 404), don't try another base.
-    if (status) return r;
   }
 
   return last;
 }
 
-function _apiGetCard(token){
-  const r = _apiRequestSync('GET', '/token/' + encodeURIComponent(token));
+async function _apiGetCard(token, { timeoutMs = 4500 } = {}){
+  const r = await _apiRequest('GET', '/token/' + encodeURIComponent(token), null, { timeoutMs });
   if (!r.ok) return null;
 
   // Backward compatibility:
@@ -98,16 +126,15 @@ function _apiGetCard(token){
   return d;
 }
 
-function _apiPutCard(card){
+async function _apiPutCard(card, { timeoutMs = 4500 } = {}){
   if (!card || !card.token) return null;
-  const r = _apiRequestSync('PUT', '/token/' + encodeURIComponent(card.token), card);
+  const r = await _apiRequest('PUT', '/token/' + encodeURIComponent(card.token), card, { timeoutMs });
   if (!r.ok) return null;
 
-  // Prefer a returned card record, but tolerate older "ok-only" responses.
+  // Prefer a returned card object.
   const d = r.data;
-  if (d && typeof d === 'object' && d.card && typeof d.card === 'object') return d.card;
   if (d && typeof d === 'object'){
-    // If response looks like { ok: true } with no token, return the input card.
+    // Some backends return { ok: true } only
     if (d.ok === true && !d.token) return card;
     return d;
   }
@@ -184,16 +211,9 @@ export function getCard(token){
     }
   }
 
-  // 2) API lookup (either forced, or as a fallback when local has no record).
-  if (mode === 'api' || mode === 'auto'){
-    const fromApi = _apiGetCard(token);
-    if (fromApi){
-      if (fromApi && typeof fromApi === 'object') fromApi._store = 'api';
-      // keep a local mirror as a cache (optional)
-      try{ _storageAdapter().setItem(PREFIX + token, JSON.stringify(fromApi)); }catch{}
-      return fromApi;
-    }
-  }
+
+  // 2) API lookup is async now (see getCardAsync). getCard() only reads local mirrors.
+
 
   // 3) In forced API mode, fall back to any local mirror if the API is down.
   if (mode === 'api'){
@@ -210,19 +230,50 @@ export function getCard(token){
   return null;
 }
 
+
+export async function getCardAsync(token, { timeoutMs = 4500 } = {}){
+  // 1) Fast path: local mirror/cache
+  const local = getCard(token);
+  const mode = _getRequestedStoreMode();
+
+  // In local/memory mode, the local read is authoritative.
+  if (mode === 'local' || mode === 'memory') return local;
+
+  // If we already have an API-backed record cached, return it.
+  if (local && local._store === 'api') return local;
+
+  // 2) Try API fetch (same-origin in production; dev :8787 on localhost)
+  const fromApi = await _apiGetCard(token, { timeoutMs });
+  if (fromApi){
+    if (fromApi && typeof fromApi === 'object') fromApi._store = 'api';
+    try{ _storageAdapter().setItem(PREFIX + token, JSON.stringify(fromApi)); }catch{}
+    return fromApi;
+  }
+
+  // 3) Fall back to any local mirror if API is down
+  return local;
+}
+
 export function saveCard(card){
   const mode = _getRequestedStoreMode();
 
   const wantsApi = (mode === 'api') || (mode === 'auto' && card && card._store === 'api');
   if (wantsApi){
-    const saved = _apiPutCard(card);
-    if (saved){
-      if (saved && typeof saved === 'object') saved._store = 'api';
-      // keep a local mirror as a cache (optional)
-      try{ _storageAdapter().setItem(PREFIX + card.token, JSON.stringify(saved)); }catch{}
-      return saved;
-    }
-    // If API fails, fall back to local storage so the app still works.
+    // Optimistic: write a local mirror immediately so the UI stays fast even if the network is slow.
+    if (card && typeof card === 'object') card._store = 'api';
+    try{ _storageAdapter().setItem(PREFIX + card.token, JSON.stringify(card)); }catch{}
+
+    // Fire-and-forget API persistence (never block the main thread).
+    _apiPutCard(card)
+      .then((saved) => {
+        if (saved && typeof saved === 'object'){
+          saved._store = 'api';
+          try{ _storageAdapter().setItem(PREFIX + card.token, JSON.stringify(saved)); }catch{}
+        }
+      })
+      .catch(() => { /* ignore */ });
+
+    return card;
   }
 
   if (card && typeof card === 'object') card._store = 'local';

@@ -1,6 +1,6 @@
 import { qs, qsa, copyText, formatIso, getTokenFromUrl } from './utils.js';
 import { REVEAL_OPTIONS, RANDOM_KEY, tierIconSrc } from './config.js';
-import { getCard, ensureCard, setConfigured, setRevealed } from './store.js';
+import { getCard, getCardAsync, ensureCard, setConfigured, setRevealed } from './store.js';
 import { attachScratchTile } from './scratch.js';
 
 // --- Patch: ensure "configured" persists so share links work ---
@@ -977,25 +977,6 @@ function renderNotReady(root, card){
     });
   }
 }
-function _apiBaseForHealth(){
-  // Local dev API server (same host, fixed port).
-  return `${window.location.protocol}//${window.location.hostname}:8787`;
-}
-
-function _apiHealthSync(){
-  // Sync check so we can decide between "invalid token" and "API offline" without refactoring.
-  const url = _apiBaseForHealth() + '/health';
-  const xhr = new XMLHttpRequest();
-  try{
-    xhr.open('GET', url, false);
-    xhr.timeout = 800;
-    xhr.send(null);
-    return xhr.status >= 200 && xhr.status < 300;
-  }catch{
-    return false;
-  }
-}
-
 
 function escapeHtml(value){
   return String(value).replace(/[&<>"']/g, (c) => ({
@@ -1477,7 +1458,7 @@ function renderRevealed(root, card){
 // Keep the external actions bar behavior.
 }
 
-export function bootCard(){
+export async function bootCard(){
   const container = qs('#app');
 
   const params = new URLSearchParams(window.location.search);
@@ -1539,19 +1520,16 @@ export function bootCard(){
 
   const storeParam = (params.get('store') || '').toLowerCase();
 
-  const card = getCard(token);
+  // Fast path: local mirror (works for same-device refreshes)
+  let card = getCard(token);
+
+  // If we didn't find a local record, try the API (same-origin on live/staging).
+  const isForceLocal = storeParam === 'local' || storeParam === 'memory';
+  if (!card && !isForceLocal){
+    card = await getCardAsync(token);
+  }
 
   if (!card){
-    // In local mode, a missing token is simply invalid. In auto/API mode, distinguish
-    // between "API down" and "token not found".
-    const isForceLocal = storeParam === 'local' || storeParam === 'memory';
-    if (!isForceLocal){
-      const apiUp = _apiHealthSync();
-      if (!apiUp){
-        renderApiUnavailable(container, token);
-        return;
-      }
-    }
     renderInvalidToken(container, token);
     return;
   }
@@ -1649,26 +1627,34 @@ function fireConfettiOnce(token){
     return Math.max(0.12, Math.min(0.88, v));
   })();
 
+  const isMobile =
+    (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) ||
+    ((window.innerWidth || 0) < 720);
+
+  const count = isMobile ? 70 : 120;
+  const ticks = isMobile ? 150 : 220;
+  const velocity = isMobile ? 48 : 55;
+
   // One-shot: two cannons.
   confetti({
-    particleCount: 120,
+    particleCount: count,
     angle: 60,
     spread: 65,
-    startVelocity: 55,
+    startVelocity: velocity,
     gravity: 1.1,
     scalar: 1.0,
-    ticks: 220,
+    ticks: ticks,
     origin: { x: 0.06, y }
   });
 
   confetti({
-    particleCount: 120,
+    particleCount: count,
     angle: 120,
     spread: 65,
-    startVelocity: 55,
+    startVelocity: velocity,
     gravity: 1.1,
     scalar: 1.0,
-    ticks: 220,
+    ticks: ticks,
     origin: { x: 0.94, y }
   });
 }
