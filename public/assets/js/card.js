@@ -1604,6 +1604,46 @@ function prefersReducedMotion(){
   return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+// --- Mobile confetti throttle ---
+// iOS Safari can freeze for several seconds on large particle bursts.
+// Default behavior: throttle on coarse-pointer/small screens.
+// Switches:
+//   - Global override: window.CC_MOBILE_CONFETTI_THROTTLE = true/false
+//   - URL param: ?cc_confetti_throttle=0|1
+//   - localStorage: cc_confetti_throttle_mobile = "0"|"1"
+const CC_MOBILE_CONFETTI_THROTTLE_DEFAULT = true;
+
+function mobileConfettiThrottleEnabled(){
+  try{
+    if (typeof window.CC_MOBILE_CONFETTI_THROTTLE === 'boolean') return window.CC_MOBILE_CONFETTI_THROTTLE;
+
+    const sp = new URLSearchParams(window.location.search);
+    const q = sp.get('cc_confetti_throttle');
+    if (q === '0' || q === 'false' || q === 'off') return false;
+    if (q === '1' || q === 'true' || q === 'on') return true;
+
+    const v = localStorage.getItem('cc_confetti_throttle_mobile');
+    if (v === '0') return false;
+    if (v === '1') return true;
+  }catch(_e){}
+  return CC_MOBILE_CONFETTI_THROTTLE_DEFAULT;
+}
+
+function scheduleConfetti(fn, throttle){
+  // Always yield at least one frame so the "win" UI can paint first.
+  const start = () => {
+    if (throttle){
+      // Small delay reduces main-thread contention with layout/paint on mobile Safari.
+      setTimeout(fn, 450);
+      return;
+    }
+    fn();
+  };
+
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(start);
+  else setTimeout(start, 0);
+}
+
 function fireConfettiOnce(token){
   if (!token) return;
   if (prefersReducedMotion()) return;
@@ -1631,30 +1671,40 @@ function fireConfettiOnce(token){
     (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) ||
     ((window.innerWidth || 0) < 720);
 
-  const count = isMobile ? 70 : 120;
-  const ticks = isMobile ? 150 : 220;
-  const velocity = isMobile ? 48 : 55;
+  const throttleMobile = isMobile && mobileConfettiThrottleEnabled();
 
-  // One-shot: two cannons.
-  confetti({
-    particleCount: count,
-    angle: 60,
-    spread: 65,
-    startVelocity: velocity,
-    gravity: 1.1,
-    scalar: 1.0,
-    ticks: ticks,
-    origin: { x: 0.06, y }
-  });
+  // Heavier on desktop, lighter on mobile, and extra-throttled when the switch is on.
+  const count = throttleMobile ? 26 : (isMobile ? 70 : 120);
+  const ticks = throttleMobile ? 90 : (isMobile ? 150 : 220);
+  const velocity = throttleMobile ? 36 : (isMobile ? 48 : 55);
+  const spread = throttleMobile ? 55 : 65;
+  const gravity = throttleMobile ? 1.2 : 1.1;
+  const scalar = throttleMobile ? 0.85 : 1.0;
 
-  confetti({
-    particleCount: count,
-    angle: 120,
-    spread: 65,
-    startVelocity: velocity,
-    gravity: 1.1,
-    scalar: 1.0,
-    ticks: ticks,
-    origin: { x: 0.94, y }
-  });
+  const run = () => {
+    // One-shot: two cannons.
+    confetti({
+      particleCount: count,
+      angle: 60,
+      spread: spread,
+      startVelocity: velocity,
+      gravity: gravity,
+      scalar: scalar,
+      ticks: ticks,
+      origin: { x: 0.06, y }
+    });
+
+    confetti({
+      particleCount: count,
+      angle: 120,
+      spread: spread,
+      startVelocity: velocity,
+      gravity: gravity,
+      scalar: scalar,
+      ticks: ticks,
+      origin: { x: 0.94, y }
+    });
+  };
+
+  scheduleConfetti(run, throttleMobile);
 }

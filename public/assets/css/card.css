@@ -494,12 +494,6 @@ border-radius: var(--scratch-tile-radius);
   .scratch-fx{ overflow:visible; }
   .scratch-stage{ padding:1.25rem; }
 
-
-
 }
 
 
-
-@media (max-width: 720px){
-
-}
