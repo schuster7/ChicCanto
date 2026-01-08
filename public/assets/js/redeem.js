@@ -13,31 +13,36 @@ function byId(...ids){
 }
 
 function apiBaseCandidates(){
-  const { protocol, hostname, port, origin } = window.location;
+  const bases = [];
+  const host = window.location.hostname;
 
-  const h = String(hostname || '').toLowerCase();
-  const p = String(port || '');
+  const isLocal =
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '[::1]';
 
-  const isNetlifyHost = h.endsWith('.netlify.app') || h.endsWith('.netlify.live');
-  // netlify dev (local) typically runs on 8888/3999 etc, not 8000
-  const isNetlifyDevLocal = (h === 'localhost' || h === '127.0.0.1') && p && p !== '8000';
+  if (isLocal){
+    // Local Worker/dev API (wrangler dev) on :8787
+    bases.push(`${window.location.protocol}//${host}:8787`);
+    // Also allow same-origin (in case you proxy locally)
+    bases.push(window.location.origin);
+  } else {
+    // Optional: Netlify Functions, if you ever deploy there again
+    const isNetlify =
+      host.endsWith('netlify.app') ||
+      host.endsWith('netlify.live');
 
-  const candidates = [];
+    if (isNetlify){
+      bases.push(`${window.location.origin}/.netlify/functions`);
+    }
 
-  // Preferred: Netlify Functions on same origin
-  if (isNetlifyHost || isNetlifyDevLocal){
-    candidates.push(origin + '/.netlify/functions');
+    // Default: same-origin backend (Cloudflare Pages/Workers, or any host with /redeem)
+    bases.push(window.location.origin);
   }
 
-  // Local dev API server (node dev-api.cjs)
-  candidates.push(`${protocol}//${hostname}:8787`);
-
-  // Fallback: if functions exist on the current origin (some setups proxy functions here)
-  candidates.push(origin + '/.netlify/functions');
-
-  // de-dupe
-  return Array.from(new Set(candidates.filter(Boolean)));
+  return [...new Set(bases.filter(Boolean))];
 }
+
 function getStoreMode(){
   try{ return String(new URLSearchParams(window.location.search).get('store') || '').trim().toLowerCase(); }
   catch{ return ''; }
@@ -80,29 +85,67 @@ function isLocalhost(){
   return h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0';
 }
 
+async function _fetchJsonWithTimeout(url, options, timeoutMs){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try{
+    const res = await fetch(url, {
+      cache: 'no-store',
+      ...options,
+      signal: controller.signal,
+    });
+
+    let data = null;
+    try{ data = await res.json(); }catch(_e){ data = null; }
+
+    return { res, data };
+  } finally{
+    clearTimeout(timer);
+  }
+}
+
 async function apiRedeem(code, init){
-  let lastErr = null;
-  for (const base of apiBaseCandidates()){
+  const bases = apiBaseCandidates();
+
+  // Keep the UI responsive: don't let any single candidate hang forever.
+  const TIMEOUT_MS = 7000;
+
+  let last = { ok: false, status: 0, error: 'Could not activate this code.' };
+
+  for (const base of bases){
+    const url = base + '/redeem';
+
     try{
-      const r = await fetch(base + '/redeem', {
+      const { res, data } = await _fetchJsonWithTimeout(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, init })
-      });
+        body: JSON.stringify({ code, init }),
+      }, TIMEOUT_MS);
 
-      const data = await r.json().catch(() => null);
-      if (!r.ok || !data || data.ok !== true){
-        const msg = (data && data.error) ? data.error : `Could not activate this code.`;
-        throw new Error(msg);
+      if (res.ok && data && data.ok){
+        return data;
       }
-      return data;
-    }catch(e){
-      lastErr = e;
-      // try next base
+
+      // Prefer server-provided error, fallback to something generic.
+      const msg =
+        (data && (data.error || data.message)) ||
+        (res.status ? `Activation failed (HTTP ${res.status}).` : 'Could not activate this code.');
+
+      last = { ok: false, status: res.status || 0, error: msg };
+    } catch (e){
+      const isTimeout = e && e.name === 'AbortError';
+      last = {
+        ok: false,
+        status: 0,
+        error: isTimeout ? 'Activation timed out. Please try again.' : (e && e.message) ? e.message : String(e),
+      };
     }
   }
-  throw lastErr || new Error('Could not activate this code.');
+
+  return last;
 }
+
 
 function goToCardWithSetup(token, init){
   // Create (or reuse) a sender-only setup key for this token.
@@ -289,6 +332,7 @@ export function bootRedeem(){
 
   const input = byId('code', 'redeem-code') || qs('#code') || qs('#redeem-code');
   const msg = byId('msg', 'redeem-error') || qs('#msg') || qs('#redeem-error');
+  const productTitleEl = byId('productName', 'product-title') || qs('#productName') || qs('#product-title');
 
   // Demo product selection via URL:
   // /activate/?product=christmas  or /activate/?product=couples
@@ -296,6 +340,14 @@ export function bootRedeem(){
   const product = getProductBySlug(urlParams.get('product'));
   const init = { product_id: product.id, theme_id: product.theme_id, fields: product.fields };
 
+  // Product label (non-blocking)
+  if (productTitleEl) {
+    // keep existing prefix in HTML if present
+    const prefix = productTitleEl.dataset && productTitleEl.dataset.prefix ? productTitleEl.dataset.prefix : '';
+    productTitleEl.textContent = (prefix ? prefix : 'Product: ') + product.name;
+  } else if (msg && !msg.textContent) {
+    msg.textContent = `Product: ${product.name}`;
+  }
 
   const btn = byId('redeemBtn', 'redeem-btn') || qs('#redeemBtn') || qs('#redeem-btn');
   const originalBtnText = btn ? btn.textContent : 'Activate';

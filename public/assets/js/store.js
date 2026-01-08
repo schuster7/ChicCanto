@@ -40,9 +40,17 @@ function _getRequestedStoreMode(){
 // 2) Same-origin backend (Netlify Functions/other) via /redeem and /token/*
 function _apiBaseCandidates(){
   const bases = [];
-  try{ bases.push(`${window.location.protocol}//${window.location.hostname}:8787`); }catch{}
-  try{ bases.push(window.location.origin); }catch{}
-  // de-dupe
+  const host = window.location.hostname;
+  const isLocal =
+  host === 'localhost' ||
+  host === '127.0.0.1' ||
+  host === '[::1]';
+
+  if (isLocal){
+    bases.push(`${window.location.protocol}//${host}:8787`);
+  }
+
+  bases.push(window.location.origin);
   return [...new Set(bases.filter(Boolean))];
 }
 
