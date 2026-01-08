@@ -155,6 +155,42 @@
   border-radius: inherit;
   pointer-events: none;
 }
+
+/* Win turbo: speed up the neon frame briefly + add a quick flash.
+   Triggered by JS adding .cc-win-turbo to .scratch-fx for ~700ms. */
+.scratch-fx.cc-win-turbo{
+  --animation-speed: 0.55s;     /* faster hue + rotate */
+  --hue-speed: 3;              /* punchier color cycling */
+  --glow-opacity: 1.2;         /* stronger inner glow */
+  --glow-scale: 1.55;
+  --glow-blur: 6;
+}
+
+.scratch-fx.cc-win-turbo::after{
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(255,255,255,.35),
+    rgba(255,255,255,0) 62%
+  );
+  mix-blend-mode: screen;
+  z-index: 6;
+  opacity: 0;
+  animation: ccWinFlash 520ms ease-out 1 both;
+}
+
+/* Never show the frame/flash in PNG export (if export ever captures wrappers). */
+.is-exporting .scratch-fx::before,
+.is-exporting .scratch-fx::after{
+  content: none !important;
+  display: none !important;
+}
+
+@keyframes ccWinFlash{
+  0%   { opacity: 0; transform: scale(1); }
+  18%  { opacity: 1; transform: scale(1.02); }
+  100% { opacity: 0; transform: scale(1.06); }
+}
+
 .scratch-fx__content {
   position: absolute;
   width: 100%;

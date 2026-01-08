@@ -1296,8 +1296,7 @@ function clearLegendState(){
       setRevealed(card.token, { board, scratched_indices });
       // Show Save PNG immediately on reveal (no refresh required)
       renderRevealedActions(getCard(card.token) || card);
-      fireWinPulse();
-      fireSparkleBurst();
+      fireWinTurboFlash();
       showWinUI();
     }
   }
@@ -1914,6 +1913,24 @@ function _ccInjectWinFxStyles(){
   style.id = 'cc-winfx-style';
   style.textContent = css;
   document.head.appendChild(style);
+}
+
+
+function fireWinTurboFlash(){
+  try{
+    if (prefersReducedMotion()) return;
+    const fx = document.querySelector('.scratch-fx');
+    if (!fx) return;
+
+    // Temporary turbo + flash driven by card.css (.cc-win-turbo)
+    fx.classList.remove('cc-win-turbo');
+    void fx.offsetWidth; // restart animation
+    fx.classList.add('cc-win-turbo');
+
+    window.setTimeout(() => {
+      fx.classList.remove('cc-win-turbo');
+    }, 700);
+  } catch(_){}
 }
 
 function fireWinPulse(){
