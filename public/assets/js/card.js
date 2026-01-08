@@ -1297,6 +1297,7 @@ function clearLegendState(){
       // Show Save PNG immediately on reveal (no refresh required)
       renderRevealedActions(getCard(card.token) || card);
       fireWinPulse();
+      fireSparkleBurst();
       showWinUI();
     }
   }
@@ -1874,7 +1875,41 @@ function _ccInjectWinFxStyles(){
 
     /* Never include win FX in export clones */
     .is-exporting .scratch-fx.cc-win-pulse::after{ display:none !important; }
-  `;
+
+    /* Star sparkle burst: light celebration, no blur, iOS-safe */
+    .cc-sparkle-burst{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      overflow:visible;
+      z-index: 5;
+    }
+    .cc-sparkle{
+      position:absolute;
+      left: var(--x, 50%);
+      top: var(--y, 50%);
+      width: var(--sz, 12px);
+      height: var(--sz, 12px);
+      margin-left: calc(var(--sz, 12px) * -0.5);
+      margin-top: calc(var(--sz, 12px) * -0.5);
+      background: linear-gradient(45deg, rgba(255,255,255,.95), rgba(255,255,255,.45));
+      opacity: 0;
+      transform: translate(0,0) scale(.4) rotate(0deg);
+      transform-origin: center;
+      /* Star shape */
+      -webkit-clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+      animation: ccSparkleBurst 650ms cubic-bezier(.2,.9,.2,1) var(--dly, 0ms) 1 both;
+    }
+    @keyframes ccSparkleBurst{
+      0%   { opacity: 0; transform: translate(0,0) scale(.35) rotate(0deg); }
+      18%  { opacity: 1; transform: translate(calc(var(--dx, 0px) * .15), calc(var(--dy, 0px) * .15)) scale(1.15) rotate(calc(var(--rot, 0deg) * .25)); }
+      100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(.25) rotate(var(--rot, 0deg)); }
+    }
+
+    /* Never include sparkle burst in export clones */
+    .is-exporting .cc-sparkle-burst{ display:none !important; }
+    `;
   const style = document.createElement('style');
   style.id = 'cc-winfx-style';
   style.textContent = css;
@@ -1899,6 +1934,68 @@ function fireWinPulse(){
     }, 800);
   } catch(_){}
 }
+
+
+function fireSparkleBurst(){
+  try{
+    if (prefersReducedMotion()) return;
+
+    _ccInjectWinFxStyles();
+
+    const fx = document.querySelector('.scratch-fx');
+    if (!fx) return;
+
+    // Remove any prior burst remnants
+    const old = fx.querySelector('.cc-sparkle-burst');
+    if (old) old.remove();
+
+    const wrap = document.createElement('div');
+    wrap.className = 'cc-sparkle-burst';
+
+    // Origin: center of the scratch stage (reads well and avoids layout work)
+    const originX = 50;
+    const originY = 40; // slightly above center feels nicer with the board
+
+    const isMobile = _ccIsMobile();
+    const lowEnd = _ccLowEndHint();
+    const count = lowEnd ? 8 : (isMobile ? 12 : 16);
+    const maxR = lowEnd ? 60 : (isMobile ? 85 : 110);
+
+    for (let i = 0; i < count; i++){
+      const s = document.createElement('span');
+      s.className = 'cc-sparkle';
+
+      const angle = Math.random() * Math.PI * 2;
+      const radius = (0.35 + Math.random() * 0.65) * maxR;
+
+      const dx = Math.cos(angle) * radius;
+      const dy = Math.sin(angle) * radius * 0.85;
+
+      const size = (lowEnd ? 10 : (isMobile ? 12 : 14)) + Math.random() * 6;
+      const rot = (Math.random() * 260 - 130).toFixed(1) + 'deg';
+      const dly = Math.floor(Math.random() * 90) + 'ms';
+
+      s.style.setProperty('--x', originX + '%');
+      s.style.setProperty('--y', originY + '%');
+      s.style.setProperty('--dx', dx.toFixed(1) + 'px');
+      s.style.setProperty('--dy', dy.toFixed(1) + 'px');
+      s.style.setProperty('--sz', size.toFixed(1) + 'px');
+      s.style.setProperty('--rot', rot);
+      s.style.setProperty('--dly', dly);
+
+      wrap.appendChild(s);
+    }
+
+    // Insert above stage so it aligns with the neon frame
+    fx.appendChild(wrap);
+
+    // Clean up after animation
+    window.setTimeout(() => {
+      try{ wrap.remove(); } catch(_){}
+    }, 900);
+  } catch(_){}
+}
+
 
 function fireFoilBurst(token){
   // Burst FX is deprecated (kept for compatibility).
