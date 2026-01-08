@@ -471,7 +471,6 @@ async function exportRevealedPng(card, opts = {}){
 
   // Clone only the card stage (no page UI).
   const clone = stage.cloneNode(true);
-  clone.classList.add('cc-exporting');
   clone.classList.add('is-exporting');
 
   // Ensure no shadow/filters on the clone root, regardless of computed styles.
@@ -534,19 +533,8 @@ clone.style.display = 'block';
 
 const embeddedFontCss = await _embedInterFontCss();
 
-const exportHideCss = `
-.cc-exporting .scratch-fx::before,
-.cc-exporting .scratch-fx::after,
-.cc-exporting .scratch-glow{
-  display: none !important;
-  opacity: 0 !important;
-  animation: none !important;
-  filter: none !important;
-}
-`.trim();
-
 // SVG is authored at on-screen size; canvas handles pixel scaling.
-const svgMarkup = _makeSvgSnapshotMarkup(clone, w0, h0, embeddedFontCss + '\n' + exportHideCss);
+const svgMarkup = _makeSvgSnapshotMarkup(clone, w0, h0, embeddedFontCss);
 const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
 
     const img = new Image();
@@ -1308,7 +1296,7 @@ function clearLegendState(){
       setRevealed(card.token, { board, scratched_indices });
       // Show Save PNG immediately on reveal (no refresh required)
       renderRevealedActions(getCard(card.token) || card);
-      fireFoilBurst(card.token);
+      fireWinPulse();
       showWinUI();
     }
   }
@@ -1849,8 +1837,73 @@ function _ccStartFoilBurst(originCssX, originCssY){
 
 const _ccBurstShown = new Set();
 
+
+/* --------------------------
+   Win FX (border/glow pulse)
+   Uses existing .scratch-fx neon border, no canvas.
+-------------------------- */
+
+let _ccWinFxStyleInjected = false;
+
+function _ccInjectWinFxStyles(){
+  if (_ccWinFxStyleInjected) return;
+  _ccWinFxStyleInjected = true;
+  const css = `
+    /* Win pulse ring: fast, no blur, mobile-safe */
+    .scratch-fx.cc-win-pulse::after{
+      content:'';
+      position:absolute;
+      inset:0;
+      border-radius: inherit;
+      pointer-events:none;
+      opacity:0;
+      box-shadow: 0 0 0 2px rgba(255,255,255,.55);
+      animation: ccWinRing 650ms ease-out 1;
+    }
+    @keyframes ccWinRing{
+      0%   { opacity: 0; transform: scale(0.992); }
+      30%  { opacity: 1; transform: scale(1.002); }
+      100% { opacity: 0; transform: scale(1.01); }
+    }
+
+    /* Slightly lift the existing neon border during the pulse */
+    .scratch-fx.cc-win-pulse::before{
+      opacity: 1 !important;
+      box-shadow: 0 0 0 2px rgba(255,255,255,.12);
+    }
+
+    /* Never include win FX in export clones */
+    .is-exporting .scratch-fx.cc-win-pulse::after{ display:none !important; }
+  `;
+  const style = document.createElement('style');
+  style.id = 'cc-winfx-style';
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+
+function fireWinPulse(){
+  try{
+    if (prefersReducedMotion()) return;
+    _ccInjectWinFxStyles();
+    const fx = document.querySelector('.scratch-fx');
+    if (!fx) return;
+
+    // Restart animation reliably
+    fx.classList.remove('cc-win-pulse');
+    // Force reflow so the animation restarts
+    void fx.offsetWidth;
+    fx.classList.add('cc-win-pulse');
+
+    window.setTimeout(() => {
+      fx.classList.remove('cc-win-pulse');
+    }, 800);
+  } catch(_){}
+}
+
 function fireFoilBurst(token){
-  // Public entry point: safe, fast, and repeatable across multiple cards in one session.
+  // Burst FX is deprecated (kept for compatibility).
+  return;
+// Public entry point: safe, fast, and repeatable across multiple cards in one session.
   if (prefersReducedMotion()) return;
   if (typeof window.CC_REVEAL_FX === 'string' && window.CC_REVEAL_FX.toLowerCase() === 'off') return;
   if (!token) token = 'no-token';
@@ -1864,7 +1917,4 @@ function fireFoilBurst(token){
 }
 
 // Warm up canvas after DOM is ready (reduces first-run jank on iOS).
-document.addEventListener('DOMContentLoaded', () => {
-  try{ _ccEnsureBurstCanvas(); }catch(_){}
-}, { once: true });
-
+// (Burst warmup removed)
