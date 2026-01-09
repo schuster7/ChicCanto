@@ -71,7 +71,12 @@
 html, body{height:100%}
 
 
-
+html.is-preload body[data-page="landing"] .landing__word,
+html.is-preload body[data-page="landing"] .landing__center,
+html.is-preload body[data-page="landing"] .landing__cta{
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
 
 @supports (-webkit-touch-callout: none){
   input, textarea, select{ font-size: 16px; }

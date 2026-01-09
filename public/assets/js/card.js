@@ -735,7 +735,7 @@ function renderSetup(root, card, container){
             </div>
 
             <div class="sharebar">
-              <div class="sharebar__url mono" id="shareUrl">Choose a prize tier to generate the recipient link.</div>
+              <div class="sharebar__url mono" id="shareUrl">Pick a prize to generate the link</div>
 
               <div class="sharebar__actions">
                 <button class="btn" id="copyBtn" type="button">Copy</button>
@@ -779,7 +779,7 @@ function renderSetup(root, card, container){
 
   function resetShareUI(){
     shareUrl = null;
-    shareUrlEl.textContent = 'Choose a prize tier to generate the recipient link.';
+    shareUrlEl.textContent = 'Pick a prize to generate the link.';
     copyBtn.disabled = true;
     if (shareBtn) shareBtn.disabled = true;
     openBtn.href = '#';
