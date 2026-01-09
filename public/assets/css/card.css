@@ -166,6 +166,15 @@
   --glow-blur: 6;
 }
 
+
+.scratch-fx.cc-win-turbo::before{
+  animation-timing-function:
+    cubic-bezier(0.55, 0.08, 0.68, 0.53),
+    cubic-bezier(0.55, 0.08, 0.68, 0.53);
+}
+
+
+
 .scratch-fx.cc-win-turbo::after{
   background: radial-gradient(
     circle at 50% 45%,
@@ -175,7 +184,9 @@
   mix-blend-mode: screen;
   z-index: 6;
   opacity: 0;
-  animation: ccWinFlash 520ms ease-out 1 both;
+
+  animation: ccWinFlash 300ms ease-out 1 both;
+  animation-delay: 700ms; /* last 300ms of the 1000ms turbo window */
 }
 
 /* Never show the frame/flash in PNG export (if export ever captures wrappers). */
@@ -187,9 +198,10 @@
 
 @keyframes ccWinFlash{
   0%   { opacity: 0; transform: scale(1); }
-  18%  { opacity: 1; transform: scale(1.02); }
+  8%   { opacity: 1; transform: scale(1.02); }
   100% { opacity: 0; transform: scale(1.06); }
 }
+
 
 .scratch-fx__content {
   position: absolute;
@@ -531,5 +543,20 @@ border-radius: var(--scratch-tile-radius);
   .scratch-stage{ padding:1.25rem; }
 
 }
+
+
+
+
+/* Mobile */
+@media (max-width: 720px) {
+/* Right panel (scratch grid) */
+.scratch-grid{
+  gap: 14px;
+  --tile-size: clamp(96px, calc((100vw - 72px - (18px * 2)) / 3), 146px);
+
+  grid-template-columns: repeat(3, var(--tile-size));
+}
+}
+
 
 

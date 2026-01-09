@@ -43,10 +43,10 @@ export function tierIconSrc(tier){
  * Keep tier ids stable (t1–t4). Labels are UI-only and can be redesigned later.
  */
 export const REVEAL_OPTIONS = [
-  { key: 'A', tier: 't1', label: 'Prize 1' },
-  { key: 'B', tier: 't2', label: 'Prize 2' },
-  { key: 'C', tier: 't3', label: 'Prize 3' },
-  { key: 'D', tier: 't4', label: 'Prize 4' },
+  { key: 'A', tier: 't1', label: 'Blowjob' },
+  { key: 'B', tier: 't2', label: 'Handjob' },
+  { key: 'C', tier: 't3', label: 'Anal' },
+  { key: 'D', tier: 't4', label: 'His Fantasy' },
 ];
 
 export const RANDOM_KEY = 'RANDOM';

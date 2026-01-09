@@ -91,7 +91,6 @@ export function bootLanding(){
 
     if (isMobileLayout && wordMoment){
       // Build "The Moment" as inline spans inside the existing Moment element.
-      // CSS previously used ::before for "The " on mobile; base.css should blank that out.
       const theSpan = document.createElement('span');
       theSpan.className = 'landing__wordPart landing__wordPart--the';
       theSpan.textContent = 'The';
@@ -113,6 +112,11 @@ export function bootLanding(){
 
       momentThePart = wordMoment.querySelector('.landing__wordPart--the');
       momentMomentPart = wordMoment.querySelector('.landing__wordPart--moment');
+
+      // Critical for mobile: transforms won't apply reliably to inline text.
+      // Make the animated spans inline-block so y-translate works (down-to-up) on mobile too.
+      if (momentThePart) momentThePart.style.display = 'inline-block';
+      if (momentMomentPart) momentMomentPart.style.display = 'inline-block';
 
       if (wordUnluck) words.push(wordUnluck);
       if (momentThePart) words.push(momentThePart);
@@ -139,10 +143,14 @@ export function bootLanding(){
 
     const tl = window.gsap.timeline({ defaults: { ease: 'power2.out' } });
 
-    // Timing (your slowed version)
-    const wordDur = 0.75;
-    const wordStagger = 0.65;
-    const cardDur = 0.95;
+    // Start delay for nicer flow
+    const startDelay = 0.30;
+
+    // Timing (slower overall)
+    // Goal: word 1 -> word 2 -> word 3 -> card -> button
+    const wordDur = 0.80;
+    const wordStagger = 0.70;
+    const cardDur = 1.00;
 
     // Ensure start states are consistent (kept for safety)
     if (words.length){
@@ -158,32 +166,35 @@ export function bootLanding(){
         filter: 'blur(0px)',
         duration: wordDur,
         stagger: wordStagger
-      }, 0);
+      }, startDelay);
     }
 
-    // Card flip: starts with the last word
-    const lastWordStart = Math.max(0, (words.length - 1) * wordStagger);
+    // Card flip: AFTER the last word finishes (no overlap)
+    const wordsDoneAt = (words.length ? ((words.length - 1) * wordStagger + wordDur) : 0);
+    const cardStart = startDelay + wordsDoneAt;
+
     tl.to(stage, {
       opacity: 1,
       rotationY: 0,
       rotationX: 0,
       duration: cardDur,
       ease: 'power3.out'
-    }, lastWordStart);
+    }, cardStart);
 
-    // CTA: delay after sequence completes
-    const wordsDoneAt = (words.length ? ((words.length - 1) * wordStagger + wordDur) : 0);
-    const cardDoneAt = lastWordStart + cardDur;
-    const allDone = Math.max(wordsDoneAt, cardDoneAt);
+    // CTA: AFTER the card finishes
+    const cardDoneAt = cardStart + cardDur;
 
     if (cta){
+      // Keep it hidden until its turn (belt + suspenders)
       tl.set(cta, { opacity: 0, y: 10, pointerEvents: 'none' }, 0);
+
       tl.to(cta, {
         opacity: 1,
         y: 0,
         duration: 0.45
-      }, allDone + 0.45);
-      tl.set(cta, { pointerEvents: 'auto' }, allDone + 0.46);
+      }, cardDoneAt + 0.35);
+
+      tl.set(cta, { pointerEvents: 'auto' }, cardDoneAt + 0.36);
     }
   } else {
     // No GSAP or reduced motion: remove preload and reveal CTA quickly
