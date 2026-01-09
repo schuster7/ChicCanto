@@ -62,13 +62,36 @@ export function bootLanding(){
     // Mobile: keep placement (single line), but animate "The" and "Moment" separately
     const isMobileLayout = window.matchMedia && window.matchMedia('(max-width: 820px)').matches;
 
+    // IMPORTANT:
+    // - Desktop needs the dedicated ".landing__word--the" element (to the right of the card).
+    // - Mobile needs "The" inline before "Moment" inside the ".landing__word--moment" element.
+    // So: hide the dedicated "The" element on mobile only, and restore it on desktop.
+    if (wordThe){
+      if (isMobileLayout){
+        wordThe.style.display = 'none';
+        wordThe.setAttribute('aria-hidden', 'true');
+      } else {
+        wordThe.style.removeProperty('display');
+        wordThe.removeAttribute('aria-hidden');
+      }
+    }
+
+    // If we previously split the Moment element (mobile) and we're now on desktop,
+    // restore it back to just "Moment" so desktop does not lose its separate "The".
+    if (!isMobileLayout && wordMoment){
+      const hadSplit = wordMoment.querySelector('.landing__wordPart--moment');
+      if (hadSplit){
+        wordMoment.textContent = 'Moment';
+      }
+    }
+
     let words = [];
     let momentThePart = null;
     let momentMomentPart = null;
 
     if (isMobileLayout && wordMoment){
       // Build "The Moment" as inline spans inside the existing Moment element.
-      // CSS previously used ::before for "The " on mobile; base.css now blanks that out.
+      // CSS previously used ::before for "The " on mobile; base.css should blank that out.
       const theSpan = document.createElement('span');
       theSpan.className = 'landing__wordPart landing__wordPart--the';
       theSpan.textContent = 'The';
@@ -116,7 +139,7 @@ export function bootLanding(){
 
     const tl = window.gsap.timeline({ defaults: { ease: 'power2.out' } });
 
-    // Faster overall timing
+    // Timing (your slowed version)
     const wordDur = 0.75;
     const wordStagger = 0.65;
     const cardDur = 0.95;
@@ -148,7 +171,7 @@ export function bootLanding(){
       ease: 'power3.out'
     }, lastWordStart);
 
-    // CTA: shorter delay after sequence completes
+    // CTA: delay after sequence completes
     const wordsDoneAt = (words.length ? ((words.length - 1) * wordStagger + wordDur) : 0);
     const cardDoneAt = lastWordStart + cardDur;
     const allDone = Math.max(wordsDoneAt, cardDoneAt);

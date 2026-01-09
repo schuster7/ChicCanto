@@ -698,10 +698,6 @@ justify-items: center;
         align-self: start;
         white-space: nowrap;
       }
-
-      .landing__word--moment::before{
-        content: "The ";
-      }
     }
 
 /* Form */
