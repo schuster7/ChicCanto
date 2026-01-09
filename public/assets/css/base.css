@@ -1215,12 +1215,6 @@ button.btn::-moz-focus-inner {
   text-overflow: ellipsis;
 }
 
-.is-exporting .prize-row__label{
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
-}
-
 .prize-row__value {
   font-weight: 800;
   font-size: 13px;

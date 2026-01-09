@@ -537,6 +537,13 @@ border-radius: var(--scratch-tile-radius);
   content: none !important;
 }
 
+
+.is-exporting .prize-row__label{
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
 /* Short viewport tweaks (moved from base.css to keep scratch styles here) */
 @media (max-height: 500px){
   .scratch-fx{ overflow:visible; }
