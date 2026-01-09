@@ -1206,13 +1206,11 @@ button.btn::-moz-focus-inner {
 }
 
 .prize-row__label {
-  font-size: var(--fs-lg);
+  font-size: var(--fs-md);
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .prize-row__value {
