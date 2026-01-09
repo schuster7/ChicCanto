@@ -1433,8 +1433,7 @@ function renderRevealed(root, card){
     winRow.classList.add('is-winner');
     const tag = qs('[data-role="prize-tag"]', winRow);
     if (tag){
-      tag.hidden = false;
-      tag.textContent = 'Revealed';
+      tag.hidden = true;
     }
   }
 

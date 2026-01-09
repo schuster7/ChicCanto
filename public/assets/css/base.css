@@ -400,7 +400,6 @@ a.btn {
   align-items: center;
   justify-content: flex-end;
   gap: var(--gap);
-  flex-wrap: wrap;
 }
 
 
@@ -1214,6 +1213,12 @@ button.btn::-moz-focus-inner {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.is-exporting .prize-row__label{
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .prize-row__value {
