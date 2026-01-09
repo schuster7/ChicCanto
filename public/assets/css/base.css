@@ -1261,7 +1261,9 @@ button.btn::-moz-focus-inner {
   margin: 0 0 10px;
 }
 
-/* Rotate overlay (only shown when body has force-landscape) */
+/* ----------------------------------------------------------------
+   Rotate overlay (only shown when body has force-landscape)
+---------------------------------------------------------------- */
 .rotate-overlay {
   position: fixed;
   inset: 0;
@@ -1270,8 +1272,7 @@ button.btn::-moz-focus-inner {
   align-items: center;
   justify-content: center;
   padding: 24px;
-
-  background: rgba(0, 0, 0, .86);
+  background: rgba(0, 0, 0, 0.86);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
@@ -1280,39 +1281,36 @@ button.btn::-moz-focus-inner {
   width: min(420px, 100%);
   border-radius: var(--radius);
   padding: 18px 16px;
-
-  border: 1px solid rgba(255, 255, 255, .14);
-  background: rgba(20, 20, 20, .85);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(20, 20, 20, 0.85);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
   text-align: center;
 }
 
 .rotate-overlay__title {
   font-weight: 800;
-  letter-spacing: .02em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   margin-bottom: 8px;
 }
 
 .rotate-overlay__text {
-  opacity: .9;
+  opacity: 0.9;
   font-size: var(--fs-sm);
   line-height: 1.35;
 }
 
 @media (orientation: portrait) {
-  body.force-landscape .rotate-overlay {
-    display: flex;
-  }
+  body.force-landscape .rotate-overlay { display: flex; }
 }
 
 @media (orientation: landscape) {
-  .rotate-overlay {
-    display: none !important;
-  }
+  .rotate-overlay { display: none !important; }
 }
 
-/* Responsive: stack legend + board in portrait */
+/* ----------------------------------------------------------------
+   Portrait: stack legend + board
+---------------------------------------------------------------- */
 @media (max-width: 860px) and (orientation: portrait) {
   .card-screen__body {
     display: flex;
@@ -1320,38 +1318,20 @@ button.btn::-moz-focus-inner {
     gap: 0.75rem;
   }
 
-  .card-screen__body .scratch-board {
-    order: 1;
-  }
+  .card-screen__body .scratch-board { order: 1; }
+  .card-screen__body .card-legend { order: 2; }
 
-  .card-screen__body .card-legend {
-    order: 2;
-  }
-
-  .card-screen__body .card-legend {
-    padding: 10px;
-  }
-
-  .prize-list {
-    gap: 8px;
-  }
-
-  .prize-row {
-    padding: 4px 6px;
-  }
+  .card-screen__body .card-legend { padding: 10px; }
+  .prize-list { gap: 8px; }
+  .prize-row { padding: 4px 6px; }
 }
 
-
-
-
-
-/* Landscape tighten for short viewports */
+/* ----------------------------------------------------------------
+   Short landscape: tighten general spacing (header + outer gaps)
+---------------------------------------------------------------- */
 @media (orientation: landscape) and (max-height: 500px) {
   .container,
   .app-stage,
-  .card-screen,
-  .card-header,
-
   .card-screen {
     gap: 1rem;
   }
@@ -1361,12 +1341,58 @@ button.btn::-moz-focus-inner {
     gap: var(--gap);
   }
 
-  .card-header__meta {
-    gap: var(--gap);
+  .card-header__meta { gap: var(--gap); }
+  .card-header__meta .row { gap: var(--gap); }
+}
+
+/* ----------------------------------------------------------------
+   Phone landscape (short height):
+   - give legend more width by shrinking board column
+   - keep both panels same height by distributing legend rows
+---------------------------------------------------------------- */
+@media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+  .card-screen__body {
+    grid-template-columns: 1.15fr 1fr;
+    gap: 18px;
+    align-items: stretch;
   }
 
-  .card-header__meta .row {
-    gap: var(--gap);
+  /* Make the legend column actually stretch */
+  .card-legend {
+    height: 100%;
+    min-height: 0;
+    padding: 10px;
+  }
+
+  /* Distribute rows to match the board height */
+  .prize-list {
+    height: 100%;
+    min-height: 0;
+    justify-content: space-between;
+  }
+
+  .prize-row {
+    flex: 1 1 0;
+    min-height: 0;
+    padding: 6px 10px;
+  }
+
+  /* Keep board from hogging width, scale from viewport height */
+  .scratch-board {
+    width: 100%;
+    max-width: 520px;         
+    justify-self: end;
+    min-height: 0;
+  }
+
+  /* Optional: slightly smaller internals if you still feel tight */
+  .prize-row__icon {
+    width: 2.1rem;  
+    height: 2.1rem;
+  }
+
+  .prize-row__label {
+    font-size: 0.98rem;
   }
 }
 
