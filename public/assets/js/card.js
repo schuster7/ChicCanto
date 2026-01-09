@@ -664,7 +664,7 @@ function render(container, token, card){
 
 const previewCta = PREVIEW_MODE ? `
   <div class="preview-line" role="note" aria-label="Preview notice">
-    <span class="muted">Preview mode. Scratch for free. Activate to create a recipient link you can send.</span>
+    <span class="muted">Preview mode. Scratch for free. Activate to create a recipient link.</span>
   </div>
 ` : '';
 
