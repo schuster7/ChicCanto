@@ -1637,7 +1637,7 @@ button.btn::-moz-focus-inner {
 
 :root{
   --card-reduce: 0px;            /* default portrait / desktop */
-  --card-landscape-reduce: 120px; /* tweak this independently */
+  --card-landscape-reduce: 170px; /* tweak this independently */
 }
 
 /* Landscape phone: short height + landscape */
@@ -1667,7 +1667,6 @@ button.btn::-moz-focus-inner {
     height: 10px;
   }
 
-
   .site-actions {
     gap: 8px;
     flex-wrap: wrap;
@@ -1687,6 +1686,15 @@ button.btn::-moz-focus-inner {
   }
   .card-screen__body {
   gap: 20px;
+     align-items: center;
+}
+
+.card-screen__body .card-legend {
+    padding: 6px;
+}
+
+.prize-row {
+  padding: 5px;
 }
 
 }
