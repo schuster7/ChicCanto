@@ -1637,7 +1637,7 @@ button.btn::-moz-focus-inner {
 
 
 :root{
-  --card-landscape-reduce: 220px; /* tweak this independently */
+  --card-landscape-reduce: 190px; /* tweak this independently */
 }
 
 /* Landscape phone: short height + landscape */
