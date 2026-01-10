@@ -1632,3 +1632,61 @@ button.btn::-moz-focus-inner {
 }
 
 
+
+
+
+:root{
+  --card-reduce: 0px;            /* default portrait / desktop */
+  --card-landscape-reduce: 120px; /* tweak this independently */
+}
+
+/* Landscape phone: short height + landscape */
+@media (orientation: landscape) and (max-height: 520px){
+  :root{
+    --header-h: 44px;
+    --card-reduce: var(--card-landscape-reduce);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px){
+    .page-main {
+    padding: var(--gap-xl) 0 44px
+  }
+
+  .site-header {
+    width: min(var(--page-max), calc(100% - 26px));
+  top: 4px;
+  margin: 4px auto 0;
+  }
+
+  .site-header__inner {
+    padding: 0 var(--gap);
+  }
+
+  .brand__logo {
+    height: 10px;
+  }
+
+
+  .site-actions {
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .site-header .btn,
+  .card-header .btn {
+    white-space: nowrap;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: var(--lh-snug);
+  }
+
+  body[data-page="card"]{
+    --card-reduce: var(--card-landscape-reduce);
+  }
+  .card-screen__body {
+  gap: 20px;
+}
+
+}

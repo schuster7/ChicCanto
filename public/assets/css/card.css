@@ -567,4 +567,14 @@ border-radius: var(--scratch-tile-radius);
 }
 
 
+/* Landscape phone: short height + landscape */
+@media (orientation: landscape) and (max-height: 520px){
+.scratch-grid{
+  gap: 14px;
+  --tile-size: clamp(96px, calc((100vw - 100px - (18px * 2)) / 3), 120px);
+
+  grid-template-columns: repeat(3, var(--tile-size));
+}
+}
+
 
