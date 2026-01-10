@@ -9,11 +9,6 @@
   --accent2: #8dd6ff;
 
   --page-max: 1000px;
-
-  /* Card page width control (keeps site header unchanged) */
-  --card-max: 980px;
-  /* Total width to subtract from container when sizing the card (both sides combined). */
-  --card-reduce: 0px;
   --radius: 12px;
   --radius-sm: 16px;
 
@@ -62,8 +57,6 @@
 @media (max-width: 720px) {
   :root {
     --header-h: 44px;
-    --card-reduce: 36px;
-
   }
 }
 
@@ -481,17 +474,10 @@ p.muted.no-m {
   display: block;
 }
 
-.preview-line  {
-  position: relative;
-  width: 100%;
-  margin:-12px auto 0 auto;
-  text-align: center;
-  padding-bottom: 6px;
-}
-
 .preview-line .muted {
-
+  position: absolute;
   font-size: var(--fs-xs);
+  margin-top: -22px;
 }
 
 /* Landing Page */
@@ -940,6 +926,9 @@ button.btn::-moz-focus-inner {
     height: 10px;
   }
 
+  .preview-line .muted {
+  position: relative;
+}
 
   .site-actions {
     gap: 8px;
@@ -1094,14 +1083,11 @@ button.btn::-moz-focus-inner {
   flex-direction: column;
   gap: 4rem;
   /* controls header-to-card spacing */
-  width: 100%;
-  max-width: min(var(--card-max), calc(100% - var(--card-reduce)));
   margin: 0 auto;
   background: transparent;
   box-shadow: none;
   overflow: visible;
 }
-
 
 /* Title (rendered inside the card content) */
 .card-heading {

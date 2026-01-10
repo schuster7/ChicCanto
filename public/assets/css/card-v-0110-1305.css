@@ -18,7 +18,7 @@
   --scratch-tile-border: transparent;
 
   /* FX wrapper (glow) sizing */
-  --scratch-fx-width: min(100%, var(--scratch-max, 980px));
+  --scratch-fx-width: min(92vw, var(--scratch-max, 980px));
   --scratch-fx-radius: 28px;
 
   --card-color: hsl(260deg 100% 3%);
@@ -106,7 +106,6 @@
 
 .scratch-fx{
   width: var(--scratch-fx-width);
-  max-width: 100%;
   height: auto;
   aspect-ratio: auto;
   margin: 0 auto;
@@ -560,7 +559,7 @@ border-radius: var(--scratch-tile-radius);
 /* Right panel (scratch grid) */
 .scratch-grid{
   gap: 14px;
-  --tile-size: clamp(96px, calc((100vw - 100px - (18px * 2)) / 3), 146px);
+  --tile-size: clamp(96px, calc((100vw - 72px - (18px * 2)) / 3), 146px);
 
   grid-template-columns: repeat(3, var(--tile-size));
 }
