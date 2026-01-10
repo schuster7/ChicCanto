@@ -32,6 +32,7 @@
   --pad: 1rem;
   --gap: 10px;
   --gap-xl: 16px;
+  --gap-xs: 6px;
   --header-h: 70px;
 
   --landing-card-w: min(62vw, 600px);
@@ -1636,8 +1637,7 @@ button.btn::-moz-focus-inner {
 
 
 :root{
-  --card-reduce: 0px;            /* default portrait / desktop */
-  --card-landscape-reduce: 170px; /* tweak this independently */
+  --card-landscape-reduce: 220px; /* tweak this independently */
 }
 
 /* Landscape phone: short height + landscape */
@@ -1693,8 +1693,25 @@ button.btn::-moz-focus-inner {
     padding: 6px;
 }
 
+.card-screen__body .card-legend h2 {
+    margin: 0;
+    font-size: clamp(15px, 2vw, 28px);
+}
+
+.card-heading {
+    margin: 0 0 6px;
+}
+
+.rule-text {
+    font-size: 11px;
+}
+
 .prize-row {
   padding: 5px;
+}
+
+.prize-list {
+    gap: var(--gap-xs);
 }
 
 }
