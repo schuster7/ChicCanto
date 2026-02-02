@@ -1715,3 +1715,32 @@ button.btn::-moz-focus-inner {
 }
 
 }
+
+/* Site footer */
+.site-footer{
+  margin-top: 28px;
+  padding: 18px 0 26px;
+  border-top: 1px solid rgba(238, 240, 246, .10);
+}
+.site-footer__inner{
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 0 18px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted2);
+  font-size: 13px;
+}
+.site-footer__link{
+  color: var(--muted2);
+  text-decoration: none;
+}
+.site-footer__link:hover{
+  color: var(--text);
+  text-decoration: underline;
+}
+.site-footer__sep{
+  opacity: .6;
+}
