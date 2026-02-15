@@ -1,0 +1,34 @@
+[
+  {
+    "key": "codes:single",
+    "value": "[\"CC-AAAA-BBBB-CCCC\",\"CC-DDDD-EEEE-FFFF\"]"
+  },
+  {
+    "key": "codes:fullset",
+    "value": "[\"CC-GGGG-HHHH-IIII\",\"CC-JJJJ-KKKK-LLLL\"]"
+  },
+  {
+    "key": "next_index:single",
+    "value": "0"
+  },
+  {
+    "key": "next_index:fullset",
+    "value": "0"
+  },
+  {
+    "key": "ac:CC-AAAA-BBBB-CCCC",
+    "value": "{\"code\":\"CC-AAAA-BBBB-CCCC\",\"sku\":\"single\",\"status\":\"available\"}"
+  },
+  {
+    "key": "ac:CC-DDDD-EEEE-FFFF",
+    "value": "{\"code\":\"CC-DDDD-EEEE-FFFF\",\"sku\":\"single\",\"status\":\"available\"}"
+  },
+  {
+    "key": "ac:CC-GGGG-HHHH-IIII",
+    "value": "{\"code\":\"CC-GGGG-HHHH-IIII\",\"sku\":\"fullset\",\"status\":\"available\"}"
+  },
+  {
+    "key": "ac:CC-JJJJ-KKKK-LLLL",
+    "value": "{\"code\":\"CC-JJJJ-KKKK-LLLL\",\"sku\":\"fullset\",\"status\":\"available\"}"
+  }
+]

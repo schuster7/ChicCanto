@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ChicCanto Fulfillment</title>
+    <link rel="stylesheet" href="/assets/css/base.css" />
+  </head>
+  <body data-page="fulfill">
+    <main class="page">
+      <div class="container narrow">
+        <header class="stack" style="margin: 20px 0 10px;">
+          <h1 style="margin:0; font-size: 20px;">Fulfillment</h1>
+          <p class="muted" style="margin:0;">Assign an activation code to an Etsy order. Copy the message and send it in Etsy.</p>
+        </header>
+
+        <section class="card stack" style="padding: 14px;">
+          <label class="stack" style="gap:6px;">
+            <span class="muted">Fulfillment password</span>
+            <input id="fulfillKey" type="password" autocomplete="current-password" placeholder="Shared password" />
+          </label>
+
+          <div class="row" style="display:grid; grid-template-columns: 1fr; gap: 10px;">
+            <label class="stack" style="gap:6px;">
+              <span class="muted">Etsy order number</span>
+              <input id="orderId" type="text" inputmode="text" placeholder="Paste order number" />
+            </label>
+
+            <label class="stack" style="gap:6px;">
+              <span class="muted">Product</span>
+              <select id="sku">
+                <option value="single">Single card</option>
+                <option value="fullset">Full set (4 cards)</option>
+              </select>
+            </label>
+
+            <label class="stack" style="gap:6px;">
+              <span class="muted">Buyer name (optional)</span>
+              <input id="buyerName" type="text" inputmode="text" placeholder="Optional" />
+            </label>
+          </div>
+
+          <button id="assignBtn" class="btn primary" type="button">Assign code</button>
+          <p id="status" class="muted" style="margin:0;"></p>
+        </section>
+
+        <section class="card stack" style="padding: 14px; margin-top: 12px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <h2 style="margin:0; font-size: 16px;">Copy to Etsy</h2>
+            <button id="copyBtn" class="btn" type="button" disabled>Copy</button>
+          </div>
+          <textarea id="message" rows="10" style="width:100%; resize: vertical;" placeholder="Your filled message will appear here" readonly></textarea>
+
+          <div class="stack" style="gap:6px;">
+            <div class="muted">Assigned code</div>
+            <input id="assignedCode" type="text" readonly />
+          </div>
+        </section>
+
+        <footer class="muted" style="margin: 18px 0 30px; font-size: 12px;">
+          If something looks wrong, do not guess. Re-run with the same order number and you should get the same code.
+        </footer>
+      </div>
+    </main>
+
+    <script type="module" src="/assets/js/app.js"></script>
+  </body>
+</html>
