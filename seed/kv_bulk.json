@@ -1,0 +1,11 @@
+[
+  { "key": "next_index:single", "value": "0" },
+  { "key": "next_index:fullset", "value": "0" },
+
+  { "key": "codes:single", "value": "[\"SINGLE-TEST-0001\",\"SINGLE-TEST-0002\"]" },
+  { "key": "codes:fullset", "value": "[\"FULLSET-TEST-0001\"]" },
+
+  { "key": "ac:SINGLE-TEST-0001", "value": "{\"code\":\"SINGLE-TEST-0001\",\"sku\":\"single\",\"status\":\"available\"}" },
+  { "key": "ac:SINGLE-TEST-0002", "value": "{\"code\":\"SINGLE-TEST-0002\",\"sku\":\"single\",\"status\":\"available\"}" },
+  { "key": "ac:FULLSET-TEST-0001", "value": "{\"code\":\"FULLSET-TEST-0001\",\"sku\":\"fullset\",\"status\":\"available\"}" }
+]
