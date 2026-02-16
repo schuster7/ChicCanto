@@ -43,20 +43,41 @@ function buildMessage({ code, sku, origin }){
   );
 }
 
+function tryParseLooseArray(raw){
+  // Accept values like:
+  // 1) ["A","B"] (proper JSON)
+  // 2) [A,B]       (quotes got stripped by shell/CLI)
+  // 3) A,B         (comma-separated list)
+  if (typeof raw !== 'string') return null;
+  const s = raw.trim();
+  if (!s) return null;
+
+  let inner = s;
+  if (inner.startsWith('[') && inner.endsWith(']')){
+    inner = inner.slice(1, -1);
+  }
+
+  // If it doesn't look like a list at all, bail.
+  if (!inner.includes(',')) return null;
+
+  const items = inner
+    .split(',')
+    .map(v => v.trim())
+    .map(v => v.replace(/^"|"$/g, ''))
+    .map(v => v.replace(/^'|'$/g, ''))
+    .filter(Boolean);
+
+  return items.length ? items : null;
+}
+
 async function getJsonKV(env, key){
   const raw = await env.CARDS_KV.get(key);
   if (!raw) return null;
   try{ return JSON.parse(raw); } catch {
-    // Ops-safety: tolerate a "list-like" string that isn't valid JSON.
-    // Example:
-    //   [SINGLE-TEST-0003,SINGLE-TEST-0004,SINGLE-TEST-0005]
-    // This happens when shell quoting strips the quotes from JSON.
-    const s = String(raw).trim();
-    if (s.startsWith('[') && s.endsWith(']')){
-      const inner = s.slice(1, -1).trim();
-      if (!inner) return [];
-      const parts = inner.split(',').map(x => x.trim()).filter(Boolean);
-      return parts.map(p => p.replace(/^"|"$/g, ''));
+    // For inventory lists, accept a loose array representation.
+    if (key.startsWith('codes:')){
+      const loose = tryParseLooseArray(raw);
+      if (loose) return loose;
     }
     return null;
   }
@@ -132,10 +153,19 @@ export async function onRequestPost(context){
     if (!code) continue;
 
     const acKey = `ac:${code}`;
-    const rec = await getJsonKV(env, acKey);
-    if (!rec || typeof rec !== 'object') continue;
+    let rec = await getJsonKV(env, acKey);
 
-    const status = String(rec.status || '').toLowerCase();
+    // If there is no record yet (fresh inventory), treat it as available.
+    if (!rec || typeof rec !== 'object'){
+      rec = {
+        code,
+        sku,
+        status: 'available',
+        created_at: new Date().toISOString(),
+      };
+    }
+
+    const status = String(rec.status || 'available').toLowerCase();
     const recSku = normalizeSku(rec.sku || sku) || sku;
     if (recSku !== sku) continue;
     if (status !== 'available') continue;
