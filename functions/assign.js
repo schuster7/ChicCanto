@@ -46,7 +46,20 @@ function buildMessage({ code, sku, origin }){
 async function getJsonKV(env, key){
   const raw = await env.CARDS_KV.get(key);
   if (!raw) return null;
-  try{ return JSON.parse(raw); } catch { return null; }
+  try{ return JSON.parse(raw); } catch {
+    // Ops-safety: tolerate a "list-like" string that isn't valid JSON.
+    // Example:
+    //   [SINGLE-TEST-0003,SINGLE-TEST-0004,SINGLE-TEST-0005]
+    // This happens when shell quoting strips the quotes from JSON.
+    const s = String(raw).trim();
+    if (s.startsWith('[') && s.endsWith(']')){
+      const inner = s.slice(1, -1).trim();
+      if (!inner) return [];
+      const parts = inner.split(',').map(x => x.trim()).filter(Boolean);
+      return parts.map(p => p.replace(/^"|"$/g, ''));
+    }
+    return null;
+  }
 }
 
 export async function onRequestPost(context){
