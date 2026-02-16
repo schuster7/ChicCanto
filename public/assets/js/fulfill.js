@@ -71,11 +71,21 @@ async function assign(){
     let data = null;
     try{ data = await res.json(); } catch { data = null; }
 
-    if (!res.ok || !data || !data.ok){
-      const msg = (data && (data.error || data.message)) || `Failed (HTTP ${res.status})`;
-      setStatus(msg, true);
-      return;
-    }
+if (!res.ok || !data || !data.ok){
+  const msg = (data && (data.error || data.message)) || `Failed (HTTP ${res.status})`;
+
+  // clear stale UI so we never show an old code/message on failure
+  const messageEl = byId('message');
+  const codeEl = byId('assignedCode');
+  const copyBtn = byId('copyBtn');
+  if (messageEl) messageEl.value = '';
+  if (codeEl) codeEl.value = '';
+  if (copyBtn) copyBtn.disabled = true;
+
+  setStatus(msg, true);
+  return;
+}
+
 
     byId('message').value = String(data.message_text || '');
     byId('assignedCode').value = String(data.code || '');
