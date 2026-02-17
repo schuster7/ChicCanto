@@ -1,138 +1,108 @@
-function byId(id){
-  return document.getElementById(id);
-}
+// Fulfillment page logic
+// This page is now protected by a server-issued session cookie (httpOnly).
+// If not authenticated, we redirect to /fulfill/login/.
 
-function setStatus(text, isError = false){
+function byId(id){ return document.getElementById(id); }
+
+function setStatus(msg, isErr=false){
   const el = byId('status');
   if (!el) return;
-  el.textContent = text || '';
-  el.style.color = isError ? '#ff6b6b' : '';
+  el.textContent = msg || '';
+  el.style.color = isErr ? '#ff6961' : '#c7f0c2';
 }
 
-async function copyText(text){
-  // Clipboard API first
-  if (navigator.clipboard && navigator.clipboard.writeText){
-    try{
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {}
-  }
+function setAssigned(code){
+  const el = byId('assignedCode');
+  if (!el) return;
+  el.value = code || '';
+}
 
-  // Fallback
-  try{
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed';
-    ta.style.left = '-9999px';
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(ta);
-    return ok;
-  } catch {
-    return false;
-  }
+function setMessage(msg){
+  const el = byId('message');
+  if (!el) return;
+  el.value = msg || '';
+
+  const copyBtn = byId('copyBtn');
+  if (copyBtn) copyBtn.disabled = !(msg && String(msg).trim().length);
+}
+
+async function isAuthenticated(){
+  const r = await fetch('/auth', { method: 'GET', credentials: 'include' });
+  const j = await r.json().catch(() => ({}));
+  return !!(r.ok && j && j.ok && j.authenticated);
+}
+
+function goLogin(){
+  // Preserve where we came from
+  const next = encodeURIComponent(window.location.pathname + window.location.search);
+  window.location.href = `/fulfill/login/?next=${next}`;
 }
 
 async function assign(){
-  const key = String(byId('fulfillKey')?.value || '').trim();
-  const order_id = String(byId('orderId')?.value || '').trim();
-  const sku = String(byId('sku')?.value || '').trim();
-  const buyer_name = String(byId('buyerName')?.value || '').trim();
-
-  // Session auth (cookie) so you don't need to send the password on every request.
-  // We still allow the password field as a one-time login for this browser session.
-  if (!window.__ccFulfillAuthed){
-    // First try existing cookie.
-    try{
-      const s = await fetch('/auth', { method: 'GET' });
-      if (s.ok){
-        const sd = await s.json();
-        window.__ccFulfillAuthed = !!sd?.authenticated;
-      }
-    } catch {}
-  }
-
-  if (!window.__ccFulfillAuthed){
-    if (!key){
-      setStatus('Missing fulfillment password.', true);
-      return;
-    }
-
-    // Establish session cookie.
-    try{
-      const r = await fetch('/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: key }),
-      });
-      if (!r.ok){
-        setStatus('Wrong password or session could not be created.', true);
-        return;
-      }
-      window.__ccFulfillAuthed = true;
-    } catch {
-      setStatus('Auth request failed.', true);
-      return;
-    }
-  }
-  if (!order_id){
-    setStatus('Missing Etsy order number.', true);
-    return;
-  }
-  if (!sku){
-    setStatus('Missing product selection.', true);
-    return;
-  }
-
   const btn = byId('assignBtn');
   if (btn) btn.disabled = true;
-  setStatus('Assigning…');
 
   try{
+    // Must have a valid session cookie
+    const authed = await isAuthenticated();
+    if (!authed){
+      goLogin();
+      return;
+    }
+
+    const order_id = String(byId('orderId')?.value || '').trim();
+    const sku = String(byId('sku')?.value || '').trim();
+    const buyer_name = String(byId('buyerName')?.value || '').trim() || null;
+
+    if (!order_id){
+      setStatus('Enter an Etsy order number.', true);
+      return;
+    }
+    if (!sku){
+      setStatus('Select a product.', true);
+      return;
+    }
+
+    setStatus('Assigning...');
+    setAssigned('');
+    setMessage('');
+
     const res = await fetch('/assign', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ order_id, sku, buyer_name }),
     });
 
-    // If the session expired, force re-auth next time.
+    const data = await res.json().catch(() => ({}));
+
     if (res.status === 401){
-      window.__ccFulfillAuthed = false;
+      goLogin();
+      return;
     }
 
-    let data = null;
-    try{ data = await res.json(); } catch { data = null; }
+    if (!res.ok || !data.ok){
+      throw new Error(data.error || 'Request failed.');
+    }
 
-if (!res.ok || !data || !data.ok){
-  const msg = (data && (data.error || data.message)) || `Failed (HTTP ${res.status})`;
-
-  // clear stale UI so we never show an old code/message on failure
-  const messageEl = byId('message');
-  const codeEl = byId('assignedCode');
-  const copyBtn = byId('copyBtn');
-  if (messageEl) messageEl.value = '';
-  if (codeEl) codeEl.value = '';
-  if (copyBtn) copyBtn.disabled = true;
-
-  setStatus(msg, true);
-  return;
+    setAssigned(data.code || '');
+    setMessage(data.etsy_message || '');
+    setStatus('Assigned.');
+  }catch(err){
+    setStatus(String(err?.message || err || 'Error'), true);
+  }finally{
+    if (btn) btn.disabled = false;
+  }
 }
 
-
-    byId('message').value = String(data.message_text || '');
-    byId('assignedCode').value = String(data.code || '');
-    const copyBtn = byId('copyBtn');
-    if (copyBtn) copyBtn.disabled = !String(data.message_text || '').length;
-
-    setStatus(data.existing ? 'Order already assigned. Returned the existing code.' : 'Assigned. Copy the message and send it in Etsy.');
-  } catch (e){
-    setStatus(e && e.message ? e.message : 'Request failed.', true);
-  } finally{
-    if (btn) btn.disabled = false;
+async function copyMessage(){
+  const txt = byId('message')?.value || '';
+  if (!txt) return;
+  try{
+    await navigator.clipboard.writeText(txt);
+    setStatus('Copied.');
+  }catch(_){
+    setStatus('Copy failed. Select text and copy manually.', true);
   }
 }
 
@@ -141,27 +111,15 @@ export function bootFulfill(){
   const copyBtn = byId('copyBtn');
   if (!btn) return;
 
-  btn.addEventListener('click', assign);
+  // Gate the page on load
+  isAuthenticated()
+    .then((authed) => {
+      if (!authed) goLogin();
+    })
+    .catch(() => goLogin());
 
-  // Enter submits
-  const order = byId('orderId');
-  if (order){
-    order.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter'){
-        e.preventDefault();
-        assign();
-      }
-    });
-  }
-
-  if (copyBtn){
-    copyBtn.addEventListener('click', async () => {
-      const text = String(byId('message')?.value || '');
-      if (!text) return;
-      const ok = await copyText(text);
-      setStatus(ok ? 'Copied.' : 'Copy failed. Select and copy manually.', !ok);
-    });
-  }
+  btn.addEventListener('click', (e) => { e.preventDefault(); assign(); });
+  if (copyBtn) copyBtn.addEventListener('click', (e) => { e.preventDefault(); copyMessage(); });
 
   setStatus('Ready.');
 }
