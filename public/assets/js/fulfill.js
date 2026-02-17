@@ -41,9 +41,41 @@ async function assign(){
   const sku = String(byId('sku')?.value || '').trim();
   const buyer_name = String(byId('buyerName')?.value || '').trim();
 
-  if (!key){
-    setStatus('Missing fulfillment password.', true);
-    return;
+  // Session auth (cookie) so you don't need to send the password on every request.
+  // We still allow the password field as a one-time login for this browser session.
+  if (!window.__ccFulfillAuthed){
+    // First try existing cookie.
+    try{
+      const s = await fetch('/auth', { method: 'GET' });
+      if (s.ok){
+        const sd = await s.json();
+        window.__ccFulfillAuthed = !!sd?.authenticated;
+      }
+    } catch {}
+  }
+
+  if (!window.__ccFulfillAuthed){
+    if (!key){
+      setStatus('Missing fulfillment password.', true);
+      return;
+    }
+
+    // Establish session cookie.
+    try{
+      const r = await fetch('/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: key }),
+      });
+      if (!r.ok){
+        setStatus('Wrong password or session could not be created.', true);
+        return;
+      }
+      window.__ccFulfillAuthed = true;
+    } catch {
+      setStatus('Auth request failed.', true);
+      return;
+    }
   }
   if (!order_id){
     setStatus('Missing Etsy order number.', true);
@@ -63,10 +95,14 @@ async function assign(){
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-FULFILL-KEY': key,
       },
       body: JSON.stringify({ order_id, sku, buyer_name }),
     });
+
+    // If the session expired, force re-auth next time.
+    if (res.status === 401){
+      window.__ccFulfillAuthed = false;
+    }
 
     let data = null;
     try{ data = await res.json(); } catch { data = null; }
