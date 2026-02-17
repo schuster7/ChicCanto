@@ -6,17 +6,6 @@ export function bootLanding(){
   const card = document.getElementById('holoCard');
   const cta = document.querySelector('.landing__cta');
 
-  // Splash behavior: automatically continue to /activate/ after the intro finishes.
-  const AUTO_FORWARD_TO_ACTIVATE = true;
-  const AUTO_FORWARD_DELAY_MS = 650;
-  let autoForwardCanceled = false;
-
-  // If the user clicks the card link, don't also auto-redirect (avoid double nav).
-  const cardLink = card.querySelector('a[href="/activate/"]');
-  if (cardLink){
-    cardLink.addEventListener('click', () => { autoForwardCanceled = true; }, { passive: true });
-  }
-
   // Preload guard: if <html class="is-preload"> is present, keep content hidden
   // until we set initial animation states, then remove the class to avoid a first-paint flash.
   const root = document.documentElement;
@@ -207,26 +196,9 @@ export function bootLanding(){
 
       tl.set(cta, { pointerEvents: 'auto' }, cardDoneAt + 0.36);
     }
-
-    // Auto-forward to activation after the intro finishes (splash screen behavior)
-    if (AUTO_FORWARD_TO_ACTIVATE){
-      const redirectAt = (cta ? (cardDoneAt + 0.35 + 0.55) : (cardDoneAt + 0.55));
-      tl.call(() => {
-        if (autoForwardCanceled) return;
-        window.location.assign('/activate/');
-      }, null, redirectAt);
-    }
   } else {
     // No GSAP or reduced motion: remove preload and reveal CTA quickly
     removePreload();
-
-    // Auto-forward even without GSAP/reduced motion (keep it quick)
-    if (AUTO_FORWARD_TO_ACTIVATE){
-      window.setTimeout(() => {
-        if (autoForwardCanceled) return;
-        window.location.assign('/activate/');
-      }, AUTO_FORWARD_DELAY_MS);
-    }
 
     if (cta){
       const delayMs = 1800;
