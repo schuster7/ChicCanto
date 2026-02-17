@@ -38,6 +38,15 @@ function goLogin(){
   window.location.href = `/fulfill/login/?next=${next}`;
 }
 
+async function logout(){
+  try{
+    await fetch('/auth', { method: 'DELETE', credentials: 'include' });
+  }catch(_){
+    // ignore
+  }
+  window.location.href = '/fulfill/login/';
+}
+
 async function assign(){
   const btn = byId('assignBtn');
   if (btn) btn.disabled = true;
@@ -109,6 +118,7 @@ async function copyMessage(){
 export function bootFulfill(){
   const btn = byId('assignBtn');
   const copyBtn = byId('copyBtn');
+  const logoutBtn = byId('logoutBtn');
   if (!btn) return;
 
   // Gate the page on load
@@ -120,6 +130,7 @@ export function bootFulfill(){
 
   btn.addEventListener('click', (e) => { e.preventDefault(); assign(); });
   if (copyBtn) copyBtn.addEventListener('click', (e) => { e.preventDefault(); copyMessage(); });
+  if (logoutBtn) logoutBtn.addEventListener('click', (e) => { e.preventDefault(); logout(); });
 
   setStatus('Ready.');
 }

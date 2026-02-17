@@ -119,6 +119,12 @@ export async function onRequest(context){
     return json({ ok: true, authenticated });
   }
 
+  // Logout: clear the session cookie
+  if (request.method === 'DELETE'){
+    const cookie = `${SESSION_COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
+    return json({ ok: true }, 200, { 'Set-Cookie': cookie });
+  }
+
   if (request.method !== 'POST'){
     return json({ ok: false, error: 'Method not allowed.' }, 405);
   }
@@ -150,4 +156,3 @@ export async function onRequest(context){
   const cookie = `${SESSION_COOKIE_NAME}=${token}; Path=/; Max-Age=${SESSION_TTL_SECONDS}; HttpOnly; Secure; SameSite=Strict`;
   return json({ ok: true }, 200, { 'Set-Cookie': cookie });
 }
-
