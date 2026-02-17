@@ -24,7 +24,7 @@ async function login(key){
     method: 'POST',
     headers: { 'Content-Type':'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ key })
+    body: JSON.stringify({ password: key })
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok || !j.ok) throw new Error(j.error || 'Wrong password.');
