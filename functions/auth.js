@@ -150,3 +150,4 @@ export async function onRequest(context){
   const cookie = `${SESSION_COOKIE_NAME}=${token}; Path=/; Max-Age=${SESSION_TTL_SECONDS}; HttpOnly; Secure; SameSite=Strict`;
   return json({ ok: true }, 200, { 'Set-Cookie': cookie });
 }
+
