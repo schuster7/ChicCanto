@@ -340,12 +340,60 @@ function renderMultiCards(result){
   });
 }
 
+
+function normalizeActivationCode(raw){
+  // Customer-friendly normalization:
+  // - uppercase
+  // - remove spaces and line breaks
+  // - keep hyphens
+  // - drop any other characters
+  const s = String(raw || '').toUpperCase();
+  return s
+    .replace(/\s+/g, '')
+    .replace(/[^A-Z0-9-]/g, '');
+}
+
 export function bootRedeem(){
   // Support both the original hook IDs and the newer hyphenated ones.
   const form = byId('redeemForm', 'redeem-form') || qs('#redeemForm') || qs('#redeem-form');
   if (!form) return; // not on a redeem/landing page
 
   const input = byId('code', 'redeem-code') || qs('#code') || qs('#redeem-code');
+
+  // Normalize activation code as the customer types/pastes.
+  if (input){
+    const applyNorm = () => {
+      const before = input.value;
+      const after = normalizeActivationCode(before);
+      if (after !== before){
+        const atEnd = input.selectionStart === before.length && input.selectionEnd === before.length;
+        input.value = after;
+        if (atEnd){
+          // keep caret at end for the common case
+          input.setSelectionRange(after.length, after.length);
+        }
+      }
+    };
+
+    input.addEventListener('input', applyNorm);
+
+    input.addEventListener('paste', (e) => {
+      try{
+        const text = (e.clipboardData || window.clipboardData).getData('text') || '';
+        if (!text) return;
+        e.preventDefault();
+        const normalized = normalizeActivationCode(text);
+        input.value = normalized;
+        input.setSelectionRange(normalized.length, normalized.length);
+      }catch{
+        // fall back to normal paste, then input event will normalize
+      }
+    });
+
+    // Run once on load in case code was prefilled from URL.
+    applyNorm();
+  }
+
   const msg = byId('msg', 'redeem-error') || qs('#msg') || qs('#redeem-error');
   const productTitleEl = byId('productName', 'product-title') || qs('#productName') || qs('#product-title');
 
@@ -375,7 +423,7 @@ export function bootRedeem(){
     const results = document.getElementById('redeemResults');
     if (results) results.innerHTML = '';
 
-    const code = input ? input.value.trim() : '';
+    const code = input ? normalizeActivationCode(input.value) : '';
     if (!code) {
       if (msg) msg.textContent = 'Please enter an activation code.';
       return;
