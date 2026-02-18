@@ -30,11 +30,15 @@ function normalizeOrderId(raw){
   return String(raw || '').trim();
 }
 
-function buildMessage({ code, origin }){
+function buildMessage({ code, origin, buyerName }) {
   const base = `${origin}/`;
+  const name = (buyerName || "").trim();
+  const greeting = name ? `Hi ${name}
+
+` : "";
 
   return (
-`Thanks for your order, and welcome to ChicCanto.
+`${greeting}Thanks for your order, and welcome to ChicCanto.
 
 Your activation code: ${code}
 
@@ -52,6 +56,7 @@ Support: chiccanto@wearrs.com
 If you enjoyed it, keep an eye on the shop. New cards and themes are added regularly.`
   );
 }
+
 
 
 async function getJsonKV(env, key){
@@ -101,7 +106,7 @@ export async function onRequestPost(context){
   const existingOrder = await getJsonKV(env, orderKey);
   if (existingOrder && typeof existingOrder === 'object' && existingOrder.code){
     const code = String(existingOrder.code);
-    const message_text = buildMessage({ code, origin });
+    const message_text = buildMessage({ code, origin, buyerName: buyer_name });
     return json({ ok: true, existing: true, order_id, sku: existingOrder.sku || sku, code, etsy_message: message_text, message_text });
   }
 
@@ -174,7 +179,7 @@ export async function onRequestPost(context){
   };
   await env.CARDS_KV.put(orderKey, JSON.stringify(orderRec));
 
-  const message_text = buildMessage({ code: chosen, origin });
+  const message_text = buildMessage({ code: chosen, origin, buyerName: buyer_name });
   return json({ ok: true, existing: false, order_id, sku, code: chosen, etsy_message: message_text, message_text });
 }
 
