@@ -1,6 +1,6 @@
 // Cloudflare Pages Function route: POST /assign
-// Assigns the next available activation code to an Etsy order, server-side.
-// This is the manual fulfillment bridge until the Etsy app is approved.
+// Assigns an activation code to an Etsy order, server-side.
+// Operational mode: generates secure random codes on-demand (no preloaded pool required).
 
 function json(data, status = 200){
   return new Response(JSON.stringify(data), {
@@ -30,39 +30,51 @@ function normalizeOrderId(raw){
   return String(raw || '').trim();
 }
 
-function buildMessage({ code, origin, buyerName }) {
-  const base = `${origin}/`;
-  const name = (buyerName || "").trim();
-  const greeting = name ? `Hi ${name}
-
-` : "";
-
-  return (
-`${greeting}Thanks for your order, and welcome to ChicCanto.
-
-Your activation code: ${code}
-
-To activate your card:
-1) Open: ${base}
-2) Enter your activation code and follow the steps on screen
-
-This is quick, private, and works on both phone and desktop. If you ever need to access it again, just enter the same code on the site and you’ll pick up where you left off.
-
-Want ideas, boundaries, or how it works before you start?
-FAQ: ${base}faq/
-
-Support: chiccanto@wearrs.com
-
-If you enjoyed it, keep an eye on the shop. New cards and themes are added regularly.`
-  );
+function skuPrefix(sku){
+  if (sku === 'fullset') return 'CC-F';
+  return 'CC-S';
 }
 
+function buildMessage({ code, origin, buyerName }){
+  const base = `${origin}/`;
+  const name = String(buyerName || '').trim();
+  const greeting = name ? `Hi ${name},\n\n` : '';
 
+  return (
+`${greeting}Thanks for your order, and welcome to ChicCanto.\n\nYour activation code: ${code}\n\nTo activate your card:\n1) Open: ${base}\n2) Enter your activation code and follow the steps on screen\n\nThis is quick, private, and works on both phone and desktop. If you ever need to access it again, just enter the same code on the site and you’ll pick up where you left off.\n\nWant ideas, boundaries, or how it works before you start?\nFAQ: ${base}faq/\n\nSupport: chiccanto@wearrs.com\n\nIf you enjoyed it, keep an eye on the shop. New cards and themes are added regularly.`
+  );
+}
 
 async function getJsonKV(env, key){
   const raw = await env.CARDS_KV.get(key);
   if (!raw) return null;
   try{ return JSON.parse(raw); } catch { return null; }
+}
+
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // avoids 0/O and 1/I
+
+function randomChars(len){
+  const bytes = new Uint8Array(len);
+  crypto.getRandomValues(bytes);
+  let out = '';
+  for (let i = 0; i < len; i++){
+    out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+  }
+  return out;
+}
+
+async function generateUniqueCode(env, sku){
+  const prefix = skuPrefix(sku);
+  // 16 random chars in 4 groups => PREFIX-XXXX-XXXX-XXXX-XXXX
+  for (let attempt = 0; attempt < 12; attempt++){
+    const body = randomChars(16);
+    const code =
+      `${prefix}-${body.slice(0,4)}-${body.slice(4,8)}-${body.slice(8,12)}-${body.slice(12,16)}`;
+
+    const exists = await env.CARDS_KV.get(`ac:${code}`);
+    if (!exists) return code;
+  }
+  throw new Error('Failed to generate a unique code.');
 }
 
 export async function onRequestPost(context){
@@ -106,69 +118,38 @@ export async function onRequestPost(context){
   const existingOrder = await getJsonKV(env, orderKey);
   if (existingOrder && typeof existingOrder === 'object' && existingOrder.code){
     const code = String(existingOrder.code);
-    const message_text = buildMessage({ code, origin, buyerName: buyer_name });
-    return json({ ok: true, existing: true, order_id, sku: existingOrder.sku || sku, code, etsy_message: message_text, message_text });
+    const message_text = buildMessage({ code, origin, buyerName: buyer_name || existingOrder.buyer_name || '' });
+    return json({
+      ok: true,
+      existing: true,
+      order_id,
+      sku: existingOrder.sku || sku,
+      code,
+      etsy_message: message_text,
+      message_text,
+    });
   }
 
-  // Read code list and pointer.
-  const listKey = `codes:${sku}`;
-  const pointerKey = `next_index:${sku}`;
-
-  const codeList = await getJsonKV(env, listKey);
-  if (!Array.isArray(codeList) || !codeList.length){
-    return json({ ok: false, error: `No inventory loaded for sku: ${sku}.` }, 409);
-  }
-
-  let pointer = 0;
-  try{
-    const raw = await env.CARDS_KV.get(pointerKey);
-    if (raw) pointer = Math.max(0, parseInt(raw, 10) || 0);
-  } catch {}
-
-  const MAX_TRIES = Math.min(200, codeList.length);
+  // Generate a new code on-demand (no pool).
   let chosen = '';
-  let chosenIndex = -1;
-  let chosenRecord = null;
-
-  for (let i = 0; i < MAX_TRIES; i++){
-    const idx = (pointer + i) % codeList.length;
-    const code = String(codeList[idx] || '').trim();
-    if (!code) continue;
-
-    const acKey = `ac:${code}`;
-    const rec = await getJsonKV(env, acKey);
-    if (!rec || typeof rec !== 'object') continue;
-
-    const status = String(rec.status || '').toLowerCase();
-    const recSku = normalizeSku(rec.sku || sku) || sku;
-    if (recSku !== sku) continue;
-    if (status !== 'available') continue;
-
-    chosen = code;
-    chosenIndex = idx;
-    chosenRecord = rec;
-    break;
+  try{
+    chosen = await generateUniqueCode(env, sku);
+  } catch {
+    return json({ ok: false, error: 'Could not generate a new code. Try again.' }, 500);
   }
-
-  if (!chosen){
-    return json({ ok: false, error: `No available codes left for sku: ${sku}.` }, 409);
-  }
-
-  const nextPointer = (chosenIndex + 1) % codeList.length;
-  await env.CARDS_KV.put(pointerKey, String(nextPointer));
 
   const assigned_at = new Date().toISOString();
   const acKey = `ac:${chosen}`;
-  const updated = {
-    ...chosenRecord,
+
+  const acRec = {
     code: chosen,
     sku,
     status: 'assigned',
     order_id,
-    buyer_name: buyer_name || chosenRecord.buyer_name || null,
+    buyer_name: buyer_name || null,
     assigned_at,
   };
-  await env.CARDS_KV.put(acKey, JSON.stringify(updated));
+  await env.CARDS_KV.put(acKey, JSON.stringify(acRec));
 
   const orderRec = {
     order_id,
@@ -180,7 +161,15 @@ export async function onRequestPost(context){
   await env.CARDS_KV.put(orderKey, JSON.stringify(orderRec));
 
   const message_text = buildMessage({ code: chosen, origin, buyerName: buyer_name });
-  return json({ ok: true, existing: false, order_id, sku, code: chosen, etsy_message: message_text, message_text });
+  return json({
+    ok: true,
+    existing: false,
+    order_id,
+    sku,
+    code: chosen,
+    etsy_message: message_text,
+    message_text,
+  });
 }
 
 // --- session cookie verification ---
@@ -189,7 +178,6 @@ const SESSION_COOKIE_NAME = 'cc_fulfill';
 
 function getCookie(request, name){
   const header = request.headers.get('Cookie') || '';
-  // naive but safe enough for small cookie sets
   const parts = header.split(/;\s*/);
   for (const part of parts){
     const eq = part.indexOf('=');
@@ -234,40 +222,29 @@ async function verifySessionCookie(request, sessionSecret){
   const token = String(getCookie(request, SESSION_COOKIE_NAME) || '').trim();
   if (!token) return false;
 
-  const dot = token.lastIndexOf('.');
-  if (dot === -1) return false;
+  const parts = token.split('.');
+  if (parts.length !== 2) return false;
 
-  const payloadB64 = token.slice(0, dot);
-  const sigB64 = token.slice(dot + 1);
+  const payloadB64 = parts[0];
+  const sigB64 = parts[1];
 
   let payloadJson = '';
   try{
-    payloadJson = new TextDecoder().decode(base64UrlToUint8Array(payloadB64));
+    payloadJson = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
   } catch {
     return false;
   }
 
-  let payload;
-  try{
-    payload = JSON.parse(payloadJson);
-  } catch {
-    return false;
-  }
+  let payload = null;
+  try{ payload = JSON.parse(payloadJson); } catch { return false; }
+  if (!payload || typeof payload !== 'object') return false;
 
-  const exp = Number(payload?.exp);
-  if (!Number.isFinite(exp) || exp <= Date.now()) return false;
+  const exp = Number(payload.exp || 0);
+  if (!exp || Date.now() > exp) return false;
 
   const expectedSig = await hmacSha256(sessionSecret, payloadB64);
-  let providedSig;
-  try{
-    providedSig = base64UrlToUint8Array(sigB64);
-  } catch {
-    return false;
-  }
+  let gotSig = null;
+  try{ gotSig = base64UrlToUint8Array(sigB64); } catch { return false; }
 
-  return timingSafeEqual(expectedSig, providedSig);
-}
-
-export async function onRequest(){
-  return json({ ok: false, error: 'Method not allowed' }, 405);
+  return timingSafeEqual(expectedSig, gotSig);
 }
