@@ -30,18 +30,29 @@ function normalizeOrderId(raw){
   return String(raw || '').trim();
 }
 
-function buildMessage({ code, sku, origin }){
-  const base = `${origin}/activate/`;
-  if (sku === 'fullset'){
-    return (
-`Thanks for your order.\n\nYour activation code: ${code}\n\n1) Open the link in your PDF (or go to ${base})\n2) Enter the code and follow the steps\n3) You will get 4 share links after activation\n\nIf you lose the link, enter the same code again to recover it.\nSupport: chiccanto@wearrs.com`
-    );
-  }
+function buildMessage({ code, origin }){
+  const base = `${origin}/`;
 
   return (
-`Thanks for your order.\n\nYour activation code: ${code}\n\n1) Open the link in your PDF (or go to ${base})\n2) Enter the code and follow the steps\n3) You will get a share link for your recipient\n\nIf you lose the link, enter the same code again to recover it.\nSupport: chiccanto@wearrs.com`
+`Thanks for your order, and welcome to ChicCanto.
+
+Your activation code: ${code}
+
+To activate your card:
+1) Open: ${base}
+2) Enter your activation code and follow the steps on screen
+
+This is quick, private, and works on both phone and desktop. If you ever need to access it again, just enter the same code on the site and you’ll pick up where you left off.
+
+Want ideas, boundaries, or how it works before you start?
+FAQ: ${base}faq/
+
+Support: chiccanto@wearrs.com
+
+If you enjoyed it, keep an eye on the shop. New cards and themes are added regularly.`
   );
 }
+
 
 async function getJsonKV(env, key){
   const raw = await env.CARDS_KV.get(key);
@@ -90,9 +101,8 @@ export async function onRequestPost(context){
   const existingOrder = await getJsonKV(env, orderKey);
   if (existingOrder && typeof existingOrder === 'object' && existingOrder.code){
     const code = String(existingOrder.code);
-    const message_text = buildMessage({ code, sku: existingOrder.sku || sku, origin });
-    const etsy_message = message_text;
-    return json({ ok: true, existing: true, order_id, sku: existingOrder.sku || sku, code, message_text, etsy_message });
+    const message_text = buildMessage({ code, origin });
+    return json({ ok: true, existing: true, order_id, sku: existingOrder.sku || sku, code, etsy_message: message_text, message_text });
   }
 
   // Read code list and pointer.
@@ -164,9 +174,8 @@ export async function onRequestPost(context){
   };
   await env.CARDS_KV.put(orderKey, JSON.stringify(orderRec));
 
-  const message_text = buildMessage({ code: chosen, sku, origin });
-  const etsy_message = message_text;
-  return json({ ok: true, existing: false, order_id, sku, code: chosen, message_text, etsy_message });
+  const message_text = buildMessage({ code: chosen, origin });
+  return json({ ok: true, existing: false, order_id, sku, code: chosen, etsy_message: message_text, message_text });
 }
 
 // --- session cookie verification ---
