@@ -37,11 +37,14 @@ function skuPrefix(sku){
 
 function buildMessage({ code, origin, buyerName }){
   const base = `${origin}/`;
+  const activatePrefill = `${origin}/activate/?code=${encodeURIComponent(code)}`;
+
+  // Buyer name greeting is optional and only used when provided.
   const name = String(buyerName || '').trim();
   const greeting = name ? `Hi ${name},\n\n` : '';
 
   return (
-`${greeting}Thanks for your order, and welcome to ChicCanto.\n\nYour activation code: ${code}\n\nTo activate your card:\n1) Open: ${base}\n2) Enter your activation code and follow the steps on screen\n\nThis is quick, private, and works on both phone and desktop. If you ever need to access it again, just enter the same code on the site and you’ll pick up where you left off.\n\nWant ideas, boundaries, or how it works before you start?\nFAQ: ${base}faq/\n\nSupport: chiccanto@wearrs.com\n\nIf you enjoyed it, keep an eye on the shop. New cards and themes are added regularly.`
+`${greeting}Thanks for your order, and welcome to ChicCanto.\n\nYour activation code: ${code}\n\nFastest option (one tap):\nOpen this link and your code will already be filled in:\n${activatePrefill}\n\nStandard option:\n1) Open: ${base}\n2) Paste your activation code and follow the steps on screen\n\nThis is quick, private, and works on both phone and desktop. If you ever need to access it again, just use the same code.\n\nNeed help or want ideas before you start?\nFAQ: ${base}faq/\nSupport: chiccanto@wearrs.com\n\nIf you enjoyed it, keep an eye on the shop. New cards and themes are added regularly.`
   );
 }
 
