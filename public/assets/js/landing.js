@@ -1,10 +1,9 @@
 // public/assets/js/landing.js
-// Landing-only behavior: word/card entrances + holo hover + CTA reveal
+// Landing-only behavior: word/card entrances + holo hover
 
 export function bootLanding(){
   const stage = document.getElementById('holoStage');
   const card = document.getElementById('holoCard');
-  const cta = document.querySelector('.landing__cta');
 
   // Splash behavior: automatically continue to /activate/ after the intro finishes.
   const AUTO_FORWARD_TO_ACTIVATE = true;
@@ -145,9 +144,6 @@ export function bootLanding(){
       window.gsap.set(words, { opacity: 0, y: 22, filter: 'blur(10px)' });
     }
     window.gsap.set(stage, { opacity: 0, rotationY: -62, rotationX: 6, transformPerspective: 900 });
-    if (cta){
-      window.gsap.set(cta, { opacity: 0, y: 10, pointerEvents: 'none' });
-    }
 
     // Remove preload on the next frame so the above sets have been applied.
     requestAnimationFrame(removePreload);
@@ -191,33 +187,19 @@ export function bootLanding(){
       duration: cardDur,
       ease: 'power3.out'
     }, cardStart);
-
-    // CTA: AFTER the card finishes
+    // After the card finishes
     const cardDoneAt = cardStart + cardDur;
-
-    if (cta){
-      // Keep it hidden until its turn (belt + suspenders)
-      tl.set(cta, { opacity: 0, y: 10, pointerEvents: 'none' }, 0);
-
-      tl.to(cta, {
-        opacity: 1,
-        y: 0,
-        duration: 0.45
-      }, cardDoneAt + 0.35);
-
-      tl.set(cta, { pointerEvents: 'auto' }, cardDoneAt + 0.36);
-    }
 
     // Auto-forward to activation after the intro finishes (splash screen behavior)
     if (AUTO_FORWARD_TO_ACTIVATE){
-      const redirectAt = (cta ? (cardDoneAt + 0.35 + 0.55) : (cardDoneAt + 0.55));
+      const redirectAt = (cardDoneAt + 0.55);
       tl.call(() => {
         if (autoForwardCanceled) return;
         window.location.assign('/activate/');
       }, null, redirectAt);
     }
   } else {
-    // No GSAP or reduced motion: remove preload and reveal CTA quickly
+    // No GSAP or reduced motion: remove preload
     removePreload();
 
     // Auto-forward even without GSAP/reduced motion (keep it quick)
@@ -226,15 +208,6 @@ export function bootLanding(){
         if (autoForwardCanceled) return;
         window.location.assign('/activate/');
       }, AUTO_FORWARD_DELAY_MS);
-    }
-
-    if (cta){
-      const delayMs = 1800;
-      window.setTimeout(() => {
-        cta.style.opacity = '1';
-        cta.style.transform = 'none';
-        cta.style.pointerEvents = 'auto';
-      }, delayMs);
     }
   }
 }

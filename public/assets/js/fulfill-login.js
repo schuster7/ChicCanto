@@ -1,64 +1,104 @@
-function byId(id){ return document.getElementById(id); }
+(() => {
+  "use strict";
 
-function setStatus(msg, isErr=false){
-  const el = byId('status');
-  if (!el) return;
-  el.textContent = msg || '';
-  el.style.color = isErr ? '#ff6961' : '#c7f0c2';
-}
+  const $ = (sel) => document.querySelector(sel);
 
-function getNext(){
-  const url = new URL(window.location.href);
-  const next = url.searchParams.get('next');
-  return next && next.startsWith('/') ? next : '/fulfill/';
-}
+  // Try common patterns without relying on exact IDs
+  const form =
+    $("form") ||
+    $(".fulfill-login form") ||
+    $("#loginForm") ||
+    $("#fulfillLoginForm");
 
-async function alreadyAuthed(){
-  const r = await fetch('/auth', { method:'GET', credentials:'include' });
-  const j = await r.json().catch(() => ({}));
-  return !!(r.ok && j && j.ok && j.authenticated);
-}
+  const passwordInput =
+    $("#password") ||
+    $("input[type='password']") ||
+    $("input[name='password']") ||
+    $("input[data-password]");
 
-async function login(key){
-  const r = await fetch('/auth', {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ password: key })
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok || !j.ok) throw new Error(j.error || 'Wrong password.');
-}
+  const submitBtn =
+    $("button[type='submit']") || $("button[data-action='login']");
 
-export async function boot(){
-  try{
-    if (await alreadyAuthed()){
-      window.location.href = getNext();
+  // Where to show errors (optional element)
+  const errorEl =
+    $("#error") ||
+    $(".error") ||
+    $(".form-error") ||
+    document.createElement("div");
+
+  if (!errorEl.isConnected) {
+    errorEl.className = "form-error";
+    errorEl.style.marginTop = "12px";
+    errorEl.style.whiteSpace = "pre-line";
+    (form || document.body).appendChild(errorEl);
+  }
+
+  function setError(msg) {
+    errorEl.textContent = msg || "";
+  }
+
+  function setBusy(isBusy) {
+    if (submitBtn) submitBtn.disabled = !!isBusy;
+    if (passwordInput) passwordInput.disabled = !!isBusy;
+  }
+
+  async function login(password) {
+    const res = await fetch("/auth", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({ password }),
+    });
+
+    // Try to parse JSON, but don’t depend on it
+    let data = null;
+    try {
+      data = await res.json();
+    } catch (_) {}
+
+    if (!res.ok) {
+      const msg =
+        (data && (data.error || data.message)) ||
+        (res.status === 401 ? "Wrong password." : "Login failed.");
+      throw new Error(msg);
+    }
+
+    return data || {};
+  }
+
+  async function onSubmit(e) {
+    e.preventDefault();
+    setError("");
+
+    const password = (passwordInput && passwordInput.value) ? passwordInput.value.trim() : "";
+    if (!password) {
+      setError("Enter the password.");
       return;
     }
-  }catch(_){ /* ignore */ }
 
-  const form = byId('loginForm');
-  const btn = byId('loginBtn');
-  const keyEl = byId('key');
-
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const key = String(keyEl?.value || '').trim();
-    if (!key){ setStatus('Enter the password.', true); return; }
-
-    try{
-      if (btn) btn.disabled = true;
-      setStatus('Signing in...');
-      await login(key);
-      setStatus('Signed in.');
-      window.location.href = getNext();
-    }catch(err){
-      setStatus(String(err?.message || err || 'Error'), true);
-    }finally{
-      if (btn) btn.disabled = false;
+    setBusy(true);
+    try {
+      await login(password);
+      // Do not keep password in memory/UI longer than needed
+      if (passwordInput) passwordInput.value = "";
+      window.location.assign("/fulfill/");
+    } catch (err) {
+      setError(err && err.message ? err.message : "Login failed.");
+      setBusy(false);
     }
-  });
-}
+  }
 
-boot();
+  // If the HTML has no form, still allow Enter-to-submit
+  if (form) {
+    form.addEventListener("submit", onSubmit);
+  } else if (passwordInput) {
+    passwordInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") onSubmit(e);
+    });
+  } else {
+    setError("Login form not found on this page.");
+  }
+})();
