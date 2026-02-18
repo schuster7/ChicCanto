@@ -91,7 +91,8 @@ export async function onRequestPost(context){
   if (existingOrder && typeof existingOrder === 'object' && existingOrder.code){
     const code = String(existingOrder.code);
     const message_text = buildMessage({ code, sku: existingOrder.sku || sku, origin });
-    return json({ ok: true, existing: true, order_id, sku: existingOrder.sku || sku, code, message_text });
+    const etsy_message = message_text;
+    return json({ ok: true, existing: true, order_id, sku: existingOrder.sku || sku, code, message_text, etsy_message });
   }
 
   // Read code list and pointer.
@@ -164,7 +165,8 @@ export async function onRequestPost(context){
   await env.CARDS_KV.put(orderKey, JSON.stringify(orderRec));
 
   const message_text = buildMessage({ code: chosen, sku, origin });
-  return json({ ok: true, existing: false, order_id, sku, code: chosen, message_text });
+  const etsy_message = message_text;
+  return json({ ok: true, existing: false, order_id, sku, code: chosen, message_text, etsy_message });
 }
 
 // --- session cookie verification ---
