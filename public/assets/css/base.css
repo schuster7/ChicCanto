@@ -107,7 +107,7 @@ html.is-preload body[data-page="landing"] .landing__cta {
   }
 }
 
-.fulfill textarea {
+#message {
   height: 320px !important;
   min-height: 320px !important;
   overflow-y: auto !important;
