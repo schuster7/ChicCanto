@@ -4,7 +4,43 @@
 // Returns whether the current request is authenticated (cookie valid).
 
 const SESSION_COOKIE_NAME = 'cc_fulfill';
-const SESSION_TTL_SECONDS = 12 * 60 * 60; // 12 hours
+const SESSION_TTL_SECONDS = 12 * 60 * 60; 
+
+const AUTH_RL_WINDOW_SECONDS = 10 * 60; // 10 minutes
+const AUTH_RL_MAX_ATTEMPTS = 10; // per IP per window
+
+function getClientIp(request){
+  // Cloudflare sets this. Fallbacks are best-effort.
+  return (
+    request.headers.get('CF-Connecting-IP') ||
+    request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() ||
+    ''
+  );
+}
+
+async function rateLimitAuth(env, ip){
+  // Uses CARDS_KV as the backing store. If missing, rate limiting is skipped.
+  if (!env?.CARDS_KV || !ip) return { allowed: true };
+
+  const windowId = Math.floor(Date.now() / 1000 / AUTH_RL_WINDOW_SECONDS);
+  const key = `rl:auth:${ip}:${windowId}`;
+
+  const raw = await env.CARDS_KV.get(key);
+  const count = raw ? parseInt(raw, 10) : 0;
+
+  if (Number.isFinite(count) && count >= AUTH_RL_MAX_ATTEMPTS){
+    return { allowed: false };
+  }
+
+  const next = (Number.isFinite(count) ? count : 0) + 1;
+
+  // Keep TTL slightly longer than window so late requests still hit the same bucket.
+  await env.CARDS_KV.put(key, String(next), { expirationTtl: AUTH_RL_WINDOW_SECONDS + 30 });
+
+  return { allowed: true };
+}
+
+// 12 hours
 
 function json(data, status = 200, extraHeaders = {}){
   return new Response(JSON.stringify(data), {
@@ -108,10 +144,10 @@ export async function onRequest(context){
   const requiredKey = String(env.FULFILL_KEY || '').trim();
   const sessionSecret = String(env.FULFILL_SESSION_SECRET || '').trim();
   if (!requiredKey){
-    return json({ ok: false, error: 'Server misconfigured: missing FULFILL_KEY.' }, 500);
+    return json({ ok: false, error: 'Server misconfigured.' }, 500);
   }
   if (!sessionSecret){
-    return json({ ok: false, error: 'Server misconfigured: missing FULFILL_SESSION_SECRET.' }, 500);
+    return json({ ok: false, error: 'Server misconfigured.' }, 500);
   }
 
   if (request.method === 'GET'){
@@ -127,6 +163,13 @@ export async function onRequest(context){
 
   if (request.method !== 'POST'){
     return json({ ok: false, error: 'Method not allowed.' }, 405);
+  }
+
+  // Rate limit login attempts (POST /auth) to reduce brute-force risk.
+  const ip = getClientIp(request);
+  const rl = await rateLimitAuth(env, ip);
+  if (!rl.allowed){
+    return json({ ok: false, error: 'Too many attempts. Try again later.' }, 429);
   }
 
   let body;
