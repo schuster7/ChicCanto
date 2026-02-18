@@ -107,6 +107,13 @@ html.is-preload body[data-page="landing"] .landing__cta {
   }
 }
 
+.fulfill textarea {
+  height: 320px !important;
+  min-height: 320px !important;
+  overflow-y: auto !important;
+  resize: none !important;
+  line-height: 1.45;
+}
 
 
 body {
