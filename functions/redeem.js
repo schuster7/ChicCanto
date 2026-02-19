@@ -23,11 +23,57 @@ async function readJson(request){
   }
 }
 
+
+const REDEEM_RL_WINDOW_SECONDS = 10 * 60; // 10 minutes
+const REDEEM_RL_MAX_PER_IP = 60;          // per IP per window (generous for real users)
+const REDEEM_RL_MAX_PER_CODE = 20;        // per activation code per window (stops targeted guessing)
+
+function getClientIp(request){
+  return (
+    request.headers.get('CF-Connecting-IP') ||
+    request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() ||
+    ''
+  );
+}
+
+async function bumpRate(env, key, windowSeconds, max){
+  if (!env?.CARDS_KV || !key) return { allowed: true };
+
+  const windowId = Math.floor(Date.now() / 1000 / windowSeconds);
+  const k = `rl:${key}:${windowId}`;
+
+  const raw = await env.CARDS_KV.get(k);
+  const count = raw ? parseInt(raw, 10) : 0;
+
+  if (Number.isFinite(count) && count >= max){
+    return { allowed: false };
+  }
+
+  const next = (Number.isFinite(count) ? count : 0) + 1;
+  await env.CARDS_KV.put(k, String(next), { expirationTtl: windowSeconds + 30 });
+  return { allowed: true };
+}
+
+async function rateLimitRedeem(env, request, code){
+  const ip = getClientIp(request);
+
+  const ipRes = await bumpRate(env, `redeem:ip:${ip}`, REDEEM_RL_WINDOW_SECONDS, REDEEM_RL_MAX_PER_IP);
+  if (!ipRes.allowed) return { allowed: false };
+
+  // Code bucket is optional (only if caller provided a code).
+  if (code){
+    const codeRes = await bumpRate(env, `redeem:code:${code}`, REDEEM_RL_WINDOW_SECONDS, REDEEM_RL_MAX_PER_CODE);
+    if (!codeRes.allowed) return { allowed: false };
+  }
+
+  return { allowed: true };
+}
+
 export async function onRequestPost(context){
   const { request, env } = context;
 
   if (!env || !env.CARDS_KV){
-    return json({ ok: false, error: 'Server misconfigured: missing CARDS_KV binding.' }, 500);
+    return json({ ok: false, error: 'Server misconfigured.' }, 500);
   }
 
   const body = await readJson(request);
@@ -43,7 +89,14 @@ export async function onRequestPost(context){
   }
 
   // Normalize code for inventory lookups: trim, uppercase, remove spaces.
-  const code = rawCode.toUpperCase().replace(/\s+/g, '');
+  const code = rawCode.toUpperCase().replace(/\s+/g, '').replace(/[^A-Z0-9-]/g, '');
+
+  // Rate limit redeem attempts to reduce abuse and code guessing.
+  const rl = await rateLimitRedeem(env, request, code);
+  if (!rl.allowed){
+    return json({ ok: false, error: 'Too many attempts. Try again later.' }, 429);
+  }
+
   const acKey = `ac:${code}`;
 
   // Inventory enforcement: code must exist in KV.
