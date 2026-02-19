@@ -126,7 +126,7 @@ async function apiRedeem(code, init){
   // Keep the UI responsive: don't let any single candidate hang forever.
   const TIMEOUT_MS = 7000;
 
-  let last = { ok: false, status: 0, error: 'Invalid activation code. Check it and try again.' };
+  let last = { ok: false, status: 0, errorCode: null, retryAfterSeconds: null };
 
   for (const base of bases){
     const url = base + '/redeem';
@@ -142,18 +142,18 @@ async function apiRedeem(code, init){
         return data;
       }
 
-      // Prefer server-provided error, fallback to something generic.
-      const msg =
-        (data && (data.error || data.message)) ||
-        (res.status ? `Activation failed (HTTP ${res.status}).` : 'Could not activate this code.');
-
-      last = { ok: false, status: res.status || 0, error: msg };
+      last = {
+        ok: false,
+        status: res.status || 0,
+        errorCode: data && data.errorCode ? data.errorCode : null,
+        retryAfterSeconds: data && data.retryAfterSeconds ? data.retryAfterSeconds : null,
+      };
     } catch (e){
-      const isTimeout = e && e.name === 'AbortError';
       last = {
         ok: false,
         status: 0,
-        error: isTimeout ? 'Activation timed out. Please try again.' : (e && e.message) ? e.message : String(e),
+        errorCode: 'NETWORK',
+        retryAfterSeconds: null,
       };
     }
   }
@@ -404,6 +404,8 @@ export function bootRedeem(){
 
   const msg = byId('msg', 'redeem-error') || qs('#msg') || qs('#redeem-error');
   const productTitleEl = byId('productName', 'product-title') || qs('#productName') || qs('#product-title');
+  const statusChip = byId('statusChip') || qs('#statusChip');
+  const inlineHint = byId('inlineHint') || qs('#inlineHint');
 
   // Demo product selection via URL:
   // /activate/?product=christmas  or /activate/?product=couples
@@ -424,9 +426,26 @@ export function bootRedeem(){
   const originalBtnText = btn ? btn.textContent : 'Activate';
   const storeMode = getStoreMode();
 
+  if (statusChip){
+    setStatusChip(statusChip, 'warn', 'Not activated');
+  }
+
+  if (inlineHint && input){
+    const paintHint = () => {
+      const info = activationCodeInfo(input.value);
+      setInlineHint(inlineHint, info);
+    };
+    input.addEventListener('input', paintHint);
+    paintHint();
+  }
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     if (msg) msg.textContent = '';
+
+    if (statusChip){
+      setStatusChip(statusChip, 'warn', 'Checking…');
+    }
 
     const results = document.getElementById('redeemResults');
     if (results) results.innerHTML = '';
@@ -434,6 +453,15 @@ export function bootRedeem(){
     const code = input ? normalizeActivationCode(input.value) : '';
     if (!code) {
       if (msg) msg.textContent = 'Please enter an activation code.';
+      if (statusChip) setStatusChip(statusChip, 'warn', 'Not activated');
+      return;
+    }
+
+    // Client-side validation (keeps UX tight and prevents server spam)
+    const info = activationCodeInfo(code);
+    if (!info.ok){
+      if (msg) msg.textContent = friendlyClientValidationMessage(info);
+      if (statusChip) setStatusChip(statusChip, 'warn', 'Not activated');
       return;
     }
 
@@ -454,8 +482,8 @@ export function bootRedeem(){
 
           // Handle API errors cleanly (no JS crashes, customer-friendly message)
           if (!result || result.ok === false){
-            const errMsg = (result && (result.error || result.message)) || 'Invalid activation code. Check it and try again.';
-            if (msg) msg.textContent = errMsg;
+            if (msg) msg.textContent = friendlyServerMessage(result);
+            if (statusChip) setStatusChip(statusChip, 'warn', 'Not activated');
             return;
           }
 
@@ -464,17 +492,20 @@ export function bootRedeem(){
             const params = new URLSearchParams();
             params.set('token', only.token);
             params.set('setup', only.setup_key);
+            if (statusChip) setStatusChip(statusChip, 'ok', result.existing ? 'Link retrieved' : 'Activated');
             window.location.href = '/card/?' + params.toString();
             return;
           }
 
           if (Array.isArray(result.cards) && result.cards.length > 1){
             renderMultiCards(result);
+            if (statusChip) setStatusChip(statusChip, 'ok', result.existing ? 'Link retrieved' : 'Activated');
             return;
           }
 
           // Unexpected shape
-          if (msg) msg.textContent = 'Invalid activation code. Check it and try again.';
+          if (msg) msg.textContent = 'That activation code doesn’t look right. Check it and try again.';
+          if (statusChip) setStatusChip(statusChip, 'warn', 'Not activated');
 
         })
         .catch((err) => {
@@ -482,7 +513,8 @@ export function bootRedeem(){
             btn.disabled = false;
             btn.textContent = originalBtnText;
           }
-          if (msg) msg.textContent = err && err.message ? err.message : 'Invalid activation code. Check it and try again.';
+          if (msg) msg.textContent = friendlyNetworkMessage(err);
+          if (statusChip) setStatusChip(statusChip, 'warn', 'Not activated');
         });
       return;
     }
@@ -494,7 +526,66 @@ export function bootRedeem(){
         btn.disabled = false;
         btn.textContent = originalBtnText;
       }
+      if (statusChip) setStatusChip(statusChip, 'ok', 'Activated');
       goToCardWithSetup(token, init);
     }, 250);
   });
+}
+
+function activationCodeInfo(code){
+  const c = normalizeActivationCode(code);
+  if (!c) return { normalized: '', ok: false, reason: 'empty' };
+  const ok = /^CC-(S|F)-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(c);
+  if (ok) return { normalized: c, ok: true, reason: null };
+  if (!/^CC-(S|F)-/i.test(c)) return { normalized: c, ok: false, reason: 'prefix' };
+  if (c.length < 23) return { normalized: c, ok: false, reason: 'short' };
+  return { normalized: c, ok: false, reason: 'format' };
+}
+
+function setStatusChip(node, kind, text){
+  if (!node) return;
+  node.textContent = text;
+  node.classList.remove('is-ok', 'is-warn');
+  if (kind === 'ok') node.classList.add('is-ok');
+  if (kind === 'warn') node.classList.add('is-warn');
+}
+
+function setInlineHint(node, info){
+  if (!node) return;
+  node.classList.remove('is-warn', 'is-error');
+  if (!info || !info.normalized || info.ok){
+    node.textContent = '';
+    return;
+  }
+  node.classList.add('is-warn');
+  if (info.reason === 'short') node.textContent = 'That code looks incomplete.';
+  else if (info.reason === 'prefix') node.textContent = 'That code doesn’t look right.';
+  else node.textContent = 'Check the code and try again.';
+}
+
+function friendlyClientValidationMessage(info){
+  if (!info || info.reason === 'empty') return 'Please enter an activation code.';
+  if (info.reason === 'short') return 'That activation code looks incomplete. Check it and try again.';
+  return 'That activation code doesn’t look right. Check it and try again.';
+}
+
+function friendlyServerMessage(result){
+  if (result && result.errorCode === 'RATE_LIMITED'){
+    const mins = result.retryAfterSeconds ? Math.round(result.retryAfterSeconds / 60) : 10;
+    return `Too many attempts. Try again in ${mins} minutes.`;
+  }
+  if (result && (result.status === 429)){
+    return 'Too many attempts. Try again in 10 minutes.';
+  }
+  if (result && (result.status === 404 || result.errorCode === 'NOT_FOUND')){
+    return 'That activation code wasn’t found. Check it and try again.';
+  }
+  if (result && result.errorCode === 'INVALID_CODE'){
+    return 'That activation code doesn’t look right. Check it and try again.';
+  }
+  return 'Could not activate right now. Please try again.';
+}
+
+function friendlyNetworkMessage(){
+  return 'We couldn’t reach the server. Refresh and try again.';
 }

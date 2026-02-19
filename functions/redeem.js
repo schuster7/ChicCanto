@@ -13,6 +13,10 @@ function json(data, status = 200){
   });
 }
 
+function err(errorCode, error, status = 400, extra = {}){
+  return json({ ok: false, errorCode, error, ...extra }, status);
+}
+
 async function readJson(request){
   const ct = request.headers.get('content-type') || '';
   if (!ct.toLowerCase().includes('application/json')) return null;
@@ -73,19 +77,19 @@ export async function onRequestPost(context){
   const { request, env } = context;
 
   if (!env || !env.CARDS_KV){
-    return json({ ok: false, error: 'Server misconfigured.' }, 500);
+    return err('SERVER_MISCONFIG', 'We couldn’t reach the server. Refresh and try again.', 500);
   }
 
   const body = await readJson(request);
   if (!body){
-    return json({ ok: false, error: 'Invalid JSON body.' }, 400);
+    return err('BAD_REQUEST', 'That request didn’t look right. Refresh and try again.', 400);
   }
 
   const rawCode = (typeof body.code === 'string' ? body.code : '').trim();
   const init = (body.init && typeof body.init === 'object') ? body.init : null;
 
   if (!rawCode){
-    return json({ ok: false, error: 'Missing activation code.' }, 400);
+    return err('INVALID_CODE', 'That activation code doesn’t look right. Check it and try again.', 400);
   }
 
   // Normalize code for inventory lookups: trim, uppercase, remove spaces.
@@ -94,7 +98,7 @@ export async function onRequestPost(context){
   // Rate limit redeem attempts to reduce abuse and code guessing.
   const rl = await rateLimitRedeem(env, request, code);
   if (!rl.allowed){
-    return json({ ok: false, error: 'Too many attempts. Try again later.' }, 429);
+    return err('RATE_LIMITED', 'Too many attempts. Try again in 10 minutes.', 429, { retryAfterSeconds: REDEEM_RL_WINDOW_SECONDS });
   }
 
   const acKey = `ac:${code}`;
@@ -107,7 +111,7 @@ export async function onRequestPost(context){
   } catch {}
 
   if (!ac || typeof ac !== 'object'){
-    return json({ ok: false, error: 'Invalid activation code.' }, 404);
+    return err('NOT_FOUND', 'That activation code wasn’t found. Check it and try again.', 404);
   }
 
   const status = String(ac.status || '').toLowerCase();

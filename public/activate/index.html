@@ -30,9 +30,18 @@
 
           <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Activation controls">
             <form id="redeemForm" class="control-grid" autocomplete="off">
+              <div class="activate-meta" aria-live="polite">
+                <div class="activate-tile" id="productTile">
+                  <div class="activate-tile__label">Product</div>
+                  <div class="activate-tile__value" id="productName">ChicCanto scratch card</div>
+                </div>
+                <div class="activate-chip" id="statusChip">Not activated</div>
+              </div>
+
               <div class="field">
                 <label class="label" for="code">Activation code</label>
                 <input id="code" class="input" type="text" inputmode="text" spellcheck="false" autocomplete="off" placeholder="Enter your activation code" />
+                <div id="inlineHint" class="inline-hint" role="status" aria-live="polite"></div>
               </div>
 
               <div class="sharebar__actions" aria-label="Activation actions">
