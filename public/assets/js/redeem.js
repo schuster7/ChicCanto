@@ -126,7 +126,7 @@ async function apiRedeem(code, init){
   // Keep the UI responsive: don't let any single candidate hang forever.
   const TIMEOUT_MS = 7000;
 
-  let last = { ok: false, status: 0, error: 'Could not activate this code.' };
+  let last = { ok: false, status: 0, error: 'Invalid activation code. Check it and try again.' };
 
   for (const base of bases){
     const url = base + '/redeem';
@@ -264,6 +264,14 @@ function renderMultiCards(result){
     ? 'This code already has cards. Pick one below.'
     : 'This code created multiple cards. Pick one below.';
   wrap.appendChild(header);
+
+  if (!Array.isArray(result.cards) || result.cards.length === 0){
+    const err = document.createElement('div');
+    err.className = 'small';
+    err.textContent = 'Invalid activation code. Check it and try again.';
+    wrap.appendChild(err);
+    return;
+  }
 
   result.cards.forEach((c, idx) => {
     const links = buildCardLinks(c);
@@ -438,9 +446,17 @@ export function bootRedeem(){
     if (storeMode === 'api'){
       apiRedeem(code, init)
         .then((result) => {
+
           if (btn) {
             btn.disabled = false;
             btn.textContent = originalBtnText;
+          }
+
+          // Handle API errors cleanly (no JS crashes, customer-friendly message)
+          if (!result || result.ok === false){
+            const errMsg = (result && (result.error || result.message)) || 'Invalid activation code. Check it and try again.';
+            if (msg) msg.textContent = errMsg;
+            return;
           }
 
           if (Array.isArray(result.cards) && result.cards.length === 1){
@@ -452,14 +468,21 @@ export function bootRedeem(){
             return;
           }
 
-          renderMultiCards(result);
+          if (Array.isArray(result.cards) && result.cards.length > 1){
+            renderMultiCards(result);
+            return;
+          }
+
+          // Unexpected shape
+          if (msg) msg.textContent = 'Invalid activation code. Check it and try again.';
+
         })
         .catch((err) => {
           if (btn) {
             btn.disabled = false;
             btn.textContent = originalBtnText;
           }
-          if (msg) msg.textContent = err && err.message ? err.message : 'Could not activate this code. Check it and try again.';
+          if (msg) msg.textContent = err && err.message ? err.message : 'Invalid activation code. Check it and try again.';
         });
       return;
     }
