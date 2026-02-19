@@ -7,59 +7,68 @@
     <link rel="stylesheet" href="/assets/css/base.css" />
   </head>
   <body data-page="fulfill">
-    <main class="page">
-      <div class="container narrow">
-        <header class="stack" style="margin: 20px 0 10px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-            <div class="stack" style="gap:4px;">
-              <h1 style="margin:0; font-size: 20px;">Fulfillment</h1>
-              <p class="muted" style="margin:0;">Assign an activation code to an Etsy order. Copy the message and send it in Etsy.</p>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="site-brand" href="/">ChicCanto</a>
+        <nav class="site-nav">
+          <button id="logoutBtn" class="btn outline sm" type="button">Log out</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page-main">
+      <div class="container flow-layout">
+        <div class="flow-intro">
+          <div class="kicker">FULFILLMENT</div>
+          <h1>Fulfillment</h1>
+          <p class="lead">Assign an activation code to an Etsy order. Copy the message and send it in Etsy.</p>
+        </div>
+
+        <section class="flow-panel">
+          <div class="stack">
+            <div class="field">
+              <label class="label" for="orderId">Etsy order number</label>
+              <input id="orderId" class="input" type="text" inputmode="text" placeholder="Paste order number" />
             </div>
-            <button id="logoutBtn" class="btn" type="button">Log out</button>
-          </div>
-        </header>
 
-        <section class="card stack" style="padding: 14px;">
-          <div class="row" style="display:grid; grid-template-columns: 1fr; gap: 10px;">
-            <label class="stack" style="gap:6px;">
-              <span class="muted">Etsy order number</span>
-              <input id="orderId" type="text" inputmode="text" placeholder="Paste order number" />
-            </label>
-
-            <label class="stack" style="gap:6px;">
-              <span class="muted">Product</span>
-              <select id="sku">
+            <div class="field">
+              <label class="label" for="sku">Product</label>
+              <select id="sku" class="select">
                 <option value="single">Single card</option>
                 <option value="fullset">Full set (4 cards)</option>
               </select>
-            </label>
+            </div>
 
-            <label class="stack" style="gap:6px;">
-              <span class="muted">Buyer name (optional)</span>
-              <input id="buyerName" type="text" inputmode="text" placeholder="Optional" />
-            </label>
-          </div>
+            <div class="field">
+              <label class="label" for="buyerName">Buyer name (optional)</label>
+              <input id="buyerName" class="input" type="text" inputmode="text" placeholder="Optional" />
+            </div>
 
-          <button id="assignBtn" class="btn primary" type="button">Assign code</button>
-          <p id="status" class="muted" style="margin:0;"></p>
-        </section>
-
-        <section class="card stack" style="padding: 14px; margin-top: 12px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-            <h2 style="margin:0; font-size: 16px;">Copy to Etsy</h2>
-            <button id="copyBtn" class="btn" type="button" disabled>Copy</button>
-          </div>
-          <textarea id="message" rows="10" style="width:100%; resize: vertical;" placeholder="Your filled message will appear here" readonly></textarea>
-
-          <div class="stack" style="gap:6px;">
-            <div class="muted">Assigned code</div>
-            <input id="assignedCode" type="text" readonly />
+            <button id="assignBtn" class="btn primary" type="button">Assign code</button>
+            <p id="status" class="muted" aria-live="polite"></p>
           </div>
         </section>
 
-        <footer class="muted" style="margin: 18px 0 30px; font-size: 12px;">
-          If something looks wrong, do not guess. Re-run with the same order number and you should get the same code.
-        </footer>
+        <section class="flow-panel">
+          <div class="stack">
+            <div class="row between">
+              <h2 class="h2 no-m">Copy to Etsy</h2>
+              <button id="copyBtn" class="btn outline sm" type="button" disabled>Copy</button>
+            </div>
+
+            <div class="field">
+              <label class="label" for="message">Message</label>
+              <textarea id="message" class="textarea" placeholder="Your filled message will appear here" readonly></textarea>
+            </div>
+
+            <div class="field">
+              <label class="label" for="assignedCode">Assigned code</label>
+              <input id="assignedCode" class="input" type="text" readonly />
+            </div>
+
+            <p class="footnote">If something looks wrong, do not guess. Re-run with the same order number and you should get the same code.</p>
+          </div>
+        </section>
       </div>
     </main>
 
