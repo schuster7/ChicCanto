@@ -29,6 +29,20 @@
           </div>
 
           <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Activation controls">
+
+      <div id="selectedCardTile" class="card-preview is-hidden" aria-live="polite">
+        <div class="card-preview__media">
+          <img id="selectedCardImg" class="card-preview__img" alt="" loading="lazy" decoding="async" />
+        </div>
+        <div class="card-preview__body">
+          <div class="card-preview__kicker">Selected card</div>
+          <div id="selectedCardName" class="card-preview__title">ChicCanto card</div>
+          <div class="card-preview__meta">
+            <span id="selectedCardChip" class="chip is-warn">Not activated</span>
+          </div>
+        </div>
+      </div>
+
             <form id="redeemForm" class="control-grid" autocomplete="off">
               <div class="activate-meta" aria-live="polite">
                 <div class="activate-tile" id="productTile">

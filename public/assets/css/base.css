@@ -1817,3 +1817,77 @@ button.btn::-moz-focus-inner {
 .inline-hint.is-error {
   color: rgba(255, 255, 255, .92);
 }
+
+/* Activate: selected card preview tile (small, app-like, non-invasive) */
+.card-preview{
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+
+.card-preview.is-hidden{ display: none; }
+
+.card-preview__media{
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.2);
+}
+
+.card-preview__img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.card-preview__kicker{
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.card-preview__title{
+  font-size: 15px;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.card-preview__meta{
+  margin-top: 8px;
+}
+
+/* Small status chip */
+.chip{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  white-space: nowrap;
+}
+
+.chip.is-ok{
+  border-color: rgba(90, 220, 140, 0.35);
+  background: rgba(90, 220, 140, 0.12);
+}
+
+.chip.is-warn{
+  border-color: rgba(255, 200, 80, 0.35);
+  background: rgba(255, 200, 80, 0.12);
+}
+
+.chip.is-error{
+  border-color: rgba(255, 110, 110, 0.35);
+  background: rgba(255, 110, 110, 0.12);
+}
