@@ -12,76 +12,6 @@ function byId(...ids){
   return null;
 }
 
-// --- Activate page: selected card thumbnail tile ---
-
-function _safeSlug(raw){
-  return String(raw || '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9\-_.]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^[-_.]+|[-_.]+$/g, '');
-}
-
-function _thumbCandidates(key){
-  const k = _safeSlug(key);
-  if (!k) return [];
-  const base = '/assets/img/thumb_' + k;
-  return [
-    base + '.jpg',
-    base + '.jpeg',
-    base + '.png',
-    base + '1.jpg',
-    base + '1.jpeg',
-    base + '1.png',
-  ];
-}
-
-function setSelectedCardTile({ name, key, statusKind, statusText }){
-  const tile = document.getElementById('selectedCardTile');
-  if (!tile) return;
-
-  const title = document.getElementById('selectedCardName');
-  const chip = document.getElementById('selectedCardChip');
-  const img = document.getElementById('selectedCardImg');
-
-  tile.classList.remove('is-hidden');
-
-  if (title) title.textContent = name || 'ChicCanto card';
-
-  if (chip){
-    chip.textContent = statusText || '';
-    chip.classList.remove('is-ok', 'is-warn', 'is-error');
-    if (statusKind === 'ok') chip.classList.add('is-ok');
-    else if (statusKind === 'error') chip.classList.add('is-error');
-    else chip.classList.add('is-warn');
-  }
-
-  if (img){
-    const candidates = _thumbCandidates(key || name);
-    let i = 0;
-
-    const tryNext = () => {
-      if (i >= candidates.length){
-        // No thumbnail found; keep tile, hide image.
-        img.removeAttribute('src');
-        img.style.display = 'none';
-        return;
-      }
-      img.style.display = 'block';
-      img.src = candidates[i++];
-    };
-
-    img.onerror = tryNext;
-    // Reset alt to avoid awkward screen reader noise
-    img.alt = name ? (name + ' thumbnail') : 'Card thumbnail';
-    tryNext();
-  }
-}
-
-
-
 function apiBaseCandidates(){
   const bases = [];
   const host = window.location.hostname;
@@ -329,8 +259,6 @@ function renderMultiCards(result){
   wrap.innerHTML = '';
 
   const header = document.createElement('div');
-
-  try{ setSelectedCardTile({ name: 'Full set', key: 'fullset', statusKind: 'ok', statusText: 'Activated' }); }catch{}
   header.className = 'small';
   header.textContent = result.existing
     ? 'This code already has cards. Pick one below.'
@@ -494,16 +422,6 @@ export function bootRedeem(){
     msg.textContent = `Product: ${product.name}`;
   }
 
-  // Show a small "Selected card" tile (thumb is best-effort, falls back gracefully).
-  try{
-    setSelectedCardTile({
-      name: product.name,
-      key: (product && (product.slug || product.id || product.name)) || '',
-      statusKind: 'warn',
-      statusText: 'Not activated'
-    });
-  }catch{}
-
   const btn = byId('redeemBtn', 'redeem-btn') || qs('#redeemBtn') || qs('#redeem-btn');
   const originalBtnText = btn ? btn.textContent : 'Activate';
   const storeMode = getStoreMode();
@@ -627,22 +545,9 @@ function activationCodeInfo(code){
 function setStatusChip(node, kind, text){
   if (!node) return;
   node.textContent = text;
-  node.classList.remove('is-ok', 'is-warn', 'is-error');
+  node.classList.remove('is-ok', 'is-warn');
   if (kind === 'ok') node.classList.add('is-ok');
-  else if (kind === 'error') node.classList.add('is-error');
-  else node.classList.add('is-warn');
-
-  // Keep the activate preview tile chip in sync when present.
-  try{
-    const t = document.getElementById('selectedCardChip');
-    if (t && t !== node){
-      t.textContent = text;
-      t.classList.remove('is-ok', 'is-warn', 'is-error');
-      if (kind === 'ok') t.classList.add('is-ok');
-      else if (kind === 'error') t.classList.add('is-error');
-      else t.classList.add('is-warn');
-    }
-  }catch{}
+  if (kind === 'warn') node.classList.add('is-warn');
 }
 
 function setInlineHint(node, info){
