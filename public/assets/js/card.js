@@ -549,6 +549,59 @@ async function exportRevealedPng(card, opts = {}){
   try{
     // Inline all computed CSS into the clone.
     _inlineStylesDeep(stage, clone);
+    // Re-apply export asset inlining AFTER computed styles have been inlined,
+    // because _inlineStylesDeep can overwrite earlier inline background-image/src.
+    try{
+      // Inline pattern / background image layers
+      const innerSrc = stage.querySelector('.scratch-stage__inner');
+      const innerDst = clone.querySelector('.scratch-stage__inner');
+      if (innerSrc && innerDst){
+        const cs = getComputedStyle(innerSrc);
+        const bgImg = cs.getPropertyValue('background-image') || '';
+        const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
+        if (m && m[1]){
+          const url = m[1];
+          if (url.startsWith('/') || url.startsWith(window.location.origin)){
+            const abs = url.startsWith('http') ? url : (window.location.origin + url);
+            const dataUrl = await _fetchAsDataUrl(abs);
+            innerDst.style.backgroundImage = `url("${dataUrl}")`;
+          }
+        }
+      }
+
+      // Inline stage background-image if present (some themes may use it)
+      {
+        const csStage = getComputedStyle(stage);
+        const bgImg = csStage.getPropertyValue('background-image') || '';
+        const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
+        if (m && m[1]){
+          const url = m[1];
+          if (url.startsWith('/') || url.startsWith(window.location.origin)){
+            const abs = url.startsWith('http') ? url : (window.location.origin + url);
+            const dataUrl = await _fetchAsDataUrl(abs);
+            clone.style.backgroundImage = `url("${dataUrl}")`;
+          }
+        }
+      }
+
+      // Inline all <img> sources inside the export root so foreignObject renders reliably.
+      {
+        const imgsSrc = stage.querySelectorAll('img');
+        const imgsDst = clone.querySelectorAll('img');
+        const n = Math.min(imgsSrc.length, imgsDst.length);
+        for (let i = 0; i < n; i++){
+          const src = imgsSrc[i].getAttribute('src') || '';
+          if (!src) continue;
+          if (!(src.startsWith('/') || src.startsWith(window.location.origin))) continue;
+          const abs = src.startsWith('http') ? src : (window.location.origin + src);
+          const dataUrl = await _fetchAsDataUrl(abs);
+          imgsDst[i].setAttribute('src', dataUrl);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
 
     const rect = stage.getBoundingClientRect();
 
@@ -1106,43 +1159,55 @@ function applyCardStageTheme(stageEl, theme){
 
   const bg = theme.background;
 
-  // Reset theme vars (we only theme via CSS variables)
+  // Reset
+  stageEl.style.backgroundImage = '';
+  stageEl.style.backgroundRepeat = '';
+  stageEl.style.backgroundSize = '';
+  stageEl.style.backgroundPosition = '';
+  stageEl.style.backgroundColor = '';
   stageEl.style.removeProperty('--scratch-card-bg');
   stageEl.style.removeProperty('--scratch-card-pattern');
   stageEl.style.removeProperty('--scratch-card-pattern-size');
   stageEl.style.removeProperty('--scratch-card-pattern-opacity');
-  stageEl.style.removeProperty('--scratch-card-pattern-repeat');
-  stageEl.style.removeProperty('--scratch-card-pattern-position');
 
-  // Base color always set (even for image cards) to avoid white flashes
-  stageEl.style.setProperty('--scratch-card-bg', bg.color || '#1c1e1e');
+  const inner = stageEl.querySelector('.scratch-stage__inner');
 
   if (bg.type === 'image' && bg.imageSrc){
-    // Single full background image (no pattern overlay)
-    stageEl.style.setProperty('--scratch-card-pattern', `url("${bg.imageSrc}")`);
-    stageEl.style.setProperty('--scratch-card-pattern-repeat', 'no-repeat');
-    stageEl.style.setProperty('--scratch-card-pattern-position', 'center');
-    stageEl.style.setProperty('--scratch-card-pattern-size', 'cover');
-    stageEl.style.setProperty('--scratch-card-pattern-opacity', '1');
+    // Use the stage background for full-cover images.
+    stageEl.style.backgroundColor = bg.color || '#000';
+    stageEl.style.backgroundImage = `url("${bg.imageSrc}")`;
+
+  // Apply per-card visuals (title is set via template, background/pattern here).
+  const stageEl = root.querySelector('.scratch-stage');
+  if (stageEl) applyCardStageTheme(stageEl, theme);
+    stageEl.style.backgroundRepeat = 'no-repeat';
+    stageEl.style.backgroundSize = 'cover';
+    stageEl.style.backgroundPosition = 'center';
+
+    // Disable the pattern layer.
+    if (inner){
+      inner.style.backgroundImage = 'none';
+      inner.style.opacity = '0';
+    }
     return;
   }
 
-  // Default: repeating pattern overlay (or none)
+  // Default: flat color + optional repeating pattern on inner layer.
+  stageEl.style.setProperty('--scratch-card-bg', bg.color || '#1c1e1e');
+
+  if (inner){
+    inner.style.opacity = (bg.patternOpacity != null) ? String(bg.patternOpacity) : '1';
+  }
+
   if (bg.patternSrc){
     stageEl.style.setProperty('--scratch-card-pattern', `url("${bg.patternSrc}")`);
-    stageEl.style.setProperty('--scratch-card-pattern-repeat', 'repeat');
-    stageEl.style.setProperty('--scratch-card-pattern-position', '0 0');
-    if (bg.patternSize){
-      stageEl.style.setProperty('--scratch-card-pattern-size', String(bg.patternSize));
-    }
-    if (bg.patternOpacity != null){
-      stageEl.style.setProperty('--scratch-card-pattern-opacity', String(bg.patternOpacity));
-    } else {
-      stageEl.style.setProperty('--scratch-card-pattern-opacity', '1');
-    }
   } else {
     stageEl.style.setProperty('--scratch-card-pattern', 'none');
-    stageEl.style.setProperty('--scratch-card-pattern-opacity', '0');
+    if (inner) inner.style.opacity = '0';
+  }
+
+  if (bg.patternSize){
+    stageEl.style.setProperty('--scratch-card-pattern-size', String(bg.patternSize));
   }
 }
 
@@ -1187,10 +1252,6 @@ function renderScratch(root, card){
 
     </div>
   `;
-
-  // Apply per-card visuals (background/pattern via CSS vars).
-  const stageEl = qs('.scratch-stage', root);
-  if (stageEl) applyCardStageTheme(stageEl, theme);
 
   const boardEl = qs('#board', root);
   const copyLinkTop = root.querySelector('#copyLinkTop');
@@ -1418,10 +1479,6 @@ function renderRevealed(root, card){
         </div>
     </div>
   `;
-
-  // Apply per-card visuals (background/pattern via CSS vars).
-  const stageEl = qs('.scratch-stage', root);
-  if (stageEl) applyCardStageTheme(stageEl, theme);
 
   const boardEl = qs('#boardStatic', root);
   for (let i = 0; i < board.length; i++){
