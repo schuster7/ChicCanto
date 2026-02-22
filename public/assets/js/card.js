@@ -549,59 +549,59 @@ async function exportRevealedPng(card, opts = {}){
   try{
     // Inline all computed CSS into the clone.
     _inlineStylesDeep(stage, clone);
-    // Re-apply export asset inlining AFTER computed styles have been inlined,
-    // because _inlineStylesDeep can overwrite earlier inline background-image/src.
-    try{
-      // Inline pattern / background image layers
-      const innerSrc = stage.querySelector('.scratch-stage__inner');
+
+    // After inlining styles, force the card background layer to a data URL based on card theme.
+    // This avoids var() + external URL issues inside the SVG foreignObject snapshot.
+    try {
+      const cardKey = (card && card.init && card.init.card_key) ? card.init.card_key : (card && card.card_key ? card.card_key : '');
+      const theme = getCardTheme(cardKey);
       const innerDst = clone.querySelector('.scratch-stage__inner');
-      if (innerSrc && innerDst){
-        const cs = getComputedStyle(innerSrc);
-        const bgImg = cs.getPropertyValue('background-image') || '';
-        const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
-        if (m && m[1]){
-          const url = m[1];
-          if (url.startsWith('/') || url.startsWith(window.location.origin)){
-            const abs = url.startsWith('http') ? url : (window.location.origin + url);
-            const dataUrl = await _fetchAsDataUrl(abs);
-            innerDst.style.backgroundImage = `url("${dataUrl}")`;
-          }
-        }
-      }
 
-      // Inline stage background-image if present (some themes may use it)
-      {
-        const csStage = getComputedStyle(stage);
-        const bgImg = csStage.getPropertyValue('background-image') || '';
-        const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
-        if (m && m[1]){
-          const url = m[1];
-          if (url.startsWith('/') || url.startsWith(window.location.origin)){
-            const abs = url.startsWith('http') ? url : (window.location.origin + url);
-            const dataUrl = await _fetchAsDataUrl(abs);
-            clone.style.backgroundImage = `url("${dataUrl}")`;
-          }
+      if (theme && theme.background && innerDst) {
+        // Base color on the stage itself
+        if (theme.background.color) {
+          clone.style.background = theme.background.color;
         }
-      }
 
-      // Inline all <img> sources inside the export root so foreignObject renders reliably.
-      {
-        const imgsSrc = stage.querySelectorAll('img');
-        const imgsDst = clone.querySelectorAll('img');
-        const n = Math.min(imgsSrc.length, imgsDst.length);
-        for (let i = 0; i < n; i++){
-          const src = imgsSrc[i].getAttribute('src') || '';
-          if (!src) continue;
-          if (!(src.startsWith('/') || src.startsWith(window.location.origin))) continue;
+        if (theme.background.type === 'image' && theme.background.imageSrc) {
+          const src = theme.background.imageSrc;
           const abs = src.startsWith('http') ? src : (window.location.origin + src);
           const dataUrl = await _fetchAsDataUrl(abs);
-          imgsDst[i].setAttribute('src', dataUrl);
+
+          innerDst.style.backgroundImage = `url("${dataUrl}")`;
+          innerDst.style.backgroundRepeat = 'no-repeat';
+          innerDst.style.backgroundPosition = 'center';
+          innerDst.style.backgroundSize = 'cover';
+          innerDst.style.opacity = '1';
+        } else if (theme.background.type === 'pattern' && theme.background.patternSrc) {
+          const src = theme.background.patternSrc;
+          const abs = src.startsWith('http') ? src : (window.location.origin + src);
+          const dataUrl = await _fetchAsDataUrl(abs);
+
+          innerDst.style.backgroundImage = `url("${dataUrl}")`;
+          innerDst.style.backgroundRepeat = 'repeat';
+          innerDst.style.backgroundPosition = '0 0';
+          innerDst.style.backgroundSize = theme.background.patternSize || 'clamp(160px, 18vw, 280px) clamp(160px, 18vw, 280px)';
+          innerDst.style.opacity = theme.background.patternOpacity || '1';
         }
       }
     } catch {
       // ignore
     }
 
+    // Inline all <img> sources inside the clone so foreignObject renders reliably.
+    try {
+      const imgs = clone.querySelectorAll('img');
+      for (const img of imgs) {
+        const src = img.getAttribute('src') || '';
+        if (!src) continue;
+        if (!(src.startsWith('/') || src.startsWith(window.location.origin))) continue;
+        const abs = src.startsWith('http') ? src : (window.location.origin + src);
+        img.setAttribute('src', await _fetchAsDataUrl(abs));
+      }
+    } catch {
+      // ignore
+    }
 
     const rect = stage.getBoundingClientRect();
 
