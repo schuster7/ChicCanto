@@ -437,6 +437,36 @@ function _inlineStylesDeep(sourceRoot, targetRoot){
   }
 }
 
+
+async function _inlineBackgroundImagesInTree(rootEl){
+  if (!rootEl) return;
+  const all = [rootEl, ...Array.from(rootEl.querySelectorAll('*'))];
+  for (const el of all){
+    const bg = el.style && el.style.backgroundImage;
+    if (!bg || bg === 'none') continue;
+
+    // Only handle first url(...) in background-image
+    const m = String(bg).match(/url\(["']?([^"')]+)["']?\)/i);
+    if (!m || !m[1]) continue;
+
+    const url = m[1];
+    // Skip already-inlined data:
+    if (url.startsWith('data:')) continue;
+
+    // Only same-origin / relative
+    if (!(url.startsWith('/') || url.startsWith(window.location.origin))) continue;
+
+    const abs = url.startsWith('http') ? url : (window.location.origin + url);
+    try{
+      const dataUrl = await _fetchAsDataUrl(abs);
+      el.style.backgroundImage = `url("${dataUrl}")`;
+    }catch{
+      // ignore and keep original
+    }
+  }
+}
+
+
 function _makeSvgSnapshotMarkup(node, width, height, embeddedCss){
   const serializer = new XMLSerializer();
   const xhtml = serializer.serializeToString(node);
@@ -549,45 +579,9 @@ async function exportRevealedPng(card, opts = {}){
   try{
     // Inline all computed CSS into the clone.
     _inlineStylesDeep(stage, clone);
-    // After inlining computed styles, force the correct themed background into the clone as data-URLs.
-    // This avoids the common foreignObject issue where external background-image URLs don't render.
-    try{
-      const cardKey =
-        (card && card.init && (card.init.card_key || card.init.cardKey)) ||
-        (card && (card.card_key || card.card_key_id)) ||
-        '';
-      const theme = getCardTheme(cardKey);
-      if (theme && theme.background){
-        const bg = theme.background;
 
-        // Apply base bg color
-        if (bg.color) clone.style.background = bg.color;
-
-        // Target the pattern/image layer (inner)
-        const innerDst = clone.querySelector('.scratch-stage__inner');
-
-        if (bg.type === 'image' && bg.imageSrc && innerDst){
-          const abs = bg.imageSrc.startsWith('http') ? bg.imageSrc : (window.location.origin + bg.imageSrc);
-          const dataUrl = await _fetchAsDataUrl(abs);
-          innerDst.style.backgroundImage = `url("${dataUrl}")`;
-          innerDst.style.backgroundRepeat = 'no-repeat';
-          innerDst.style.backgroundPosition = 'center';
-          innerDst.style.backgroundSize = 'cover';
-          innerDst.style.opacity = '1';
-        } else if (bg.patternSrc && innerDst){
-          const abs = bg.patternSrc.startsWith('http') ? bg.patternSrc : (window.location.origin + bg.patternSrc);
-          const dataUrl = await _fetchAsDataUrl(abs);
-          innerDst.style.backgroundImage = `url("${dataUrl}")`;
-          innerDst.style.backgroundRepeat = 'repeat';
-          innerDst.style.backgroundPosition = '0 0';
-          if (bg.patternSize) innerDst.style.backgroundSize = bg.patternSize;
-          if (bg.patternOpacity) innerDst.style.opacity = bg.patternOpacity;
-        }
-      }
-    }catch(e){
-      console.warn('Export theme background inline failed', e);
-    }
-
+    // Inline any background-image URLs (pattern/bg-image) into data URLs for export.
+    await _inlineBackgroundImagesInTree(clone);
 
     const rect = stage.getBoundingClientRect();
 
@@ -728,7 +722,7 @@ function buildMatch3Board(totalTiles, winTier, tiers, seedKey){
 
 function render(container, token, card){
   // Card is expected to already exist in storage (redeem/setup creates it).
-  applyTheme(card);
+  applyTheme(card.theme_id);
 
   const contentId = 'content';
 
@@ -828,6 +822,11 @@ function renderSetup(root, card, container){
       </div>
     </div>
 `;
+
+  // Apply background/pattern from registry theme (source of truth: cardKey).
+  const stageEl = root.querySelector('.scratch-stage');
+  if (stageEl) applyCardStageTheme(stageEl, theme);
+
 
   const shareUrlEl = qs('#shareUrl', root);
   const copyBtn = qs('#copyBtn', root);
@@ -1144,8 +1143,9 @@ function applyCardStageTheme(stageEl, theme){
   if (!stageEl || !theme || !theme.background) return;
 
   const bg = theme.background;
+  const inner = stageEl.querySelector('.scratch-stage__inner');
 
-  // Reset
+  // Reset stage
   stageEl.style.backgroundImage = '';
   stageEl.style.backgroundRepeat = '';
   stageEl.style.backgroundSize = '';
@@ -1155,22 +1155,27 @@ function applyCardStageTheme(stageEl, theme){
   stageEl.style.removeProperty('--scratch-card-pattern');
   stageEl.style.removeProperty('--scratch-card-pattern-size');
   stageEl.style.removeProperty('--scratch-card-pattern-opacity');
+  stageEl.style.removeProperty('--scratch-card-pattern-repeat');
+  stageEl.style.removeProperty('--scratch-card-pattern-position');
 
-  const inner = stageEl.querySelector('.scratch-stage__inner');
+  // Reset inner overlay
+  if (inner){
+    inner.style.backgroundImage = '';
+    inner.style.backgroundRepeat = '';
+    inner.style.backgroundSize = '';
+    inner.style.backgroundPosition = '';
+    inner.style.opacity = '';
+  }
 
   if (bg.type === 'image' && bg.imageSrc){
-    // Use the stage background for full-cover images.
+    // Full-card background image lives on the stage.
     stageEl.style.backgroundColor = bg.color || '#000';
     stageEl.style.backgroundImage = `url("${bg.imageSrc}")`;
-
-  // Apply per-card visuals (title is set via template, background/pattern here).
-  const stageEl = root.querySelector('.scratch-stage');
-  if (stageEl) applyCardStageTheme(stageEl, theme);
     stageEl.style.backgroundRepeat = 'no-repeat';
     stageEl.style.backgroundSize = 'cover';
     stageEl.style.backgroundPosition = 'center';
 
-    // Disable the pattern layer.
+    // Disable the pattern/overlay layer so it doesn't sit on top.
     if (inner){
       inner.style.backgroundImage = 'none';
       inner.style.opacity = '0';
@@ -1178,22 +1183,18 @@ function applyCardStageTheme(stageEl, theme){
     return;
   }
 
-  // Default: flat color + optional repeating pattern on inner layer.
+  // Default: flat color + optional repeating pattern on inner overlay
   stageEl.style.setProperty('--scratch-card-bg', bg.color || '#1c1e1e');
-
-  if (inner){
-    inner.style.opacity = (bg.patternOpacity != null) ? String(bg.patternOpacity) : '1';
-  }
 
   if (bg.patternSrc){
     stageEl.style.setProperty('--scratch-card-pattern', `url("${bg.patternSrc}")`);
+    if (bg.patternSize) stageEl.style.setProperty('--scratch-card-pattern-size', String(bg.patternSize));
+    if (bg.patternOpacity != null) stageEl.style.setProperty('--scratch-card-pattern-opacity', String(bg.patternOpacity));
+    if (bg.patternRepeat) stageEl.style.setProperty('--scratch-card-pattern-repeat', String(bg.patternRepeat));
+    if (bg.patternPosition) stageEl.style.setProperty('--scratch-card-pattern-position', String(bg.patternPosition));
   } else {
     stageEl.style.setProperty('--scratch-card-pattern', 'none');
-    if (inner) inner.style.opacity = '0';
-  }
-
-  if (bg.patternSize){
-    stageEl.style.setProperty('--scratch-card-pattern-size', String(bg.patternSize));
+    stageEl.style.setProperty('--scratch-card-pattern-opacity', '0');
   }
 }
 
@@ -1592,57 +1593,18 @@ export async function bootCard(){
 
 // --- Orientation / minimum tile size guard (mobile) ---
 
-function applyTheme(card){
+function applyTheme(themeId){
   try{
-    // Keep existing theme-* body class behavior (if card.theme_id is used elsewhere)
-    const themeId = card && card.theme_id ? String(card.theme_id) : '';
     const body = document.body;
+    // remove existing theme-* classes
     body.className.split(/\s+/).forEach(c => {
       if (c && c.startsWith('theme-')) body.classList.remove(c);
     });
-    if (themeId && themeId.startsWith('theme-')) body.classList.add(themeId);
+    if (typeof themeId === 'string' && themeId.startsWith('theme-')){
+      body.classList.add(themeId);
+    }
   }catch{}
-
-  // Apply background variables deterministically from card_key via registry
-  try{
-    const stage = document.querySelector('.scratch-stage');
-    if (!stage) return;
-
-    const cardKey =
-      (card && card.init && (card.init.card_key || card.init.cardKey)) ||
-      (card && (card.card_key || card.card_key_id)) ||
-      '';
-
-    const theme = getCardTheme(cardKey);
-    if (!theme || !theme.background) return;
-
-    const bg = theme.background;
-
-    // Base card color
-    if (bg.color) stage.style.setProperty('--scratch-card-bg', bg.color);
-
-    if (bg.type === 'image' && bg.imageSrc){
-      stage.style.setProperty('--scratch-card-pattern', `url("${bg.imageSrc}")`);
-      stage.style.setProperty('--scratch-card-pattern-repeat', 'no-repeat');
-      stage.style.setProperty('--scratch-card-pattern-position', 'center');
-      stage.style.setProperty('--scratch-card-pattern-size', 'cover');
-      stage.style.setProperty('--scratch-card-pattern-opacity', '1');
-      return;
-    }
-
-    // Default: pattern
-    if (bg.patternSrc){
-      stage.style.setProperty('--scratch-card-pattern', `url("${bg.patternSrc}")`);
-    }
-    stage.style.setProperty('--scratch-card-pattern-repeat', 'repeat');
-    stage.style.setProperty('--scratch-card-pattern-position', '0 0');
-    if (bg.patternSize) stage.style.setProperty('--scratch-card-pattern-size', bg.patternSize);
-    if (bg.patternOpacity) stage.style.setProperty('--scratch-card-pattern-opacity', bg.patternOpacity);
-  }catch(e){
-    console.warn('Theme apply failed', e);
-  }
 }
-
 
 const CC_MIN_TILE_PX = 56;
 let rotateGuardInstalled = false;
