@@ -22,20 +22,36 @@ export const PRODUCTS = {
 export const TIERS = ['t1','t2','t3','t4'];
 
 /**
- * Tier → icon file mapping.
+ * Multi-card: tile set selection.
+ * For now, tile sets mirror card keys (e.g. /assets/tiles/men-novice1/*).
+ */
+let _CURRENT_TILE_SET = 'men-novice1';
+
+export function setTileSet(tileSet){
+  const s = String(tileSet || '').trim();
+  if (!s) return;
+  _CURRENT_TILE_SET = s;
+}
+
+export function getTileSet(){
+  return _CURRENT_TILE_SET;
+}
+
+/**
+ * Tier → symbol filename mapping.
  * Keep tier ids as t1..t4 for logic stability, only swap filenames here.
  */
-const TIER_ICON_MAP = {
-  t1: '/assets/img/t1-mouth.svg',
-  t2: '/assets/img/t2-hand.svg',
-  t3: '/assets/img/t3-girl.svg',
-  t4: '/assets/img/t4-fantasy.svg'
+const TIER_SYMBOL_MAP = {
+  t1: 'blowjob',
+  t2: 'handjob',
+  t3: 'anal',
+  t4: 'fantasy'
 };
 
 export function tierIconSrc(tier){
   const safe = String(tier || '').toLowerCase();
-  if (!TIERS.includes(safe)) return TIER_ICON_MAP.t1;
-  return TIER_ICON_MAP[safe] || TIER_ICON_MAP.t1;
+  const sym = TIER_SYMBOL_MAP[safe] || TIER_SYMBOL_MAP.t1;
+  return `/assets/tiles/${_CURRENT_TILE_SET}/${sym}.svg`;
 }
 
 /**

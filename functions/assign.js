@@ -1,6 +1,7 @@
 // Cloudflare Pages Function route: POST /assign
-// Assigns an activation code to an Etsy order, server-side.
-// Operational mode: generates secure random codes on-demand (no preloaded pool required).
+// Assigns activation code(s) to an Etsy order, server-side.
+// Manual fulfillment v1: user selects card_key + quantity (1 or 4).
+// Each activation code is bound to a single card (one redeem = one card).
 
 function json(data, status = 200){
   return new Response(JSON.stringify(data), {
@@ -18,33 +19,51 @@ async function readJson(request){
   try{ return await request.json(); } catch { return null; }
 }
 
-function normalizeSku(raw){
-  const s = String(raw || '').trim().toLowerCase();
-  if (s === 'single') return 'single';
-  if (s === 'fullset' || s === 'full_set' || s === 'set' || s === 'bundle') return 'fullset';
-  return '';
-}
-
 function normalizeOrderId(raw){
   // Keep Etsy order IDs exactly as the fulfiller pasted, but trimmed.
   return String(raw || '').trim();
 }
 
-function skuPrefix(sku){
-  if (sku === 'fullset') return 'CC-F';
-  return 'CC-S';
+function normalizeCardKey(raw){
+  return String(raw || '').trim();
 }
 
-function buildMessage({ code, origin, buyerName }){
-  const base = `${origin}/`;
-  const activatePrefill = `${origin}/activate/?code=${encodeURIComponent(code)}`;
+function normalizeQuantity(raw){
+  const n = parseInt(String(raw ?? '').trim(), 10);
+  if (n === 4) return 4;
+  return 1;
+}
 
-  // Buyer name greeting is optional and only used when provided.
+function cardKeyToCodePrefix(card_key){
+  // Human-readable prefix for support. Keep it stable once issued.
+  const k = String(card_key || '').trim();
+  const MAP = {
+    'men-novice1': 'CC-MEN-STD1',
+    'men-novice-birthday1': 'CC-MEN-BDAY1',
+    'women-novice1': 'CC-WOM-STD1',
+    'women-novice-birthday1': 'CC-WOM-BDAY1',
+    'men-advanced1': 'CC-MEN-ADV1',
+    'women-advanced1': 'CC-WOM-ADV1',
+  };
+  return MAP[k] || 'CC-CARD';
+}
+
+function buildMessage({ codes, origin, buyerName }){
+  const base = `${origin}/`;
+
   const name = String(buyerName || '').trim();
   const greeting = name ? `Hi ${name},\n\n` : '';
 
+  const list = (Array.isArray(codes) ? codes : []).filter(Boolean);
+  const lines = list.length <= 1
+    ? [`Your activation code: ${list[0] || ''}`]
+    : [
+        `Your ${list.length} activation codes (one per card):`,
+        ...list.map((c, i) => `Card ${i + 1}: ${c}`)
+      ];
+
   return (
-`${greeting}Thanks for your order, and welcome to ChicCanto.\n\nYour activation code: ${code}\n\nFastest option (one tap):\nOpen this link and your code will already be filled in:\n${activatePrefill}\n\nStandard option:\n1) Open: ${base}\n2) Paste your activation code and follow the steps on screen\n\nThis is quick, private, and works on both phone and desktop. If you ever need to access it again, just use the same code.\n\nNeed help or want ideas before you start?\nFAQ: ${base}faq/\nSupport: chiccanto@wearrs.com\n\nIf you enjoyed it, keep an eye on the shop. New cards and themes are added regularly.`
+`${greeting}Thanks for your order, and welcome to ChicCanto.\n\n${lines.join('\n')}\n\nHow to use it:\n1) Open: ${base}\n2) Paste your activation code and follow the steps on screen\n\nThis is quick, private, and works on both phone and desktop. If you ever need to access it again, just use the same code.\n\nNeed help?\nFAQ: ${base}faq/\nSupport: chiccanto@wearrs.com`
   );
 }
 
@@ -66,14 +85,10 @@ function randomChars(len){
   return out;
 }
 
-async function generateUniqueCode(env, sku){
-  const prefix = skuPrefix(sku);
-  // 16 random chars in 4 groups => PREFIX-XXXX-XXXX-XXXX-XXXX
+async function generateUniqueCode(env, prefix){
+  // PREFIX-XXXXXXXX (8 random chars)
   for (let attempt = 0; attempt < 12; attempt++){
-    const body = randomChars(16);
-    const code =
-      `${prefix}-${body.slice(0,4)}-${body.slice(4,8)}-${body.slice(8,12)}-${body.slice(12,16)}`;
-
+    const code = `${prefix}-${randomChars(8)}`;
     const exists = await env.CARDS_KV.get(`ac:${code}`);
     if (!exists) return code;
   }
@@ -104,76 +119,89 @@ export async function onRequestPost(context){
   }
 
   const order_id = normalizeOrderId(body.order_id);
-  const sku = normalizeSku(body.sku);
+  const card_key = normalizeCardKey(body.card_key);
+  const quantity = normalizeQuantity(body.quantity);
   const buyer_name = (typeof body.buyer_name === 'string') ? body.buyer_name.trim() : '';
 
   if (!order_id){
     return json({ ok: false, error: 'Missing order_id.' }, 400);
   }
-  if (!sku){
-    return json({ ok: false, error: 'Invalid sku. Use single or fullset.' }, 400);
+  if (!card_key){
+    return json({ ok: false, error: 'Missing card_key.' }, 400);
   }
 
   const origin = new URL(request.url).origin;
-  const orderKey = `order:${order_id}`;
 
-  // Idempotent: if this order already has a code, return it.
+  // Idempotent per order + card_key + quantity.
+  const orderKey = `order:${order_id}:${card_key}:${quantity}`;
   const existingOrder = await getJsonKV(env, orderKey);
-  if (existingOrder && typeof existingOrder === 'object' && existingOrder.code){
-    const code = String(existingOrder.code);
-    const message_text = buildMessage({ code, origin, buyerName: buyer_name || existingOrder.buyer_name || '' });
+  if (existingOrder && typeof existingOrder === 'object' && Array.isArray(existingOrder.codes) && existingOrder.codes.length){
+    const codes = existingOrder.codes.map(String);
+    const message_text = buildMessage({ codes, origin, buyerName: buyer_name || existingOrder.buyer_name || '' });
     return json({
       ok: true,
       existing: true,
       order_id,
-      sku: existingOrder.sku || sku,
-      code,
+      card_key,
+      quantity,
+      codes,
       etsy_message: message_text,
       message_text,
     });
   }
 
-  // Generate a new code on-demand (no pool).
-  let chosen = '';
-  try{
-    chosen = await generateUniqueCode(env, sku);
-  } catch {
-    return json({ ok: false, error: 'Could not generate a new code. Try again.' }, 500);
+  const prefix = cardKeyToCodePrefix(card_key);
+
+  const codes = [];
+  for (let i = 0; i < quantity; i++){
+    let code = '';
+    try{
+      code = await generateUniqueCode(env, prefix);
+    } catch {
+      return json({ ok: false, error: 'Could not generate a new code. Try again.' }, 500);
+    }
+
+    const assigned_at = new Date().toISOString();
+    const acKey = `ac:${code}`;
+
+    const acRec = {
+      code,
+      sku: 'single',
+      status: 'assigned',
+      order_id,
+      buyer_name: buyer_name || null,
+      assigned_at,
+      bundle_index: quantity > 1 ? (i + 1) : null,
+      init: { card_key },
+    };
+
+    await env.CARDS_KV.put(acKey, JSON.stringify(acRec));
+    codes.push(code);
   }
-
-  const assigned_at = new Date().toISOString();
-  const acKey = `ac:${chosen}`;
-
-  const acRec = {
-    code: chosen,
-    sku,
-    status: 'assigned',
-    order_id,
-    buyer_name: buyer_name || null,
-    assigned_at,
-  };
-  await env.CARDS_KV.put(acKey, JSON.stringify(acRec));
 
   const orderRec = {
     order_id,
-    sku,
-    code: chosen,
+    card_key,
+    quantity,
+    codes,
     buyer_name: buyer_name || null,
-    assigned_at,
+    assigned_at: new Date().toISOString(),
   };
   await env.CARDS_KV.put(orderKey, JSON.stringify(orderRec));
 
-  const message_text = buildMessage({ code: chosen, origin, buyerName: buyer_name });
+  const message_text = buildMessage({ codes, origin, buyerName: buyer_name });
   return json({
     ok: true,
     existing: false,
     order_id,
-    sku,
-    code: chosen,
+    card_key,
+    quantity,
+    codes,
     etsy_message: message_text,
     message_text,
   });
 }
+
 
 // --- session cookie verification ---
 

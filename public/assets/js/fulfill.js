@@ -60,15 +60,16 @@ async function assign(){
     }
 
     const order_id = String(byId('orderId')?.value || '').trim();
-    const sku = String(byId('sku')?.value || '').trim();
+    const card_key = String(byId('cardKey')?.value || '').trim();
+    const quantity = String(byId('quantity')?.value || '1').trim();
     const buyer_name = String(byId('buyerName')?.value || '').trim() || null;
 
     if (!order_id){
       setStatus('Enter an Etsy order number.', true);
       return;
     }
-    if (!sku){
-      setStatus('Select a product.', true);
+    if (!card_key){
+      setStatus('Select a card type.', true);
       return;
     }
 
@@ -80,7 +81,7 @@ async function assign(){
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ order_id, sku, buyer_name }),
+      body: JSON.stringify({ order_id, card_key, quantity, buyer_name }),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -94,7 +95,8 @@ async function assign(){
       throw new Error(data.error || 'Request failed.');
     }
 
-    setAssigned(data.code || '');
+    const codes = Array.isArray(data.codes) ? data.codes : (data.code ? [data.code] : []);
+    setAssigned(codes.join('\n'));
     setMessage(data.etsy_message || '');
     setStatus('Assigned.');
   }catch(err){

@@ -38,7 +38,12 @@ export function normalizeInit(init){
   const theme_id = (typeof obj.theme_id === 'string' && obj.theme_id) ? obj.theme_id : null;
   const fields = Number.isFinite(obj.fields) ? obj.fields : 9;
 
-  return { product_id, theme_id, fields };
+  // Multi-card: server-owned card key that selects the correct assets (title, background, tiles).
+  const card_key = (typeof obj.card_key === 'string' && obj.card_key.trim())
+    ? obj.card_key.trim()
+    : null;
+
+  return { product_id, theme_id, fields, card_key };
 }
 
 export function buildNewCard({ init } = {}){
@@ -50,6 +55,7 @@ export function buildNewCard({ init } = {}){
 
     product_id: n.product_id,
     theme_id: n.theme_id,
+    card_key: n.card_key,
 
     // sender-only secret
     setup_key: makeSetupKey(),
