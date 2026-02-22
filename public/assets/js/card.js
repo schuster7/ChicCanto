@@ -1106,55 +1106,43 @@ function applyCardStageTheme(stageEl, theme){
 
   const bg = theme.background;
 
-  // Reset
-  stageEl.style.backgroundImage = '';
-  stageEl.style.backgroundRepeat = '';
-  stageEl.style.backgroundSize = '';
-  stageEl.style.backgroundPosition = '';
-  stageEl.style.backgroundColor = '';
+  // Reset theme vars (we only theme via CSS variables)
   stageEl.style.removeProperty('--scratch-card-bg');
   stageEl.style.removeProperty('--scratch-card-pattern');
   stageEl.style.removeProperty('--scratch-card-pattern-size');
   stageEl.style.removeProperty('--scratch-card-pattern-opacity');
+  stageEl.style.removeProperty('--scratch-card-pattern-repeat');
+  stageEl.style.removeProperty('--scratch-card-pattern-position');
 
-  const inner = stageEl.querySelector('.scratch-stage__inner');
+  // Base color always set (even for image cards) to avoid white flashes
+  stageEl.style.setProperty('--scratch-card-bg', bg.color || '#1c1e1e');
 
   if (bg.type === 'image' && bg.imageSrc){
-    // Use the stage background for full-cover images.
-    stageEl.style.backgroundColor = bg.color || '#000';
-    stageEl.style.backgroundImage = `url("${bg.imageSrc}")`;
-
-  // Apply per-card visuals (title is set via template, background/pattern here).
-  const stageEl = root.querySelector('.scratch-stage');
-  if (stageEl) applyCardStageTheme(stageEl, theme);
-    stageEl.style.backgroundRepeat = 'no-repeat';
-    stageEl.style.backgroundSize = 'cover';
-    stageEl.style.backgroundPosition = 'center';
-
-    // Disable the pattern layer.
-    if (inner){
-      inner.style.backgroundImage = 'none';
-      inner.style.opacity = '0';
-    }
+    // Single full background image (no pattern overlay)
+    stageEl.style.setProperty('--scratch-card-pattern', `url("${bg.imageSrc}")`);
+    stageEl.style.setProperty('--scratch-card-pattern-repeat', 'no-repeat');
+    stageEl.style.setProperty('--scratch-card-pattern-position', 'center');
+    stageEl.style.setProperty('--scratch-card-pattern-size', 'cover');
+    stageEl.style.setProperty('--scratch-card-pattern-opacity', '1');
     return;
   }
 
-  // Default: flat color + optional repeating pattern on inner layer.
-  stageEl.style.setProperty('--scratch-card-bg', bg.color || '#1c1e1e');
-
-  if (inner){
-    inner.style.opacity = (bg.patternOpacity != null) ? String(bg.patternOpacity) : '1';
-  }
-
+  // Default: repeating pattern overlay (or none)
   if (bg.patternSrc){
     stageEl.style.setProperty('--scratch-card-pattern', `url("${bg.patternSrc}")`);
+    stageEl.style.setProperty('--scratch-card-pattern-repeat', 'repeat');
+    stageEl.style.setProperty('--scratch-card-pattern-position', '0 0');
+    if (bg.patternSize){
+      stageEl.style.setProperty('--scratch-card-pattern-size', String(bg.patternSize));
+    }
+    if (bg.patternOpacity != null){
+      stageEl.style.setProperty('--scratch-card-pattern-opacity', String(bg.patternOpacity));
+    } else {
+      stageEl.style.setProperty('--scratch-card-pattern-opacity', '1');
+    }
   } else {
     stageEl.style.setProperty('--scratch-card-pattern', 'none');
-    if (inner) inner.style.opacity = '0';
-  }
-
-  if (bg.patternSize){
-    stageEl.style.setProperty('--scratch-card-pattern-size', String(bg.patternSize));
+    stageEl.style.setProperty('--scratch-card-pattern-opacity', '0');
   }
 }
 
@@ -1199,6 +1187,10 @@ function renderScratch(root, card){
 
     </div>
   `;
+
+  // Apply per-card visuals (background/pattern via CSS vars).
+  const stageEl = qs('.scratch-stage', root);
+  if (stageEl) applyCardStageTheme(stageEl, theme);
 
   const boardEl = qs('#board', root);
   const copyLinkTop = root.querySelector('#copyLinkTop');
@@ -1426,6 +1418,10 @@ function renderRevealed(root, card){
         </div>
     </div>
   `;
+
+  // Apply per-card visuals (background/pattern via CSS vars).
+  const stageEl = qs('.scratch-stage', root);
+  if (stageEl) applyCardStageTheme(stageEl, theme);
 
   const boardEl = qs('#boardStatic', root);
   for (let i = 0; i < board.length; i++){
