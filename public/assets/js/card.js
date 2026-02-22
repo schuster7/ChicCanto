@@ -437,36 +437,6 @@ function _inlineStylesDeep(sourceRoot, targetRoot){
   }
 }
 
-
-async function _inlineBackgroundImagesInTree(rootEl){
-  if (!rootEl) return;
-  const all = [rootEl, ...Array.from(rootEl.querySelectorAll('*'))];
-  for (const el of all){
-    const bg = el.style && el.style.backgroundImage;
-    if (!bg || bg === 'none') continue;
-
-    // Only handle first url(...) in background-image
-    const m = String(bg).match(/url\(["']?([^"')]+)["']?\)/i);
-    if (!m || !m[1]) continue;
-
-    const url = m[1];
-    // Skip already-inlined data:
-    if (url.startsWith('data:')) continue;
-
-    // Only same-origin / relative
-    if (!(url.startsWith('/') || url.startsWith(window.location.origin))) continue;
-
-    const abs = url.startsWith('http') ? url : (window.location.origin + url);
-    try{
-      const dataUrl = await _fetchAsDataUrl(abs);
-      el.style.backgroundImage = `url("${dataUrl}")`;
-    }catch{
-      // ignore and keep original
-    }
-  }
-}
-
-
 function _makeSvgSnapshotMarkup(node, width, height, embeddedCss){
   const serializer = new XMLSerializer();
   const xhtml = serializer.serializeToString(node);
@@ -580,8 +550,21 @@ async function exportRevealedPng(card, opts = {}){
     // Inline all computed CSS into the clone.
     _inlineStylesDeep(stage, clone);
 
-    // Inline any background-image URLs (pattern/bg-image) into data URLs for export.
+    // Inline background images AFTER style inlining so data URLs win.
     await _inlineBackgroundImagesInTree(clone);
+
+    // Inline all <img> sources in the clone (title + tiles) for SVG foreignObject reliability.
+    const imgs = clone.querySelectorAll('img');
+    for (const img of imgs){
+      const src = img.getAttribute('src') || '';
+      if (!src) continue;
+      if (!(src.startsWith('/') || src.startsWith(window.location.origin))) continue;
+      const abs = src.startsWith('http') ? src : (window.location.origin + src);
+      try{
+        const dataUrl = await _fetchAsDataUrl(abs);
+        img.setAttribute('src', dataUrl);
+      }catch(e){}
+    }
 
     const rect = stage.getBoundingClientRect();
 
@@ -823,10 +806,26 @@ function renderSetup(root, card, container){
     </div>
 `;
 
-  // Apply background/pattern from registry theme (source of truth: cardKey).
-  const stageEl = root.querySelector('.scratch-stage');
-  if (stageEl) applyCardStageTheme(stageEl, theme);
-
+  // Apply background vars based on the theme registry (single source of truth).
+  const stageEl = qs('.scratch-stage', root);
+  if (stageEl && theme && theme.background){
+    if (theme.background.color){
+      stageEl.style.setProperty('--scratch-card-bg', theme.background.color);
+    }
+    if (theme.background.type === 'image' && theme.background.imageSrc){
+      stageEl.style.setProperty('--scratch-card-pattern', `url("${theme.background.imageSrc}")`);
+      stageEl.style.setProperty('--scratch-card-pattern-repeat', 'no-repeat');
+      stageEl.style.setProperty('--scratch-card-pattern-position', 'center');
+      stageEl.style.setProperty('--scratch-card-pattern-size', 'cover');
+      stageEl.style.setProperty('--scratch-card-pattern-opacity', String(theme.background.opacity ?? 1));
+    } else if (theme.background.type === 'pattern' && theme.background.patternSrc){
+      stageEl.style.setProperty('--scratch-card-pattern', `url("${theme.background.patternSrc}")`);
+      stageEl.style.setProperty('--scratch-card-pattern-repeat', 'repeat');
+      stageEl.style.setProperty('--scratch-card-pattern-position', '0 0');
+      stageEl.style.setProperty('--scratch-card-pattern-size', theme.background.patternSize || 'clamp(160px, 18vw, 280px) clamp(160px, 18vw, 280px)');
+      stageEl.style.setProperty('--scratch-card-pattern-opacity', String(theme.background.opacity ?? 1));
+    }
+  }
 
   const shareUrlEl = qs('#shareUrl', root);
   const copyBtn = qs('#copyBtn', root);
@@ -1143,9 +1142,8 @@ function applyCardStageTheme(stageEl, theme){
   if (!stageEl || !theme || !theme.background) return;
 
   const bg = theme.background;
-  const inner = stageEl.querySelector('.scratch-stage__inner');
 
-  // Reset stage
+  // Reset
   stageEl.style.backgroundImage = '';
   stageEl.style.backgroundRepeat = '';
   stageEl.style.backgroundSize = '';
@@ -1155,27 +1153,22 @@ function applyCardStageTheme(stageEl, theme){
   stageEl.style.removeProperty('--scratch-card-pattern');
   stageEl.style.removeProperty('--scratch-card-pattern-size');
   stageEl.style.removeProperty('--scratch-card-pattern-opacity');
-  stageEl.style.removeProperty('--scratch-card-pattern-repeat');
-  stageEl.style.removeProperty('--scratch-card-pattern-position');
 
-  // Reset inner overlay
-  if (inner){
-    inner.style.backgroundImage = '';
-    inner.style.backgroundRepeat = '';
-    inner.style.backgroundSize = '';
-    inner.style.backgroundPosition = '';
-    inner.style.opacity = '';
-  }
+  const inner = stageEl.querySelector('.scratch-stage__inner');
 
   if (bg.type === 'image' && bg.imageSrc){
-    // Full-card background image lives on the stage.
+    // Use the stage background for full-cover images.
     stageEl.style.backgroundColor = bg.color || '#000';
     stageEl.style.backgroundImage = `url("${bg.imageSrc}")`;
+
+  // Apply per-card visuals (title is set via template, background/pattern here).
+  const stageEl = root.querySelector('.scratch-stage');
+  if (stageEl) applyCardStageTheme(stageEl, theme);
     stageEl.style.backgroundRepeat = 'no-repeat';
     stageEl.style.backgroundSize = 'cover';
     stageEl.style.backgroundPosition = 'center';
 
-    // Disable the pattern/overlay layer so it doesn't sit on top.
+    // Disable the pattern layer.
     if (inner){
       inner.style.backgroundImage = 'none';
       inner.style.opacity = '0';
@@ -1183,23 +1176,27 @@ function applyCardStageTheme(stageEl, theme){
     return;
   }
 
-  // Default: flat color + optional repeating pattern on inner overlay
+  // Default: flat color + optional repeating pattern on inner layer.
   stageEl.style.setProperty('--scratch-card-bg', bg.color || '#1c1e1e');
+
+  if (inner){
+    inner.style.opacity = (bg.patternOpacity != null) ? String(bg.patternOpacity) : '1';
+  }
 
   if (bg.patternSrc){
     stageEl.style.setProperty('--scratch-card-pattern', `url("${bg.patternSrc}")`);
-    if (bg.patternSize) stageEl.style.setProperty('--scratch-card-pattern-size', String(bg.patternSize));
-    if (bg.patternOpacity != null) stageEl.style.setProperty('--scratch-card-pattern-opacity', String(bg.patternOpacity));
-    if (bg.patternRepeat) stageEl.style.setProperty('--scratch-card-pattern-repeat', String(bg.patternRepeat));
-    if (bg.patternPosition) stageEl.style.setProperty('--scratch-card-pattern-position', String(bg.patternPosition));
   } else {
     stageEl.style.setProperty('--scratch-card-pattern', 'none');
-    stageEl.style.setProperty('--scratch-card-pattern-opacity', '0');
+    if (inner) inner.style.opacity = '0';
+  }
+
+  if (bg.patternSize){
+    stageEl.style.setProperty('--scratch-card-pattern-size', String(bg.patternSize));
   }
 }
 
 function renderScratch(root, card){
-  const cardKey = String(card?.card_key || '').trim() || 'men-novice1';
+  const cardKey = String(card?.init?.card_key || card?.card_key || '').trim() || 'men-novice1';
   setTileSet(cardKey);
 
   const theme = getCardTheme(cardKey);
@@ -2086,3 +2083,26 @@ function fireFoilBurst(token){
 
 // Warm up canvas after DOM is ready (reduces first-run jank on iOS).
 // (Burst warmup removed)
+
+
+async function _inlineBackgroundImagesInTree(rootEl){
+  const nodes = [rootEl, ...rootEl.querySelectorAll('*')];
+  for (const el of nodes){
+    const style = el.style;
+    if (!style) continue;
+    const bg = style.backgroundImage || '';
+    if (!bg || bg === 'none') continue;
+    // Handle a single url(...) background.
+    const m = bg.match(/url\(["']?([^"')]+)["']?\)/i);
+    if (!m || !m[1]) continue;
+    const url = m[1];
+    if (!(url.startsWith('/') || url.startsWith(window.location.origin))) continue;
+    const abs = url.startsWith('http') ? url : (window.location.origin + url);
+    try{
+      const dataUrl = await _fetchAsDataUrl(abs);
+      el.style.backgroundImage = `url("${dataUrl}")`;
+    }catch(e){
+      // ignore and continue
+    }
+  }
+}
