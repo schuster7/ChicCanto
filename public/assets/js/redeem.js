@@ -24,15 +24,9 @@ function _safeSlug(raw){
     .replace(/^[-_.]+|[-_.]+$/g, '');
 }
 
-function _thumbCandidates(key){
-  const k = _safeSlug(key || '');
-  const out = [];
-  if (k){
-    out.push(`/assets/img/thumb_${k}.jpg`);
-  }
-  // Fallbacks (legacy)
-  out.push('/assets/img/thumb_men-novice1.jpg');
-  return out;
+function _thumbCandidates(){
+  // Single-card mode: hardcode the only thumbnail we currently ship.
+  return ['/assets/img/thumb_men-novice1.jpg'];
 }
 
 function setSelectedCardTile({ name, key, statusKind, statusText }){
@@ -56,7 +50,7 @@ function setSelectedCardTile({ name, key, statusKind, statusText }){
   }
 
   if (img){
-    const candidates = _thumbCandidates(key);
+    const candidates = _thumbCandidates();
     let i = 0;
 
     const tryNext = () => {
@@ -613,12 +607,24 @@ export function bootRedeem(){
 
 function activationCodeInfo(code){
   const c = normalizeActivationCode(code);
-  if (!c) return { normalized: '', ok: false, reason: 'empty' };
-  const ok = /^CC-(S|F)-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(c);
+  if (!c) return { normalized: "", ok: false, reason: "empty" };
+
+  // Support both legacy inventory codes and newer human-readable codes.
+  // Legacy: CC-S-XXXX-XXXX-XXXX-XXXX (or CC-F-...)
+  // New:    CC-<AUD>-<TYPE>-<RANDOM8>  (e.g. CC-MEN-STD1-YC7EHS26)
+  const LEGACY = /^CC-(S|F)-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+  const NEW = /^CC-[A-Z0-9]{2,6}-[A-Z0-9]{2,10}-[A-Z0-9]{8}$/;
+
+  const ok = LEGACY.test(c) || NEW.test(c);
   if (ok) return { normalized: c, ok: true, reason: null };
-  if (!/^CC-(S|F)-/i.test(c)) return { normalized: c, ok: false, reason: 'prefix' };
-  if (c.length < 23) return { normalized: c, ok: false, reason: 'short' };
-  return { normalized: c, ok: false, reason: 'format' };
+
+  if (!/^CC-/i.test(c)) return { normalized: c, ok: false, reason: "prefix" };
+
+  // Heuristic: clearly too short to be either format.
+  // Legacy min length: 25, New min length: 17
+  if (c.length < 17) return { normalized: c, ok: false, reason: "short" };
+
+  return { normalized: c, ok: false, reason: "format" };
 }
 
 function setStatusChip(node, kind, text){
