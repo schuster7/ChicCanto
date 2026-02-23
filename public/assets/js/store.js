@@ -115,7 +115,19 @@ async function _apiRequest(method, path, bodyObj, { timeoutMs = 4500 } = {}){
 }
 
 async function _apiGetCard(token, { timeoutMs = 4500 } = {}){
-  const r = await _apiRequest('GET', '/token/' + encodeURIComponent(token), null, { timeoutMs });
+  let path = '/token/' + encodeURIComponent(token);
+
+  // Forward sender setup key (when present) so the backend can safely decide
+  // whether to include sender-only fields like setup_key in the response.
+  try{
+    const params = new URLSearchParams(window.location.search);
+    const setup = String(params.get('setup') || params.get('setup_key') || params.get('setupKey') || '').trim();
+    if (setup){
+      path += '?setup=' + encodeURIComponent(setup);
+    }
+  }catch{}
+
+  const r = await _apiRequest('GET', path, null, { timeoutMs });
   if (!r.ok) return null;
 
   // Backward compatibility:
