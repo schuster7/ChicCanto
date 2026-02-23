@@ -1,7 +1,9 @@
 /* public/assets/css/card.css
    ChicCanto scratch card styles
-   Background strategy: per-card bg-desktop.jpg / bg-mobile.jpg rendered via <picture> + <img>
-   Export strategy: export inlines <img> (uses currentSrc), so backgrounds are export-safe.
+
+   Background strategy:
+   - Per-card bg-desktop.jpg / bg-mobile.jpg rendered via <picture> + <img>
+   - Export strategy: export inlines <img> (uses currentSrc), so backgrounds are export-safe.
 */
 
 /* Prevent text selection while scratching */
@@ -39,7 +41,7 @@
   width: 100%;
   box-shadow: 0 18px 50px rgba(0,0,0,0.35);
 
-  /* Keep a safe base color under the bg image */
+  /* Safe base color under the bg image */
   background: #1c1e1e;
 }
 
@@ -54,7 +56,7 @@
 }
 
 /* -----------------------------
-   NEW: Background image layer
+   Background image layer
    ----------------------------- */
 .card-bg{
   position: absolute;
@@ -88,22 +90,32 @@
   padding: 0;
 }
 
-/* Layout: body grid (desktop) */
+/* -----------------------------
+   Layout: desktop two-column card
+   ----------------------------- */
 .card-screen__body{
   display: grid;
   grid-template-columns: 1fr 1.25fr;
   gap: 1.25rem;
-  align-items: start;
+
+  /* Key: make both columns equal height */
+  align-items: stretch;
 }
 
 /* Left panel */
 .card-legend.panel{
   border-radius: 18px;
   padding: 1.1rem 1.1rem;
+
+  /* Key: let it stretch cleanly */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Right: scratch board wrapper */
+/* Right panel wrapper: center the grid inside a full-height column */
 .scratch-board{
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -114,7 +126,7 @@
   display: grid;
   gap: 18px;
 
-  /* Tile size: responsive */
+  /* Tile size: responsive (desktop) */
   --tile-size: clamp(96px, calc((100vw - 72px - (18px * 2)) / 3), 170px);
 
   grid-template-columns: repeat(3, var(--tile-size));
@@ -159,21 +171,33 @@
   border-radius: 9999px;
 }
 
-/* Mobile stack */
+/* -----------------------------
+   Mobile stack
+   ----------------------------- */
 @media (max-width: 720px){
   .card-screen__body{
     grid-template-columns: 1fr;
     gap: 1rem;
+    align-items: start; /* avoid forcing tall equal-height behavior on stacked layout */
   }
 
-  /* On mobile you already changed the design (legend bottom). Keep board full width. */
+  /* Board first, legend below */
   .scratch-board{
+    height: auto;
     justify-content: center;
   }
 
+  .card-legend.panel{
+    height: auto;
+    margin-top: 12px;
+  }
+
   .scratch-grid{
-    gap: 14px;
-    --tile-size: clamp(92px, calc((100vw - 64px - (14px * 2)) / 3), 150px);
+    gap: 12px;
+
+    /* Clamp harder so the grid doesn't become a skyscraper on phones */
+    --tile-size: clamp(84px, calc((100vw - 56px - (12px * 2)) / 3), 120px);
+
     grid-template-columns: repeat(3, var(--tile-size));
   }
 }
@@ -181,7 +205,7 @@
 /* Landscape phone */
 @media (orientation: landscape) and (max-height: 520px){
   .scratch-grid{
-    gap: 14px;
-    --tile-size: clamp(88px, calc((100vw - 100px - (14px * 2)) / 3), 110px);
+    gap: 12px;
+    --tile-size: clamp(80px, calc((100vw - 100px - (12px * 2)) / 3), 110px);
   }
 }
