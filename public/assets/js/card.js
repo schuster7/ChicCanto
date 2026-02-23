@@ -550,22 +550,6 @@ async function exportRevealedPng(card, opts = {}){
     // Inline all computed CSS into the clone.
     _inlineStylesDeep(stage, clone);
 
-    // Inline background images AFTER style inlining so data URLs win.
-    await _inlineBackgroundImagesInTree(clone);
-
-    // Inline all <img> sources in the clone (title + tiles) for SVG foreignObject reliability.
-    const imgs = clone.querySelectorAll('img');
-    for (const img of imgs){
-      const src = img.getAttribute('src') || '';
-      if (!src) continue;
-      if (!(src.startsWith('/') || src.startsWith(window.location.origin))) continue;
-      const abs = src.startsWith('http') ? src : (window.location.origin + src);
-      try{
-        const dataUrl = await _fetchAsDataUrl(abs);
-        img.setAttribute('src', dataUrl);
-      }catch(e){}
-    }
-
     const rect = stage.getBoundingClientRect();
 
 // Export scale: 1 = same pixel size as on-screen.
@@ -805,27 +789,6 @@ function renderSetup(root, card, container){
       </div>
     </div>
 `;
-
-  // Apply background vars based on the theme registry (single source of truth).
-  const stageEl = qs('.scratch-stage', root);
-  if (stageEl && theme && theme.background){
-    if (theme.background.color){
-      stageEl.style.setProperty('--scratch-card-bg', theme.background.color);
-    }
-    if (theme.background.type === 'image' && theme.background.imageSrc){
-      stageEl.style.setProperty('--scratch-card-pattern', `url("${theme.background.imageSrc}")`);
-      stageEl.style.setProperty('--scratch-card-pattern-repeat', 'no-repeat');
-      stageEl.style.setProperty('--scratch-card-pattern-position', 'center');
-      stageEl.style.setProperty('--scratch-card-pattern-size', 'cover');
-      stageEl.style.setProperty('--scratch-card-pattern-opacity', String(theme.background.opacity ?? 1));
-    } else if (theme.background.type === 'pattern' && theme.background.patternSrc){
-      stageEl.style.setProperty('--scratch-card-pattern', `url("${theme.background.patternSrc}")`);
-      stageEl.style.setProperty('--scratch-card-pattern-repeat', 'repeat');
-      stageEl.style.setProperty('--scratch-card-pattern-position', '0 0');
-      stageEl.style.setProperty('--scratch-card-pattern-size', theme.background.patternSize || 'clamp(160px, 18vw, 280px) clamp(160px, 18vw, 280px)');
-      stageEl.style.setProperty('--scratch-card-pattern-opacity', String(theme.background.opacity ?? 1));
-    }
-  }
 
   const shareUrlEl = qs('#shareUrl', root);
   const copyBtn = qs('#copyBtn', root);
@@ -1196,11 +1159,15 @@ function applyCardStageTheme(stageEl, theme){
 }
 
 function renderScratch(root, card){
-  const cardKey = String(card?.init?.card_key || card?.card_key || '').trim() || 'men-novice1';
+  const cardKey = String(card?.card_key || '').trim() || 'men-novice1';
   setTileSet(cardKey);
 
   const theme = getCardTheme(cardKey);
   const titleSrc = (theme && theme.titleSrc) ? theme.titleSrc : '/assets/cards/men-novice1/title.svg';
+
+  const bgDesktopSrc = (theme && theme.bgDesktopSrc) ? theme.bgDesktopSrc : '/assets/cards/men-novice1/bg-desktop.jpg';
+  const bgMobileSrc  = (theme && theme.bgMobileSrc)  ? theme.bgMobileSrc  : bgDesktopSrc;
+
 
   renderCardHeaderActions(card, false);
   const shareUrl = makeAbsoluteCardLink(card.token);
@@ -1221,7 +1188,10 @@ function renderScratch(root, card){
         <span class="scratch-glow"></span>
 
             <div class="scratch-stage" data-export-root="1">
-            <div class="scratch-stage__inner" data-export-root="1"></div>
+            <picture class="card-bg" aria-hidden="true" data-export-root="1">
+  <source media="(max-width: 720px)" srcset="${bgMobileSrc}">
+  <img class="card-bg__img" src="${bgDesktopSrc}" alt="" />
+</picture>
               <h1 class="scratch-stage__title card-heading" aria-label="Scratch Match Up Game"><img class="scratch-title-img" src="${titleSrc}" alt="" /></h1>
 
               <div class="card-screen__body">
@@ -2083,26 +2053,3 @@ function fireFoilBurst(token){
 
 // Warm up canvas after DOM is ready (reduces first-run jank on iOS).
 // (Burst warmup removed)
-
-
-async function _inlineBackgroundImagesInTree(rootEl){
-  const nodes = [rootEl, ...rootEl.querySelectorAll('*')];
-  for (const el of nodes){
-    const style = el.style;
-    if (!style) continue;
-    const bg = style.backgroundImage || '';
-    if (!bg || bg === 'none') continue;
-    // Handle a single url(...) background.
-    const m = bg.match(/url\(["']?([^"')]+)["']?\)/i);
-    if (!m || !m[1]) continue;
-    const url = m[1];
-    if (!(url.startsWith('/') || url.startsWith(window.location.origin))) continue;
-    const abs = url.startsWith('http') ? url : (window.location.origin + url);
-    try{
-      const dataUrl = await _fetchAsDataUrl(abs);
-      el.style.backgroundImage = `url("${dataUrl}")`;
-    }catch(e){
-      // ignore and continue
-    }
-  }
-}

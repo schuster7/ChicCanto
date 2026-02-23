@@ -401,6 +401,8 @@
   z-index: 1;
 }
 
+.card-bg{position:absolute;inset:0;z-index:0;pointer-events:none;}
+.card-bg__img{width:100%;height:100%;object-fit:cover;display:block;}
 .scratch-stage__inner {
   position: absolute;
   inset: 0;
@@ -413,6 +415,8 @@
   background-repeat: var(--scratch-card-pattern-repeat);
   background-position: var(--scratch-card-pattern-position);
   background-size: var(--scratch-card-pattern-size);
+
+  display: none;
 }
 
 /* Ensure the real content sits above the pattern layer */
@@ -582,3 +586,7 @@ border-radius: var(--scratch-tile-radius);
 }
 
 
+
+
+/* Keep content above the background image layer */
+.scratch-stage > :not(.card-bg){position:relative;z-index:1;}
