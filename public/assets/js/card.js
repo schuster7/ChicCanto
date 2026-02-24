@@ -689,7 +689,8 @@ function buildMatch3Board(totalTiles, winTier, tiers, seedKey){
 
 function render(container, token, card){
   // Card is expected to already exist in storage (redeem/setup creates it).
-  applyTheme(card.theme_id);
+  // Clear legacy theme body classes; card visuals now come from card_key assets.
+  applyTheme(null);
 
   const contentId = 'content';
 
@@ -1492,6 +1493,7 @@ export async function bootCard(){
 // --- Orientation / minimum tile size guard (mobile) ---
 
 function applyTheme(themeId){
+  // Legacy body-theme support only. New card visuals are asset-driven by card_key.
   try{
     const body = document.body;
     // remove existing theme-* classes

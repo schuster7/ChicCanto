@@ -302,20 +302,29 @@ export function ensureCard(token, init = null){
       saveCard(existing);
     }
 
-    // Backward compatibility: older cards may have stored theme_id without the
-    // required "theme-" prefix (or used legacy placeholders). Normalize.
-    const needsThemeFix =
-      !existing.theme_id ||
-      typeof existing.theme_id !== 'string' ||
-      !existing.theme_id.startsWith('theme-') ||
-      existing.theme_id === 'default';
-
-    if (needsThemeFix){
+    // Card identity cleanup:
+    // If the server provided card_key (new canonical path), do not rewrite visual IDs.
+    // Keep legacy product/theme fallback only for old local/demo records.
+    if (!Number.isFinite(existing.fields)) {
       const p = getProductById(existing.product_id || DEFAULT_PRODUCT_ID);
-      existing.product_id = p.id;
-      existing.theme_id = p.theme_id;
-      if (!Number.isFinite(existing.fields)) existing.fields = p.fields || 9;
+      existing.fields = p.fields || 9;
       saveCard(existing);
+    } else {
+      const hasCanonicalCardKey = typeof existing.card_key === 'string' && existing.card_key.trim();
+      if (!hasCanonicalCardKey){
+        const needsThemeFix =
+          !existing.theme_id ||
+          typeof existing.theme_id !== 'string' ||
+          !existing.theme_id.startsWith('theme-') ||
+          existing.theme_id === 'default';
+
+        if (needsThemeFix){
+          const p = getProductById(existing.product_id || DEFAULT_PRODUCT_ID);
+          existing.product_id = p.id;
+          existing.theme_id = p.theme_id;
+          saveCard(existing);
+        }
+      }
     }
 
     return existing;
@@ -324,7 +333,8 @@ export function ensureCard(token, init = null){
   const fresh = {
     token,
 
-    // product lock (set at redeem time; must not be switchable later)
+    // canonical card identity (asset-driven). Keep product/theme for legacy preview compatibility.
+    card_key: (init && typeof init.card_key === 'string' && init.card_key.trim()) ? init.card_key.trim() : null,
     product_id: (init && init.product_id) ? init.product_id : getProductById(DEFAULT_PRODUCT_ID).id,
     theme_id: (init && init.theme_id) ? init.theme_id : getProductById(DEFAULT_PRODUCT_ID).theme_id,
 
@@ -352,11 +362,13 @@ export function ensureCard(token, init = null){
   return saveCard(fresh);
 }
 
-export function setConfigured(token, { choice, reveal_amount, fields, product_id, theme_id }){
+export function setConfigured(token, { choice, reveal_amount, fields, product_id, theme_id, card_key }){
   const card = ensureCard(token);
 
-  // Lock product/theme on first configuration only.
+  // Lock card identity on first configuration only.
   if (!card.configured){
+    if (typeof card_key === 'string' && card_key.trim()) card.card_key = card_key.trim();
+    // Legacy preview compatibility only.
     if (typeof product_id === 'string' && product_id) card.product_id = product_id;
     if (typeof theme_id === 'string' && theme_id) card.theme_id = theme_id;
   }
