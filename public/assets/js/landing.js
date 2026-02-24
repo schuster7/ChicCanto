@@ -10,9 +10,16 @@ export function bootLanding(){
   const AUTO_FORWARD_DELAY_MS = 650;
   let autoForwardCanceled = false;
 
+  const buildActivateUrl = () => {
+    const qs = window.location.search || '';
+    const hash = '';
+    return '/activate/' + qs + hash;
+  };
+
   // If the user clicks the card link, don't also auto-redirect (avoid double nav).
   const cardLink = card.querySelector('a[href="/activate/"]');
   if (cardLink){
+    try { cardLink.setAttribute('href', buildActivateUrl()); } catch {}
     cardLink.addEventListener('click', () => { autoForwardCanceled = true; }, { passive: true });
   }
 
@@ -195,7 +202,7 @@ export function bootLanding(){
       const redirectAt = (cardDoneAt + 0.55);
       tl.call(() => {
         if (autoForwardCanceled) return;
-        window.location.assign('/activate/');
+        window.location.assign(buildActivateUrl());
       }, null, redirectAt);
     }
   } else {
@@ -206,7 +213,7 @@ export function bootLanding(){
     if (AUTO_FORWARD_TO_ACTIVATE){
       window.setTimeout(() => {
         if (autoForwardCanceled) return;
-        window.location.assign('/activate/');
+        window.location.assign(buildActivateUrl());
       }, AUTO_FORWARD_DELAY_MS);
     }
   }
