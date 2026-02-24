@@ -27,6 +27,46 @@ async function readJson(request){
   }
 }
 
+function normalizeInitBinding(raw){
+  const obj = (raw && typeof raw === 'object') ? raw : {};
+
+  const card_key = (typeof obj.card_key === 'string' && obj.card_key.trim())
+    ? obj.card_key.trim()
+    : null;
+
+  const product_id = (typeof obj.product_id === 'string' && obj.product_id.trim())
+    ? obj.product_id.trim()
+    : null;
+
+  const theme_id = (typeof obj.theme_id === 'string' && obj.theme_id.trim())
+    ? obj.theme_id.trim()
+    : null;
+
+  const fields = Number.isFinite(obj.fields) ? Number(obj.fields) : null;
+
+  // Treat empty bindings as null so we do not store junk.
+  if (!card_key && !product_id && !theme_id && !Number.isFinite(fields)) return null;
+
+  return { card_key, product_id, theme_id, fields };
+}
+
+function sameCardBinding(a, b){
+  const aa = normalizeInitBinding(a);
+  const bb = normalizeInitBinding(b);
+  if (!aa || !bb) return false;
+
+  // card_key is canonical when present.
+  if (aa.card_key || bb.card_key){
+    return String(aa.card_key || '') === String(bb.card_key || '');
+  }
+
+  return (
+    String(aa.product_id || '') === String(bb.product_id || '') &&
+    String(aa.theme_id || '') === String(bb.theme_id || '') &&
+    Number(aa.fields || 0) === Number(bb.fields || 0)
+  );
+}
+
 
 const REDEEM_RL_WINDOW_SECONDS = 10 * 60; // 10 minutes
 const REDEEM_RL_MAX_PER_IP = 60;          // per IP per window (generous for real users)
@@ -91,6 +131,7 @@ export async function onRequestPost(context){
 
   const rawCode = (typeof body.code === 'string' ? body.code : '').trim();
   const init = (body.init && typeof body.init === 'object') ? body.init : null;
+  const requestedInit = normalizeInitBinding(init);
 
   if (!rawCode){
     return err('INVALID_CODE', 'That activation code doesn’t look right. Check it and try again.', 400);
@@ -124,6 +165,17 @@ export async function onRequestPost(context){
     ? Math.max(1, Math.min(10, ac.quantity_allowed))
     : (sku === 'fullset' ? 4 : 1);
 
+  const boundInit = normalizeInitBinding(ac.init);
+
+  // Guard unknown/corrupt inventory states so a used code cannot mint new cards again by accident.
+  if (status && !['available', 'assigned', 'redeemed'].includes(status)) {
+    return err('INVALID_STATE', 'This code is not ready to use. Contact support if needed.', 409);
+  }
+
+  if (status === 'redeemed' && (!Array.isArray(ac.tokens) || ac.tokens.length === 0)) {
+    return err('ALREADY_USED', 'This activation code has already been used. Contact support if you need help.', 409);
+  }
+
   // If already redeemed and tokens exist, return existing cards.
   if ((status === 'redeemed' || status === 'assigned') && Array.isArray(ac.tokens) && ac.tokens.length){
     const cards = [];
@@ -136,8 +188,16 @@ export async function onRequestPost(context){
       } catch {}
     }
     if (cards.length){
+      if (requestedInit && boundInit && !sameCardBinding(requestedInit, boundInit)){
+        return err('CODE_CARD_MISMATCH', 'This code is already linked to another card type.', 409);
+      }
       return json({ ok: true, existing: true, cards });
     }
+  }
+
+  // If the code is assigned to a specific card type, block attempts to redeem it as another type.
+  if (requestedInit && boundInit && !sameCardBinding(requestedInit, boundInit)) {
+    return err('CODE_CARD_MISMATCH', 'This code is linked to a different card type.', 409);
   }
 
   // Create cards now.
@@ -145,8 +205,9 @@ export async function onRequestPost(context){
   const cards = [];
 
   // Server-owned init wins; fall back to client init only if inventory doesn't specify.
-  const invInit = (ac.init && typeof ac.init === 'object') ? ac.init : null;
-  const finalInit = invInit || init;
+  // For legacy inventory codes with no bound init, we bind on first successful redeem.
+  const invInit = boundInit;
+  const finalInit = invInit || requestedInit || init;
 
   for (let i = 0; i < quantity; i++){
     const card = buildNewCard({ init: finalInit });
@@ -161,6 +222,7 @@ export async function onRequestPost(context){
     ...ac,
     code,
     sku: sku || ac.sku || null,
+    init: invInit || requestedInit || (ac.init && typeof ac.init === 'object' ? ac.init : null),
     status: 'redeemed',
     redeemed_at,
     tokens,

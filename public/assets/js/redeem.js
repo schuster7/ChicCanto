@@ -681,6 +681,12 @@ function friendlyServerMessage(result){
   if (result && result.errorCode === 'INVALID_CODE'){
     return 'That activation code doesn’t look right. Check it and try again.';
   }
+  if (result && result.errorCode === 'CODE_CARD_MISMATCH'){
+    return 'That code is already linked to another card type.';
+  }
+  if (result && result.errorCode === 'ALREADY_USED'){
+    return 'That activation code has already been used.';
+  }
   return 'Could not activate right now. Please try again.';
 }
 
