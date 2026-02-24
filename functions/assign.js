@@ -140,35 +140,34 @@ export async function onRequestPost(context){
 
   const origin = new URL(request.url).origin;
 
-  // Idempotent per order + card_key + quantity.
+  // Assignment policy: first assignment wins per order_id.
+  // We still keep the composite key for support/idempotency history, but `order:${order_id}` is canonical.
   const orderKey = buildOrderKey(order_id, card_key, quantity);
   const orderIndexKey = buildOrderIndexKey(order_id);
 
-  // Check the specific composite key first (canonical for idempotency).
-  let existingOrder = await getJsonKV(env, orderKey);
+  // Canonical lookup: if this order_id already has any assigned codes, always return them.
+  let existingOrder = await getJsonKV(env, orderIndexKey);
 
-  // Backwards/ops compatibility: if a plain order key exists and matches this exact assignment, reuse it.
+  // Backwards compatibility: if older data only exists under the composite key, reuse that too.
   if (!existingOrder){
-    const legacyOrder = await getJsonKV(env, orderIndexKey);
-    const sameAssignment =
-      legacyOrder &&
-      typeof legacyOrder === 'object' &&
-      String(legacyOrder.card_key || '') === card_key &&
-      Number(legacyOrder.quantity || 0) === quantity &&
-      Array.isArray(legacyOrder.codes) &&
-      legacyOrder.codes.length;
-    if (sameAssignment) existingOrder = legacyOrder;
+    existingOrder = await getJsonKV(env, orderKey);
   }
 
   if (existingOrder && typeof existingOrder === 'object' && Array.isArray(existingOrder.codes) && existingOrder.codes.length){
     const codes = existingOrder.codes.map(String);
+    const existing_card_key = String(existingOrder.card_key || card_key);
+    const existing_quantity = Number(existingOrder.quantity || quantity || codes.length || 1);
+    const assignment_conflict = (existing_card_key !== card_key) || (existing_quantity !== quantity);
     const message_text = buildMessage({ codes, origin, buyerName: buyer_name || existingOrder.buyer_name || '' });
     return json({
       ok: true,
       existing: true,
+      assignment_conflict,
       order_id,
-      card_key,
-      quantity,
+      card_key: existing_card_key,
+      quantity: existing_quantity,
+      requested_card_key: card_key,
+      requested_quantity: quantity,
       codes,
       etsy_message: message_text,
       message_text,

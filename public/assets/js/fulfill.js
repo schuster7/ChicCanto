@@ -98,7 +98,14 @@ async function assign(){
     const codes = Array.isArray(data.codes) ? data.codes : (data.code ? [data.code] : []);
     setAssigned(codes.join('\n'));
     setMessage(data.etsy_message || '');
-    setStatus('Assigned.');
+
+    if (data.existing && data.assignment_conflict){
+      setStatus(`Order already had code(s) assigned for ${data.card_key || 'another card type'}. Returned existing code(s).`, true);
+    } else if (data.existing){
+      setStatus('Order already assigned. Returned existing code(s).');
+    } else {
+      setStatus('Assigned.');
+    }
   }catch(err){
     setStatus(String(err?.message || err || 'Error'), true);
   }finally{
