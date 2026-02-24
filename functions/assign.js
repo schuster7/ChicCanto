@@ -58,22 +58,77 @@ function cardKeyToCodePrefix(card_key){
 
 function buildMessage({ codes, origin, buyerName }){
   const base = `${origin}/`;
+  const faq = `${base}faq/`;
 
   const name = String(buyerName || '').trim();
-  const greeting = name ? `Hi ${name},\n\n` : '';
+  const greeting = name ? `Hi ${name},` : 'Hi,';
 
-  const list = (Array.isArray(codes) ? codes : []).filter(Boolean);
-  const lines = list.length <= 1
-    ? [`Your activation code: ${list[0] || ''}`]
-    : [
-        `Your ${list.length} activation codes (one per card):`,
-        ...list.map((c, i) => `Card ${i + 1}: ${c}`)
-      ];
+  const list = (Array.isArray(codes) ? codes : [])
+    .map((c) => String(c || '').trim())
+    .filter(Boolean);
+
+  const buildActivationLink = (code) => `${base}?code=${encodeURIComponent(code)}`;
+
+  if (list.length <= 1){
+    const assignedCode = list[0] || '';
+    const activationLinkWithCode = buildActivationLink(assignedCode);
+
+    return (
+`${greeting}
+
+Thanks for your order, and welcome to ChicCanto.
+
+Your activation code: ${assignedCode}
+
+Quick start (recommended):
+Open this link and your code will be filled in automatically:
+${activationLinkWithCode}
+
+Manual option:
+
+1. Open: [${base}](${base})
+2. Paste your activation code and follow the steps on screen
+
+This is quick, private, and works on both phone and desktop. If you ever need to access it again, just use the same code.
+
+Need help?
+FAQ: [${faq}](${faq})
+
+Best,
+ChicCanto`
+    );
+  }
+
+  const codeLines = list.map((code, i) => `Card ${i + 1} code: ${code}`);
+  const linkLines = list.map((code, i) => `Card ${i + 1}: ${buildActivationLink(code)}`);
 
   return (
-`${greeting}Thanks for your order, and welcome to ChicCanto.\n\n${lines.join('\n')}\n\nHow to use it:\n1) Open: ${base}\n2) Paste your activation code and follow the steps on screen\n\nThis is quick, private, and works on both phone and desktop. If you ever need to access it again, just use the same code.\n\nNeed help?\nFAQ: ${base}faq/\nSupport: chiccanto@wearrs.com`
+`${greeting}
+
+Thanks for your order, and welcome to ChicCanto.
+
+Your ${list.length} activation codes (one per card):
+${codeLines.join('\n')}
+
+Quick start (recommended):
+Open a link below and the matching code will be filled in automatically:
+${linkLines.join('\n')}
+
+Manual option:
+
+1. Open: [${base}](${base})
+2. Paste your activation code and follow the steps on screen
+
+This is quick, private, and works on both phone and desktop. If you ever need to access it again, just use the same code.
+
+Need help?
+FAQ: [${faq}](${faq})
+
+Best,
+ChicCanto`
   );
 }
+
 
 async function getJsonKV(env, key){
   const raw = await env.CARDS_KV.get(key);
