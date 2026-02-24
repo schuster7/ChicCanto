@@ -86,13 +86,13 @@ ${activationLinkWithCode}
 
 Manual option:
 
-1. Open: [${base}](${base})
+1. Open: https://chiccanto.pages.dev/
 2. Paste your activation code and follow the steps on screen
 
 This is quick, private, and works on both phone and desktop. If you ever need to access it again, just use the same code.
 
 Need help?
-FAQ: [${faq}](${faq})
+FAQ: https://chiccanto.pages.dev/faq/
 
 Best,
 ChicCanto`
@@ -116,13 +116,13 @@ ${linkLines.join('\n')}
 
 Manual option:
 
-1. Open: [${base}](${base})
+1. Open: https://chiccanto.pages.dev/
 2. Paste your activation code and follow the steps on screen
 
 This is quick, private, and works on both phone and desktop. If you ever need to access it again, just use the same code.
 
 Need help?
-FAQ: [${faq}](${faq})
+FAQ: https://chiccanto.pages.dev/faq/
 
 Best,
 ChicCanto`
