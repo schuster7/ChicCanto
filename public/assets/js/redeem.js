@@ -196,7 +196,7 @@ async function apiRedeem(code, init){
       const { res, data } = await _fetchJsonWithTimeout(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, init }),
+        body: JSON.stringify(init ? { code, init } : { code }),
       }, TIMEOUT_MS);
 
       if (res.ok && data && data.ok){
@@ -474,7 +474,7 @@ export function bootRedeem(){
   // /activate/?product=christmas  or /activate/?product=couples
   const urlParams = new URLSearchParams(window.location.search);
   const product = getProductBySlug(urlParams.get('product'));
-  const init = { product_id: product.id, theme_id: product.theme_id, fields: product.fields };
+  const init = { product_id: product.id, theme_id: product.theme_id, fields: product.fields }; // local/demo fallback only
 
   // Product label (non-blocking)
   if (productTitleEl) {
@@ -545,7 +545,10 @@ export function bootRedeem(){
 
     // API mode: redeem through the local dev API so we can support multi-purchase.
     if (storeMode === 'api'){
-      apiRedeem(code, init)
+      // In API mode, inventory on the server already owns the card type binding.
+      // Do not send a client-selected card init here, or valid codes can be rejected
+      // if the UI preview card does not match the code's assigned card type.
+      apiRedeem(code, null)
         .then((result) => {
 
           if (btn) {
