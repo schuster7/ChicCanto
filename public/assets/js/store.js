@@ -302,29 +302,20 @@ export function ensureCard(token, init = null){
       saveCard(existing);
     }
 
-    // Card identity cleanup:
-    // If the server provided card_key (new canonical path), do not rewrite visual IDs.
-    // Keep legacy product/theme fallback only for old local/demo records.
-    if (!Number.isFinite(existing.fields)) {
-      const p = getProductById(existing.product_id || DEFAULT_PRODUCT_ID);
-      existing.fields = p.fields || 9;
-      saveCard(existing);
-    } else {
-      const hasCanonicalCardKey = typeof existing.card_key === 'string' && existing.card_key.trim();
-      if (!hasCanonicalCardKey){
-        const needsThemeFix =
-          !existing.theme_id ||
-          typeof existing.theme_id !== 'string' ||
-          !existing.theme_id.startsWith('theme-') ||
-          existing.theme_id === 'default';
+    // Backward compatibility: older cards may have stored theme_id without the
+    // required "theme-" prefix (or used legacy placeholders). Normalize.
+    const needsThemeFix =
+      !existing.theme_id ||
+      typeof existing.theme_id !== 'string' ||
+      !existing.theme_id.startsWith('theme-') ||
+      existing.theme_id === 'default';
 
-        if (needsThemeFix){
-          const p = getProductById(existing.product_id || DEFAULT_PRODUCT_ID);
-          existing.product_id = p.id;
-          existing.theme_id = p.theme_id;
-          saveCard(existing);
-        }
-      }
+    if (needsThemeFix){
+      const p = getProductById(existing.product_id || DEFAULT_PRODUCT_ID);
+      existing.product_id = p.id;
+      existing.theme_id = p.theme_id;
+      if (!Number.isFinite(existing.fields)) existing.fields = p.fields || 9;
+      saveCard(existing);
     }
 
     return existing;
@@ -333,8 +324,7 @@ export function ensureCard(token, init = null){
   const fresh = {
     token,
 
-    // canonical card identity (asset-driven). Keep product/theme for legacy preview compatibility.
-    card_key: (init && typeof init.card_key === 'string' && init.card_key.trim()) ? init.card_key.trim() : null,
+    // product lock (set at redeem time; must not be switchable later)
     product_id: (init && init.product_id) ? init.product_id : getProductById(DEFAULT_PRODUCT_ID).id,
     theme_id: (init && init.theme_id) ? init.theme_id : getProductById(DEFAULT_PRODUCT_ID).theme_id,
 
@@ -362,13 +352,11 @@ export function ensureCard(token, init = null){
   return saveCard(fresh);
 }
 
-export function setConfigured(token, { choice, reveal_amount, fields, product_id, theme_id, card_key }){
+export function setConfigured(token, { choice, reveal_amount, fields, product_id, theme_id }){
   const card = ensureCard(token);
 
-  // Lock card identity on first configuration only.
+  // Lock product/theme on first configuration only.
   if (!card.configured){
-    if (typeof card_key === 'string' && card_key.trim()) card.card_key = card_key.trim();
-    // Legacy preview compatibility only.
     if (typeof product_id === 'string' && product_id) card.product_id = product_id;
     if (typeof theme_id === 'string' && theme_id) card.theme_id = theme_id;
   }
@@ -388,6 +376,51 @@ export function setConfigured(token, { choice, reveal_amount, fields, product_id
   card.scratched_fields = null;
 
   return saveCard(card);
+}
+
+export async function setConfiguredAndWait(token, { choice, reveal_amount, fields, product_id, theme_id, card_key }){
+  const card = ensureCard(token);
+
+  // Lock product/theme/card identity on first configuration only.
+  if (!card.configured){
+    if (typeof product_id === 'string' && product_id) card.product_id = product_id;
+    if (typeof theme_id === 'string' && theme_id) card.theme_id = theme_id;
+    if (typeof card_key === 'string' && card_key) card.card_key = card_key;
+  }
+
+  card.configured = true;
+  card.choice = choice;
+  card.reveal_amount = reveal_amount;
+
+  if (typeof fields === 'number' && Number.isFinite(fields)) card.fields = fields;
+
+  card.revealed = false;
+  card.revealed_at = null;
+  card.board = null;
+  card.scratched_indices = null;
+  card.scratched_fields = null;
+
+  const mode = _getRequestedStoreMode();
+  const wantsApi = (mode === 'api') || (mode === 'auto' && card && card._store === 'api');
+
+  if (!wantsApi){
+    if (card && typeof card === 'object') card._store = mode === 'memory' ? 'memory' : 'local';
+    try{ _storageAdapter().setItem(PREFIX + card.token, JSON.stringify(card)); }catch{}
+    return card;
+  }
+
+  // Mirror locally for immediate UI state, but wait for backend persistence before callers share links.
+  if (card && typeof card === 'object') card._store = 'api';
+  try{ _storageAdapter().setItem(PREFIX + card.token, JSON.stringify(card)); }catch{}
+
+  const saved = await _apiPutCard(card);
+  if (saved && typeof saved === 'object') {
+    saved._store = 'api';
+    try{ _storageAdapter().setItem(PREFIX + saved.token, JSON.stringify(saved)); }catch{}
+    return saved;
+  }
+
+  return null;
 }
 
 /**

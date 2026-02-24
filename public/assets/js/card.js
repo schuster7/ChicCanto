@@ -1,7 +1,7 @@
 import { qs, qsa, copyText, formatIso, getTokenFromUrl } from './utils.js';
 import { REVEAL_OPTIONS, RANDOM_KEY, tierIconSrc, setTileSet } from './config.js';
 import { getCardTheme } from './card-themes.js';
-import { getCard, getCardAsync, ensureCard, setConfigured, setRevealed } from './store.js';
+import { getCard, getCardAsync, ensureCard, setConfigured, setConfiguredAndWait, setRevealed } from './store.js';
 import { attachScratchTile } from './scratch.js';
 
 // --- Patch: ensure "configured" persists so share links work ---
@@ -689,8 +689,7 @@ function buildMatch3Board(totalTiles, winTier, tiers, seedKey){
 
 function render(container, token, card){
   // Card is expected to already exist in storage (redeem/setup creates it).
-  // Clear legacy theme body classes; card visuals now come from card_key assets.
-  applyTheme(null);
+  applyTheme(card.theme_id);
 
   const contentId = 'content';
 
@@ -865,15 +864,26 @@ function renderSetup(root, card, container){
       fields: Number(card.fields || 9)
     };
 
-    // Keep the existing store update (whatever backend it's using)...
-    setConfigured(card.token, {
+    // Persist configuration to backend before enabling the recipient link.
+    // This avoids intermittent "Not ready yet" on the recipient side when the sender shares too fast.
+    const saved = await setConfiguredAndWait(card.token, {
       choice,
       reveal_amount: chosen.amount,
-      fields: Number(card.fields || 9)
+      fields: Number(card.fields || 9),
+      card_key: card.card_key
     });
 
-    // ...but also force-persist the configured flag locally so the share link works reliably.
-    _forcePersistConfiguredCard(card.token, nextCard);
+    if (!saved){
+      // Keep local mirror for sender UX, but do not enable sharing until server confirms.
+      _forcePersistConfiguredCard(card.token, nextCard);
+      setChoiceButtonsEnabled(true);
+      resetShareUI();
+      window.alert('Could not save the card setup yet. Please try again.');
+      return;
+    }
+
+    // Also keep local mirror aligned (helps if the browser reloads immediately).
+    _forcePersistConfiguredCard(card.token, { ...nextCard, ...saved });
 
     shareUrl = makeAbsoluteCardLink(card.token);
     enableShare();
@@ -1493,7 +1503,6 @@ export async function bootCard(){
 // --- Orientation / minimum tile size guard (mobile) ---
 
 function applyTheme(themeId){
-  // Legacy body-theme support only. New card visuals are asset-driven by card_key.
   try{
     const body = document.body;
     // remove existing theme-* classes
