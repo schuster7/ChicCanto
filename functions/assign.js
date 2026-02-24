@@ -34,6 +34,14 @@ function normalizeQuantity(raw){
   return 1;
 }
 
+function buildOrderKey(order_id, card_key, quantity){
+  return `order:${order_id}:${card_key}:${quantity}`;
+}
+
+function buildOrderIndexKey(order_id){
+  return `order:${order_id}`;
+}
+
 function cardKeyToCodePrefix(card_key){
   // Human-readable prefix for support. Keep it stable once issued.
   const k = String(card_key || '').trim();
@@ -133,8 +141,25 @@ export async function onRequestPost(context){
   const origin = new URL(request.url).origin;
 
   // Idempotent per order + card_key + quantity.
-  const orderKey = `order:${order_id}:${card_key}:${quantity}`;
-  const existingOrder = await getJsonKV(env, orderKey);
+  const orderKey = buildOrderKey(order_id, card_key, quantity);
+  const orderIndexKey = buildOrderIndexKey(order_id);
+
+  // Check the specific composite key first (canonical for idempotency).
+  let existingOrder = await getJsonKV(env, orderKey);
+
+  // Backwards/ops compatibility: if a plain order key exists and matches this exact assignment, reuse it.
+  if (!existingOrder){
+    const legacyOrder = await getJsonKV(env, orderIndexKey);
+    const sameAssignment =
+      legacyOrder &&
+      typeof legacyOrder === 'object' &&
+      String(legacyOrder.card_key || '') === card_key &&
+      Number(legacyOrder.quantity || 0) === quantity &&
+      Array.isArray(legacyOrder.codes) &&
+      legacyOrder.codes.length;
+    if (sameAssignment) existingOrder = legacyOrder;
+  }
+
   if (existingOrder && typeof existingOrder === 'object' && Array.isArray(existingOrder.codes) && existingOrder.codes.length){
     const codes = existingOrder.codes.map(String);
     const message_text = buildMessage({ codes, origin, buyerName: buyer_name || existingOrder.buyer_name || '' });
@@ -187,7 +212,11 @@ export async function onRequestPost(context){
     buyer_name: buyer_name || null,
     assigned_at: new Date().toISOString(),
   };
+  // Store both:
+  // - composite key = idempotent assignment identity (order + card + quantity)
+  // - plain order key = quick lookup/index for later redeem enrichment and support tools
   await env.CARDS_KV.put(orderKey, JSON.stringify(orderRec));
+  await env.CARDS_KV.put(orderIndexKey, JSON.stringify(orderRec));
 
   const message_text = buildMessage({ codes, origin, buyerName: buyer_name });
   return json({

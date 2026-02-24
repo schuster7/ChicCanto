@@ -32,6 +32,10 @@ const REDEEM_RL_WINDOW_SECONDS = 10 * 60; // 10 minutes
 const REDEEM_RL_MAX_PER_IP = 60;          // per IP per window (generous for real users)
 const REDEEM_RL_MAX_PER_CODE = 20;        // per activation code per window (stops targeted guessing)
 
+function buildOrderIndexKey(order_id){
+  return `order:${String(order_id || '').trim()}`;
+}
+
 function getClientIp(request){
   return (
     request.headers.get('CF-Connecting-IP') ||
@@ -166,15 +170,18 @@ export async function onRequestPost(context){
   // Backwards compatible index for older tooling (optional but harmless)
   await env.CARDS_KV.put(`code:${code}`, JSON.stringify(tokens));
 
-  // If an order mapping exists, enrich it with tokens.
+  // If an order mapping exists, enrich the plain order index with redeemed token(s).
+  // Important: append/merge tokens instead of overwriting, because one Etsy order can have multiple activation codes.
   if (ac.order_id){
-    const orderKey = `order:${String(ac.order_id).trim()}`;
+    const orderKey = buildOrderIndexKey(ac.order_id);
     try{
       const rawOrder = await env.CARDS_KV.get(orderKey);
       if (rawOrder){
         const o = JSON.parse(rawOrder);
         if (o && typeof o === 'object'){
-          o.tokens = tokens;
+          const prev = Array.isArray(o.tokens) ? o.tokens.map(String) : [];
+          const merged = Array.from(new Set([...prev, ...tokens.map(String)]));
+          o.tokens = merged;
           o.redeemed_at = redeemed_at;
           await env.CARDS_KV.put(orderKey, JSON.stringify(o));
         }
