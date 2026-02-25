@@ -24,16 +24,12 @@
             <h1>Operator console, simplified</h1>
             <p class="lead">Assign an activation code, then copy the Etsy message with direct link included.</p>
           </div>
-          
         </div>
 
-        <div class="panel-overline">Assign card</div>
+        <div class="panel-kicker">ASSIGN CARD</div>
         <section class="flow-panel fulfill-panel fulfill-panel--assign">
+          <div class="panel-meta"><span>Step 1 - Card setup</span><span>Assign code</span></div>
           <div class="stack">
-            <div class="panel-meta" aria-hidden="true">
-              <span class="panel-meta__step">Step 1 of 2</span>
-              <span class="panel-meta__label">Card setup</span>
-            </div>
             <div class="field">
               <label class="sr-only" for="orderId">Etsy order number</label>
               <input id="orderId" class="input" type="text" inputmode="text" placeholder="Etsy order number" />
@@ -63,7 +59,7 @@
               <input id="buyerName" class="input" type="text" inputmode="text" placeholder="Buyer name (optional)" />
             </div>
 
-            <button id="assignBtn" class="btn outline" type="button">Assign code</button>
+            <button id="assignBtn" class="btn outline full" type="button">Assign code</button>
 
             <div class="fulfill-feedback">
               <p id="status" class="muted" aria-live="polite"></p>
@@ -75,24 +71,20 @@
           </div>
         </section>
 
-        <div class="panel-overline">Paste to Etsy</div>
+        <div class="panel-kicker">PASTE TO ETSY</div>
         <section class="flow-panel fulfill-panel fulfill-panel--message">
+          <div class="panel-meta"><span>Step 2 - Paste to Etsy message</span><span>Copy and send</span></div>
           <div class="stack">
-            <div class="panel-meta" aria-hidden="true">
-              <span class="panel-meta__step">Step 2 of 2</span>
-              <span class="panel-meta__label">Paste to Etsy message</span>
-            </div>
-
             <div class="row between fulfill-message-head">
               <div>
-                <h2 class="h2 no-m">Etsy message preview</h2>
+                  <h2 class="h2 no-m">Etsy message preview</h2>
               </div>
               <button id="copyBtn" class="btn outline" type="button" disabled>Copy</button>
             </div>
 
             <div class="field">
               <label class="sr-only" for="message">Message</label>
-              <textarea id="message" class="textarea fulfill-message-box" placeholder="Ready for input. Assigned Etsy message appears here." readonly></textarea>
+              <textarea id="message" class="textarea fulfill-message-box" placeholder="Your filled message will appear here" readonly></textarea>
             </div>
 
             <p class="footnote">If something looks wrong, do not guess. Re-run with the same order number and you should get the same code.</p>
