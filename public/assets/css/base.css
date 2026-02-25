@@ -2067,159 +2067,23 @@ button.btn::-moz-focus-inner {
 }
 
 
-/* Tweaks v2 based on QA feedback */
-.fulfill-hero__badge { display: none !important; }
-
-.flow-panel__meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 4px;
-}
-
-.flow-panel__hint {
-  color: rgba(255,255,255,0.72);
-  font-size: 13px;
-  letter-spacing: 0.01em;
-}
-
-.fulfill-panel .btn,
-.fulfill-panel .btn.primary,
-.fulfill-panel .btn.outline {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.14);
-  color: #fff;
-}
-
-.fulfill-panel .btn:hover,
-.fulfill-panel .btn.primary:hover,
-.fulfill-panel .btn.outline:hover {
-  background: rgba(255,255,255,0.08);
-}
-
-.fulfill-message-head .kicker { display: none; }
-
+/* v3 fulfillment tweaks */
 .fulfill-message-box {
-  background: #f2f4f7;
-  border-radius: 16px;
-  padding: 12px;
-}
-
-.fulfill-message-box textarea {
-  background: #fff;
-  color: #111827;
-  border: 1px solid rgba(17,24,39,0.10);
-  border-radius: 12px;
-  padding: 14px 16px;
   font-family: inherit;
   font-size: 15px;
-  line-height: 1.45;
-  box-sizing: border-box;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  line-height: 1.55;
+  padding: 18px 20px;
 }
 
-@media (max-width: 720px) {
-  .flow-panel__hint { font-size: 12px; }
+.fulfill-message-box::placeholder {
+  color: rgba(17,23,36,0.46);
 }
 
-
-/* QA round 2 fulfill refinements */
-[data-page="fulfill"] .fulfill-hero__badge { display: none !important; }
-
-[data-page="fulfill"] .flow-panel__meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 2px;
+.fulfill-panel .btn.outline {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
 }
 
-[data-page="fulfill"] .flow-panel__hint {
-  color: rgba(255,255,255,.72);
-  font-size: 13px;
-  letter-spacing: .01em;
-}
-
-[data-page="fulfill"] .fulfill-panel .btn,
-[data-page="fulfill"] .fulfill-panel .btn.primary,
-[data-page="fulfill"] .fulfill-panel .btn.outline {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.14);
-  color: #fff;
-}
-
-[data-page="fulfill"] .fulfill-panel .btn:hover,
-[data-page="fulfill"] .fulfill-panel .btn.primary:hover,
-[data-page="fulfill"] .fulfill-panel .btn.outline:hover {
-  background: rgba(255,255,255,.08);
-}
-
-[data-page="fulfill"] .fulfill-message-head .h2 {
-  color: rgba(255,255,255,.9);
-}
-
-[data-page="fulfill"] .fulfill-message-box {
-  background: rgba(255,255,255,.88);
-  border: 1px solid rgba(255,255,255,.10);
-  border-radius: 16px;
-  padding: 10px;
-  min-height: auto;
-}
-
-[data-page="fulfill"] .fulfill-message-box.textarea {
-  min-height: 300px;
-  resize: vertical;
-  background: rgba(255,255,255,.88);
-  color: #101318;
-  border: 1px solid rgba(255,255,255,.10);
-  border-radius: 16px;
-  padding: 14px 16px;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 400;
-  line-height: 1.45;
-  box-sizing: border-box;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-  overflow: auto;
-}
-
-@media (max-width: 860px) {
-  [data-page="fulfill"] .flow-panel__hint { font-size: 12px; }
-}
-
-
-/* Fulfillment panel micro-headers */
-.panel-kicker {
-  margin: 18px 2px 10px;
-  font-size: 12px;
-  letter-spacing: .22em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,.62);
-}
-
-.panel-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 12px;
-  color: rgba(255,255,255,.62);
-  margin-bottom: 14px;
-}
-
-.btn.full {
-  width: 100%;
-}
-
-/* Keep the Etsy message text inside the white box */
-.message-box {
-  font-family: inherit;
-  line-height: 1.45;
-  padding: 16px 18px;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
+.fulfill-panel .btn.outline:hover {
+  background: rgba(255,255,255,0.1);
 }
