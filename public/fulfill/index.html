@@ -24,10 +24,11 @@
             <h1>Operator console, simplified</h1>
             <p class="lead">Assign an activation code, then copy the Etsy message with direct link included.</p>
           </div>
-          <div class="fulfill-hero__badge" aria-hidden="true">Admin only</div>
         </div>
 
+        <div class="panel-kicker">ASSIGN CARD</div>
         <section class="flow-panel fulfill-panel fulfill-panel--assign">
+          <div class="panel-meta"><span>Step 1 - Card setup</span><span>Assign code</span></div>
           <div class="stack">
             <div class="field">
               <label class="sr-only" for="orderId">Etsy order number</label>
@@ -58,7 +59,7 @@
               <input id="buyerName" class="input" type="text" inputmode="text" placeholder="Buyer name (optional)" />
             </div>
 
-            <button id="assignBtn" class="btn primary" type="button">Assign code</button>
+            <button id="assignBtn" class="btn outline full" type="button">Assign code</button>
 
             <div class="fulfill-feedback">
               <p id="status" class="muted" aria-live="polite"></p>
@@ -70,7 +71,9 @@
           </div>
         </section>
 
+        <div class="panel-kicker">PASTE TO ETSY</div>
         <section class="flow-panel fulfill-panel fulfill-panel--message">
+          <div class="panel-meta"><span>Step 2 - Paste to Etsy message</span><span>Copy and send</span></div>
           <div class="stack">
             <div class="row between fulfill-message-head">
               <div>
