@@ -1889,3 +1889,179 @@ button.btn::-moz-focus-inner {
   border-color: rgba(255, 110, 110, 0.35);
   background: rgba(255, 110, 110, 0.12);
 }
+
+
+/* ---------------------------------------------------------------
+   Fulfillment redesign pass (dark app-like, minimal surfaces)
+---------------------------------------------------------------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+[data-page="fulfill"] .container.flow-layout {
+  gap: 20px;
+}
+
+[data-page="fulfill"] .fulfill-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+[data-page="fulfill"] .fulfill-hero .kicker {
+  margin-bottom: 8px;
+}
+
+[data-page="fulfill"] .fulfill-hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+
+[data-page="fulfill"] .fulfill-hero .lead {
+  margin: 10px 0 0;
+  color: rgba(255,255,255,.78);
+  max-width: 60ch;
+}
+
+[data-page="fulfill"] .fulfill-hero__badge {
+  border-radius: 999px;
+  padding: 10px 16px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.03);
+  color: rgba(255,255,255,.9);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+[data-page="fulfill"] .flow-panel.fulfill-panel {
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(4, 8, 18, .90);
+  box-shadow: 0 8px 30px rgba(0,0,0,.18);
+  padding: 18px;
+}
+
+[data-page="fulfill"] .fulfill-panel .stack {
+  gap: 14px;
+}
+
+[data-page="fulfill"] .fulfill-panel .field {
+  margin: 0;
+}
+
+[data-page="fulfill"] .fulfill-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 12px;
+}
+
+[data-page="fulfill"] .fulfill-panel .input,
+[data-page="fulfill"] .fulfill-panel .select,
+[data-page="fulfill"] .fulfill-panel .textarea {
+  min-height: 54px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
+  color: #fff;
+  box-shadow: none;
+}
+
+[data-page="fulfill"] .fulfill-panel .input::placeholder,
+[data-page="fulfill"] .fulfill-panel .textarea::placeholder {
+  color: rgba(255,255,255,.42);
+}
+
+[data-page="fulfill"] .fulfill-panel .input:focus,
+[data-page="fulfill"] .fulfill-panel .select:focus,
+[data-page="fulfill"] .fulfill-panel .textarea:focus {
+  border-color: rgba(255,255,255,.18);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.05);
+}
+
+[data-page="fulfill"] .fulfill-panel #assignBtn {
+  min-height: 56px;
+  border-radius: 18px;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+[data-page="fulfill"] .fulfill-feedback {
+  display: grid;
+  gap: 10px;
+}
+
+[data-page="fulfill"] #status {
+  min-height: 1.3em;
+  margin: 0;
+  font-weight: 500;
+}
+
+[data-page="fulfill"] .fulfill-code-preview .input {
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+[data-page="fulfill"] .fulfill-message-head {
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+[data-page="fulfill"] .kicker.kicker--tight {
+  margin: 0 0 6px;
+  opacity: .72;
+}
+
+[data-page="fulfill"] .fulfill-message-head .h2 {
+  font-size: 1.05rem;
+  font-weight: 550;
+  color: rgba(255,255,255,.82);
+}
+
+[data-page="fulfill"] .fulfill-message-head .btn {
+  min-height: 46px;
+  border-radius: 16px;
+  padding: 0 18px;
+  font-weight: 600;
+}
+
+[data-page="fulfill"] .fulfill-message-box {
+  min-height: 300px;
+  resize: vertical;
+  line-height: 1.5;
+  background: rgba(255,255,255,.86);
+  color: #0f1115;
+  border-color: rgba(255,255,255,.10);
+}
+
+[data-page="fulfill"] .fulfill-panel .footnote {
+  margin: 0;
+  color: rgba(255,255,255,.60);
+}
+
+@media (max-width: 860px) {
+  [data-page="fulfill"] .fulfill-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  [data-page="fulfill"] .fulfill-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  [data-page="fulfill"] .fulfill-message-head {
+    align-items: flex-start;
+    gap: 10px;
+  }
+}

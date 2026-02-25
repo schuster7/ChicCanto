@@ -18,61 +18,71 @@
 
     <main class="page-main">
       <div class="container flow-layout">
-        <div class="flow-intro">
-          <div class="kicker">FULFILLMENT</div>
-          <h1>Fulfillment</h1>
-          <p class="lead">Assign an activation code to an Etsy order. Copy the message and send it in Etsy.</p>
+        <div class="flow-intro fulfill-hero">
+          <div>
+            <div class="kicker">FULFILLMENT</div>
+            <h1>Operator console, simplified</h1>
+            <p class="lead">Assign an activation code, then copy the Etsy message with direct link included.</p>
+          </div>
+          <div class="fulfill-hero__badge" aria-hidden="true">Admin only</div>
         </div>
 
-        <section class="flow-panel">
+        <section class="flow-panel fulfill-panel fulfill-panel--assign">
           <div class="stack">
             <div class="field">
-              <label class="label" for="orderId">Etsy order number</label>
-              <input id="orderId" class="input" type="text" inputmode="text" placeholder="Paste order number" />
+              <label class="sr-only" for="orderId">Etsy order number</label>
+              <input id="orderId" class="input" type="text" inputmode="text" placeholder="Etsy order number" />
+            </div>
+
+            <div class="fulfill-grid-2">
+              <div class="field">
+                <label class="sr-only" for="cardKey">Card type</label>
+                <select id="cardKey" class="select" aria-label="Card type">
+                  <option value="">Select card type</option>
+                  <option value="men-novice1">Men card (standard)</option>
+                  <option value="men-novice-birthday1">Men card (birthday)</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label class="sr-only" for="quantity">Quantity</label>
+                <select id="quantity" class="select" aria-label="Quantity">
+                  <option value="1">1 card</option>
+                  <option value="4">Full set (4 cards)</option>
+                </select>
+              </div>
             </div>
 
             <div class="field">
-              <label class="label" for="cardKey">Card type</label>
-              <select id="cardKey" class="select">
-                <option value="">Select card type</option>
-                <option value="men-novice1">Men card (standard)</option>
-                <option value="men-novice-birthday1">Men card (birthday)</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label class="label" for="quantity">Quantity</label>
-              <select id="quantity" class="select">
-                <option value="1">1 card</option>
-                <option value="4">Full set (4 cards)</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label class="label" for="buyerName">Buyer name (optional)</label>
-              <input id="buyerName" class="input" type="text" inputmode="text" placeholder="Optional" />
+              <label class="sr-only" for="buyerName">Buyer name (optional)</label>
+              <input id="buyerName" class="input" type="text" inputmode="text" placeholder="Buyer name (optional)" />
             </div>
 
             <button id="assignBtn" class="btn primary" type="button">Assign code</button>
-            <p id="status" class="muted" aria-live="polite"></p>
+
+            <div class="fulfill-feedback">
+              <p id="status" class="muted" aria-live="polite"></p>
+              <div class="fulfill-code-preview">
+                <label class="sr-only" for="assignedCode">Assigned code</label>
+                <input id="assignedCode" class="input" type="text" readonly placeholder="Assigned code" />
+              </div>
+            </div>
           </div>
         </section>
 
-        <section class="flow-panel">
+        <section class="flow-panel fulfill-panel fulfill-panel--message">
           <div class="stack">
-            <div class="row between">
-              <h2 class="h2 no-m">Copy to Etsy</h2>
-              <button id="copyBtn" class="btn outline sm" type="button" disabled>Copy</button>
+            <div class="row between fulfill-message-head">
+              <div>
+                <div class="kicker kicker--tight">COPY TO ETSY</div>
+                <h2 class="h2 no-m">Etsy message preview</h2>
+              </div>
+              <button id="copyBtn" class="btn outline" type="button" disabled>Copy</button>
             </div>
 
             <div class="field">
-              <label class="label" for="message">Message</label>
-              <textarea id="message" class="textarea" placeholder="Your filled message will appear here" readonly></textarea>
-            </div>
-
-            <div class="field">
-              <label class="label" for="assignedCode">Assigned code</label>
-              <input id="assignedCode" class="input" type="text" readonly />
+              <label class="sr-only" for="message">Message</label>
+              <textarea id="message" class="textarea fulfill-message-box" placeholder="Your filled message will appear here" readonly></textarea>
             </div>
 
             <p class="footnote">If something looks wrong, do not guess. Re-run with the same order number and you should get the same code.</p>
