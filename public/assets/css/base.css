@@ -2065,3 +2065,127 @@ button.btn::-moz-focus-inner {
     gap: 10px;
   }
 }
+
+
+/* Tweaks v2 based on QA feedback */
+.fulfill-hero__badge { display: none !important; }
+
+.flow-panel__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.flow-panel__hint {
+  color: rgba(255,255,255,0.72);
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+
+.fulfill-panel .btn,
+.fulfill-panel .btn.primary,
+.fulfill-panel .btn.outline {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: #fff;
+}
+
+.fulfill-panel .btn:hover,
+.fulfill-panel .btn.primary:hover,
+.fulfill-panel .btn.outline:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.fulfill-message-head .kicker { display: none; }
+
+.fulfill-message-box {
+  background: #f2f4f7;
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.fulfill-message-box textarea {
+  background: #fff;
+  color: #111827;
+  border: 1px solid rgba(17,24,39,0.10);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.45;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .flow-panel__hint { font-size: 12px; }
+}
+
+
+/* QA round 2 fulfill refinements */
+[data-page="fulfill"] .fulfill-hero__badge { display: none !important; }
+
+[data-page="fulfill"] .flow-panel__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+
+[data-page="fulfill"] .flow-panel__hint {
+  color: rgba(255,255,255,.72);
+  font-size: 13px;
+  letter-spacing: .01em;
+}
+
+[data-page="fulfill"] .fulfill-panel .btn,
+[data-page="fulfill"] .fulfill-panel .btn.primary,
+[data-page="fulfill"] .fulfill-panel .btn.outline {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #fff;
+}
+
+[data-page="fulfill"] .fulfill-panel .btn:hover,
+[data-page="fulfill"] .fulfill-panel .btn.primary:hover,
+[data-page="fulfill"] .fulfill-panel .btn.outline:hover {
+  background: rgba(255,255,255,.08);
+}
+
+[data-page="fulfill"] .fulfill-message-head .h2 {
+  color: rgba(255,255,255,.9);
+}
+
+[data-page="fulfill"] .fulfill-message-box {
+  background: rgba(255,255,255,.88);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 16px;
+  padding: 10px;
+  min-height: auto;
+}
+
+[data-page="fulfill"] .fulfill-message-box.textarea {
+  min-height: 300px;
+  resize: vertical;
+  background: rgba(255,255,255,.88);
+  color: #101318;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.45;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  overflow: auto;
+}
+
+@media (max-width: 860px) {
+  [data-page="fulfill"] .flow-panel__hint { font-size: 12px; }
+}
