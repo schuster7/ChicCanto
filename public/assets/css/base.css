@@ -2253,28 +2253,91 @@ button.btn::-moz-focus-inner {
 }
 
 /* ---------------------------------------------------------------
-   Fulfillment select dropdown tuning (dark list, light highlight)
+   Fulfillment custom select (replaces native <select> dropdown)
 ---------------------------------------------------------------- */
 
-[data-page="fulfill"] select.select {
-  color-scheme: dark;
+[data-page="fulfill"] select.native-select {
+  position: absolute !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 1px !important;
+  height: 1px !important;
 }
 
-/* Native dropdown list (support varies by OS/browser) */
-[data-page="fulfill"] select.select option {
-  background-color: rgba(4, 8, 18, .98);
+[data-page="fulfill"] .cselect {
+  position: relative;
+  width: 100%;
+}
+
+[data-page="fulfill"] .cselect__btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(10, 14, 24, .55);
   color: rgba(238, 240, 246, .96);
-  padding: 12px 14px;
-  font-size: 15px;
+  cursor: pointer;
 }
 
-/* Try to avoid the default bright-blue highlight by forcing a light inverse highlight */
-[data-page="fulfill"] select.select option:checked {
-  background-color: rgba(242, 244, 247, 1);
-  color: rgba(17, 24, 39, 0.98);
+[data-page="fulfill"] .cselect__btn:focus {
+  outline: none;
+  border-color: rgba(255,255,255,.22);
+  box-shadow: 0 0 0 4px rgba(255,255,255,.06);
 }
 
-[data-page="fulfill"] select.select option:hover {
-  background-color: rgba(242, 244, 247, 1);
-  color: rgba(17, 24, 39, 0.98);
+[data-page="fulfill"] .cselect__value {
+  font-size: 18px;
+  line-height: 1.2;
+  text-align: left;
+}
+
+[data-page="fulfill"] .cselect__chev {
+  font-size: 18px;
+  opacity: .9;
+}
+
+[data-page="fulfill"] .cselect__menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: 50;
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(6, 8, 14, .98);
+  box-shadow: 0 18px 60px rgba(0,0,0,.55);
+  display: none;
+}
+
+[data-page="fulfill"] .cselect.is-open .cselect__menu {
+  display: block;
+}
+
+[data-page="fulfill"] .cselect__opt {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: rgba(238, 240, 246, .96);
+  padding: 14px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+[data-page="fulfill"] .cselect__opt:hover,
+[data-page="fulfill"] .cselect__opt:focus {
+  outline: none;
+  background: rgba(242, 244, 247, 1);
+  color: rgba(17, 24, 39, .98);
+}
+
+[data-page="fulfill"] .cselect__opt[aria-selected="true"] {
+  background: rgba(242, 244, 247, 1);
+  color: rgba(17, 24, 39, .98);
 }

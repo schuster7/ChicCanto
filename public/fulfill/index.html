@@ -1,97 +1,210 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ChicCanto Fulfillment</title>
-    <link rel="stylesheet" href="/assets/css/base.css" />
-  </head>
-  <body data-page="fulfill">
-    <header class="site-header">
-      <div class="site-header__inner">
-        <a class="brand" href="/fulfill/"><img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto"></a>
-        <div class="site-actions">
-          <button id="logoutBtn" class="btn outline sm" type="button">Log out</button>
-        </div>
-      </div>
-    </header>
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>ChicCanto Fulfillment</title>
+<link href="/assets/css/base.css" rel="stylesheet"/>
+</head>
+<body data-page="fulfill">
+<header class="site-header">
+<div class="site-header__inner">
+<a class="brand" href="/fulfill/"><img alt="ChicCanto" class="brand__logo" src="/assets/img/logo1.svg"/></a>
+<div class="site-actions">
+<button class="btn outline sm" id="logoutBtn" type="button">Log out</button>
+</div>
+</div>
+</header>
+<main class="page-main">
+<div class="container flow-layout">
+<div class="flow-intro fulfill-hero">
+<div>
+<div class="kicker">FULFILLMENT</div>
+<h1>Operator console, simplified</h1>
+<p class="lead">Assign an activation code, then copy the Etsy message with direct link included.</p>
+</div>
+</div>
+<div class="panel-kicker">ASSIGN CARD</div>
+<section class="flow-panel fulfill-panel fulfill-panel--assign">
+<div class="panel-meta"><span>Step 1 - Card setup</span><span>Assign code</span></div>
+<div class="stack">
+<div class="field">
+<label class="sr-only" for="orderId">Etsy order number</label>
+<input class="input" id="orderId" inputmode="text" placeholder="Etsy order number" type="text"/>
+</div>
+<div class="fulfill-grid-2">
+<div class="field">
+<label class="sr-only" for="cardKey">Card type</label>
+<select aria-hidden="true" aria-label="Card type" class="select native-select" id="cardKey" tabindex="-1">
 
-    <main class="page-main">
-      <div class="container flow-layout">
-        <div class="flow-intro fulfill-hero">
-          <div>
-            <div class="kicker">FULFILLMENT</div>
-            <h1>Operator console, simplified</h1>
-            <p class="lead">Assign an activation code, then copy the Etsy message with direct link included.</p>
-          </div>
-        </div>
+<option value="men-novice1">Men card (standard)</option>
+<option value="men-novice-birthday1">Men card (birthday)</option>
+</select><div class="cselect" data-select="#cardKey"><button aria-expanded="false" aria-haspopup="listbox" class="cselect__btn" type="button"><span class="cselect__value"></span><span aria-hidden="true" class="cselect__chev">▾</span></button><div class="cselect__menu" role="listbox" tabindex="-1"></div></div>
+</div>
+<div class="field">
+<label class="sr-only" for="quantity">Quantity</label>
+<select aria-hidden="true" aria-label="Quantity" class="select native-select" id="quantity" tabindex="-1">
+<option value="1">1 card</option>
+<option value="4">Full set (4 cards)</option>
+</select><div class="cselect" data-select="#quantity"><button aria-expanded="false" aria-haspopup="listbox" class="cselect__btn" type="button"><span class="cselect__value"></span><span aria-hidden="true" class="cselect__chev">▾</span></button><div class="cselect__menu" role="listbox" tabindex="-1"></div></div>
+</div>
+</div>
+<div class="field">
+<label class="sr-only" for="buyerName">Buyer name (optional)</label>
+<input class="input" id="buyerName" inputmode="text" placeholder="Buyer name (optional)" type="text"/>
+</div>
+<button class="btn outline full" id="assignBtn" type="button">Assign code</button>
+<div class="fulfill-feedback">
+<p aria-live="polite" class="muted" id="status"></p>
+<div class="fulfill-code-preview">
+<label class="sr-only" for="assignedCode">Assigned code</label>
+<input class="input" id="assignedCode" placeholder="Assigned code" readonly="" type="text"/>
+</div>
+</div>
+</div>
+</section>
+<div class="panel-kicker">PASTE TO ETSY</div>
+<section class="flow-panel fulfill-panel fulfill-panel--message">
+<div class="panel-meta"><span>Step 2 - Paste to Etsy message</span><span>Copy and send</span></div>
+<div class="stack">
+<div class="row between fulfill-message-head">
+<div>
+<h2 class="h2 no-m">Etsy message preview</h2>
+</div>
+<button class="btn outline" disabled="" id="copyBtn" type="button">Copy</button>
+</div>
+<div class="field">
+<label class="sr-only" for="message">Message</label>
+<textarea class="textarea fulfill-message-box" id="message" placeholder="Your filled message will appear here" readonly=""></textarea>
+</div>
+<p class="footnote">If something looks wrong, do not guess. Re-run with the same order number and you should get the same code.</p>
+</div>
+</section>
+</div>
+</main>
+<script src="/assets/js/app.js" type="module"></script>
+<script>(function () {
+  function initCustomSelect(root) {
+    const sel = document.querySelector(root.dataset.select);
+    if (!sel) return;
 
-        <div class="panel-kicker">ASSIGN CARD</div>
-        <section class="flow-panel fulfill-panel fulfill-panel--assign">
-          <div class="panel-meta"><span>Step 1 - Card setup</span><span>Assign code</span></div>
-          <div class="stack">
-            <div class="field">
-              <label class="sr-only" for="orderId">Etsy order number</label>
-              <input id="orderId" class="input" type="text" inputmode="text" placeholder="Etsy order number" />
-            </div>
+    const btn = root.querySelector('.cselect__btn');
+    const valEl = root.querySelector('.cselect__value');
+    const menu = root.querySelector('.cselect__menu');
 
-            <div class="fulfill-grid-2">
-              <div class="field">
-                <label class="sr-only" for="cardKey">Card type</label>
-                <select id="cardKey" class="select" aria-label="Card type">
-                  <option value="men-novice1">Men card (standard)</option>
-                  <option value="men-novice-birthday1">Men card (birthday)</option>
-                </select>
-              </div>
+    // Build menu from native select options
+    const opts = Array.from(sel.options).filter(o => (o.value || '').trim() !== '');
+    if (!opts.length) return;
 
-              <div class="field">
-                <label class="sr-only" for="quantity">Quantity</label>
-                <select id="quantity" class="select" aria-label="Quantity">
-                  <option value="1">1 card</option>
-                  <option value="4">Full set (4 cards)</option>
-                </select>
-              </div>
-            </div>
+    // If no value selected, default to first option
+    if (!sel.value) sel.value = opts[0].value;
 
-            <div class="field">
-              <label class="sr-only" for="buyerName">Buyer name (optional)</label>
-              <input id="buyerName" class="input" type="text" inputmode="text" placeholder="Buyer name (optional)" />
-            </div>
+    function renderMenu() {
+      menu.innerHTML = '';
+      opts.forEach((o) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'cselect__opt';
+        item.setAttribute('role', 'option');
+        item.dataset.value = o.value;
+        item.textContent = o.textContent;
+        if (o.value === sel.value) item.setAttribute('aria-selected', 'true');
+        item.addEventListener('click', () => {
+          setValue(o.value);
+          close();
+          btn.focus();
+        });
+        menu.appendChild(item);
+      });
+    }
 
-            <button id="assignBtn" class="btn outline full" type="button">Assign code</button>
+    function syncLabel() {
+      const selected = opts.find(o => o.value === sel.value) || opts[0];
+      valEl.textContent = selected.textContent;
+      // keep aria-selected updated
+      Array.from(menu.querySelectorAll('.cselect__opt')).forEach((n) => {
+        n.setAttribute('aria-selected', n.dataset.value === sel.value ? 'true' : 'false');
+      });
+    }
 
-            <div class="fulfill-feedback">
-              <p id="status" class="muted" aria-live="polite"></p>
-              <div class="fulfill-code-preview">
-                <label class="sr-only" for="assignedCode">Assigned code</label>
-                <input id="assignedCode" class="input" type="text" readonly placeholder="Assigned code" />
-              </div>
-            </div>
-          </div>
-        </section>
+    function setValue(v) {
+      if (sel.value === v) return;
+      sel.value = v;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      syncLabel();
+    }
 
-        <div class="panel-kicker">PASTE TO ETSY</div>
-        <section class="flow-panel fulfill-panel fulfill-panel--message">
-          <div class="panel-meta"><span>Step 2 - Paste to Etsy message</span><span>Copy and send</span></div>
-          <div class="stack">
-            <div class="row between fulfill-message-head">
-              <div>
-                  <h2 class="h2 no-m">Etsy message preview</h2>
-              </div>
-              <button id="copyBtn" class="btn outline" type="button" disabled>Copy</button>
-            </div>
+    function open() {
+      root.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
+      renderMenu();
+      syncLabel();
+      // Focus first selected option for keyboard
+      const current = menu.querySelector('.cselect__opt[aria-selected="true"]') || menu.querySelector('.cselect__opt');
+      current && current.focus();
+    }
 
-            <div class="field">
-              <label class="sr-only" for="message">Message</label>
-              <textarea id="message" class="textarea fulfill-message-box" placeholder="Your filled message will appear here" readonly></textarea>
-            </div>
+    function close() {
+      root.classList.remove('is-open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
 
-            <p class="footnote">If something looks wrong, do not guess. Re-run with the same order number and you should get the same code.</p>
-          </div>
-        </section>
-      </div>
-    </main>
+    function toggle() {
+      if (root.classList.contains('is-open')) close();
+      else open();
+    }
 
-    <script type="module" src="/assets/js/app.js"></script>
-  </body>
+    // Initial render
+    renderMenu();
+    syncLabel();
+
+    btn.addEventListener('click', toggle);
+
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        open();
+      }
+    });
+
+    menu.addEventListener('keydown', (e) => {
+      const items = Array.from(menu.querySelectorAll('.cselect__opt'));
+      const idx = items.indexOf(document.activeElement);
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+        btn.focus();
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = items[Math.min(items.length - 1, idx + 1)] || items[0];
+        next && next.focus();
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prev = items[Math.max(0, idx - 1)] || items[0];
+        prev && prev.focus();
+        return;
+      }
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const el = document.activeElement;
+        if (el && el.dataset && el.dataset.value) {
+          setValue(el.dataset.value);
+          close();
+          btn.focus();
+        }
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!root.contains(e.target)) close();
+    });
+  }
+
+  document.querySelectorAll('.cselect[data-select]').forEach(initCustomSelect);
+})();</script></body>
 </html>
