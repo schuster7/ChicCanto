@@ -732,7 +732,7 @@ const previewCta = PREVIEW_MODE ? `
 }
 
 function renderSetup(root, card, container){
-  const options = REVEAL_OPTIONS.map(o => `
+  const tierOptions = REVEAL_OPTIONS.map(o => `
       <button class="btn" data-choice="${o.key}" type="button">${o.label}</button>
     `).join('');
 
@@ -740,57 +740,93 @@ function renderSetup(root, card, container){
     <div class="flow-screen stack">
       <div class="flow-layout">
         <div class="flow-intro">
-          <div class="flow-kicker">Sender setup</div>
+          <div class="panel-kicker">SENDER SETUP</div>
           <h1 class="flow-title">Select the prize</h1>
-          <p class="flow-lead muted">Pick a prize tier and send the recipient link.</p>
+          <p class="flow-lead muted">Choose what they can win, then send the recipient link.</p>
           <div class="flow-sub muted small">After you confirm, you have 5 seconds to change your mind.</div>
         </div>
 
-        <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Sender controls">
-          <div class="flow-section" aria-label="Prize level">
-            <div class="flow-panel__head">
-              <div class="flow-panel__title">Prize level</div>
-              <div class="flow-panel__meta muted small">Locks after confirmation</div>
-            </div>
-
-            <div class="choice-grid" role="group" aria-label="Choose a prize level">
-              ${options}
-              <button class="btn" data-choice="${RANDOM_KEY}" type="button">Surprise me</button>
-            </div>
-
-            <div class="flow-status muted small" id="setupStatus"></div>
+        <section class="flow-panel--combined panel panel--glass panel--padded setup-unified" aria-label="Sender controls">
+          <div class="panel-meta">
+            <div>Step 2 - Choose prize</div>
+            <div class="flow-panel__hint">Choose one</div>
           </div>
 
-          <div class="flow-divider" role="separator" aria-hidden="true"></div>
+          <div class="setup-grid">
+            <!-- Left: trust + guidance + random -->
+            <div class="setup-left stack">
+  <div class="setup-thumb">
+    <div class="setup-thumb__media">
+      <img class="card-preview__img" src="/assets/img/thumb_men-novice1.jpg" alt="Card thumbnail" />
+    </div>
+    <div class="setup-thumb__info">
+      <div class="mini-panel__kicker">Selected card</div>
+      <div class="h3">Men card (birthday)</div>
+      <div class="small muted">This is the card they will scratch.</div>
+      <div class="small muted" style="margin-top:6px;">Verified from your activation code</div>
+    </div>
+  </div>
 
-          <div class="flow-section" aria-label="Share link">
-            <div class="flow-panel__head">
-              <div class="flow-panel__title">Recipient link</div>
-            </div>
+  <div class="mini-panel">
+    <div class="mini-panel__kicker">What happens next</div>
+    <div class="small muted">Pick one prize level or choose Surprise me. Then lock it and copy the recipient link.</div>
+  </div>
 
-            <div class="sharebar">
-              <div class="sharebar__url mono" id="shareUrl">Pick a prize to generate the link</div>
+  <div class="mini-panel">
+    <div class="mini-panel__kicker" style="display:flex; align-items:center; justify-content:space-between;">
+      <span>Prefer not to choose?</span>
+      <span class="small muted">Optional</span>
+    </div>
+    <div class="small muted">Let ChicCanto pick one of the four prizes for you.</div>
+    <button class="btn outline w-full" id="surpriseBtn" type="button" style="margin-top:12px;">Surprise me (we choose)</button>
 
-              <div class="sharebar__actions">
-                <button class="btn" id="copyBtn" type="button">Copy</button>
-                <button class="btn" id="shareBtn" type="button">Share</button>
-                <button class="btn" id="openBtn" type="button">Open as recipient</button>
+<div class="small muted" style="margin-top:10px;">You can still lock the result and share the link the same way.</div>
+  </div>
+</div><div class="setup-right">
+              <div class="flow-section" aria-label="Prize level">
+                <div class="flow-panel__head">
+                  <div class="flow-panel__title">Prize level</div>
+                  <div class="flow-panel__meta muted small">Locks after confirmation</div>
+                </div>
+
+                <div class="choice-grid choice-grid--4" role="group" aria-label="Choose a prize level">
+                  ${tierOptions}
+                </div>
+
+                <div class="flow-status muted small" id="setupStatus"></div>
               </div>
 
-              <div class="sharebar__lock" id="changeRow" hidden>
-                <button class="btn" id="changeBtn" type="button">Cancel</button>
-                <div class="small muted" id="lockHint"></div>
+              <div class="flow-divider" role="separator" aria-hidden="true"></div>
+
+              <div class="flow-section" aria-label="Share link">
+                <div class="flow-panel__head">
+                  <div class="flow-panel__title">Recipient link</div>
+                </div>
+
+                <div class="sharebar">
+                  <div class="sharebar__url" id="shareUrl">Pick a prize to generate the link</div>
+
+                  <div class="sharebar__actions">
+                    <button class="btn" id="copyBtn" type="button">Copy</button>
+                    <button class="btn" id="shareBtn" type="button">Share</button>
+                    <button class="btn" id="openBtn" type="button">Open as recipient</button>
+                  </div>
+
+                  <div class="sharebar__lock" id="changeRow" hidden>
+                    <button class="btn" id="changeBtn" type="button">Cancel</button>
+                    <div class="small muted" id="lockHint"></div>
+                  </div>
+                </div>
+
+                <div class="flow-tip muted small">Tip: you can return to this setup link anytime to copy the recipient link again.</div>
               </div>
             </div>
-
-            <div class="flow-tip muted small">Tip: you can return to this setup link anytime to copy the recipient link again.</div>
           </div>
         </section>
       </div>
     </div>
 `;
-
-  const shareUrlEl = qs('#shareUrl', root);
+const shareUrlEl = qs('#shareUrl', root);
   const copyBtn = qs('#copyBtn', root);
   const shareBtn = qs('#shareBtn', root);
   const openBtn = qs('#openBtn', root);

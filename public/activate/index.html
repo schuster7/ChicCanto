@@ -1,93 +1,65 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ChicCanto | Activate</title>
-  <link rel="icon" href="/favicon.ico">
-  <link rel="stylesheet" href="/assets/css/base.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>ChicCanto | Activate</title>
+<link href="/favicon.ico" rel="icon"/>
+<link href="/assets/css/base.css" rel="stylesheet"/>
 </head>
-
 <body class="theme-default" data-page="redeem">
-  <header class="site-header">
-    <div class="site-header__inner">
-      <a class="brand" href="/activate/"><img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto"></a>
-      <div class="site-actions">
-        <a class="btn ghost" href="/preview/">Preview</a>
-      </div>
-    </div>
-  </header>
+<header class="site-header">
+<div class="site-header__inner">
+<a class="brand" href="/activate/"><img alt="ChicCanto" class="brand__logo" src="/assets/img/logo1.svg"/></a>
 
-  <main class="page-main">
-    <div class="container">
-      <section class="flow-screen">
-        <div class="flow-layout">
-          <div class="flow-intro">
-            <div class="flow-kicker">Activation</div>
-            <h1 class="flow-title">Activate your card</h1>
-            <p class="flow-lead muted">Enter your activation code to create your setup link.</p>
-          </div>
-
-          <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Activation controls">
-
-      <div id="selectedCardTile" class="card-preview is-hidden" aria-live="polite">
-        <div class="card-preview__media">
-          <img id="selectedCardImg" class="card-preview__img" alt="" loading="lazy" decoding="async" />
-        </div>
-        <div class="card-preview__body">
-          <div class="card-preview__kicker">Selected card</div>
-          <div id="selectedCardName" class="card-preview__title">ChicCanto card</div>
-          <div class="card-preview__meta">
-            <span id="selectedCardChip" class="chip is-warn">Not activated</span>
-          </div>
-        </div>
-      </div>
-
-            <form id="redeemForm" class="control-grid" autocomplete="off">
-              <div class="activate-meta" aria-live="polite">
-                <div class="activate-tile" id="productTile">
-                  <div class="activate-tile__label">Product</div>
-                  <div class="activate-tile__value" id="productName">ChicCanto scratch card</div>
-                </div>
-                <div class="activate-chip" id="statusChip">Not activated</div>
-              </div>
-
-              <div class="field">
-                <label class="label" for="code">Activation code</label>
-                <input id="code" class="input" type="text" inputmode="text" spellcheck="false" autocomplete="off" placeholder="Enter your activation code" />
-                <div id="inlineHint" class="inline-hint" role="status" aria-live="polite"></div>
-              </div>
-
-              <div class="sharebar__actions" aria-label="Activation actions">
-                <button id="redeemBtn" class="btn primary" type="submit">Activate</button>
-              </div>
-
-              <p id="msg" class="muted small" role="status" aria-live="polite"></p>
-
-              <div id="result" class="result" hidden></div>
-
-              <p class="muted no-m small">
-                <span>Activation unlocks your setup link.</span>
-                <span class="mt-6 block">Next: choose what they can win, then send the recipient link.</span>
-              </p>
-
-            </form>
-          </section>
-
-          <p class="flow-sub muted small">Tip: you can re-activate with the same code to get your setup link again. <a href="/faq/">Need help? FAQ</a></p>
-        </div>
-      </section>
-    </div>
-  </main>
-
-  <script type="module" src="/assets/js/app.js"></script>
-
-  <footer class="site-footer" role="contentinfo">
-    <div class="site-footer__inner">
-      <a class="site-footer__link" href="/privacy/">Privacy</a>
-      <span class="site-footer__sep">•</span>
-      <a class="site-footer__link" href="mailto:chiccanto@wearrs.com">chiccanto@wearrs.com</a>
-    </div>
-  </footer>
+</div>
+</header>
+<main class="page-main">
+<div class="container">
+<section class="flow-screen">
+<div class="flow-layout">
+<div class="flow-intro">
+<h1 class="flow-title">Activate your card</h1>
+<p class="flow-lead muted panel-meta">Enter your activation code to open your setup link.</p>
+</div>
+<div class="panel-kicker">ACTIVATE</div><section aria-label="Activation controls" class="flow-panel--combined panel panel--glass panel--padded"><div class="panel-meta"><div>Step 1 - Activate</div><div class="flow-panel__hint">Private setup link</div></div>
+<form autocomplete="off" class="control-grid" id="redeemForm">
+<div aria-live="polite" class="activate-meta">
+<div class="activate-tile" id="productTile">
+<div class="activate-tile__label">Product</div>
+<div class="activate-tile__value" id="productName">ChicCanto scratch card</div>
+</div>
+<div class="activate-chip" id="statusChip">Not activated</div>
+</div>
+<div class="field">
+<label class="label" for="code">Activation code</label>
+<input autocomplete="off" class="input" id="code" inputmode="text" placeholder="Enter your activation code" spellcheck="false" type="text"/>
+<div aria-live="polite" class="inline-hint" id="inlineHint" role="status"></div>
+</div>
+<div aria-label="Activation actions" class="sharebar__actions">
+<button class="btn primary" id="redeemBtn" type="submit">Activate</button>
+</div>
+<p aria-live="polite" class="muted small" id="msg" role="status"></p>
+<div class="result" hidden="" id="result"></div>
+<p class="muted no-m small">
+<span>Activation unlocks your setup link.</span>
+<span class="mt-6 block">Next: choose what they can win, then send the recipient link.</span>
+</p>
+</form>
+</section>
+<section aria-label="Preview option" class="panel panel--glass panel--padded preview-callout"><div class="panel-meta"><div>Preview the experience</div><div class="flow-panel__hint">No code needed</div></div><div class="stack"><p class="muted no-m">Open a demo flow to see how activation and setup works. Nothing is saved or sent.</p><div class="sharebar__actions"><a class="btn outline" href="/preview/">Preview</a></div></div></section><div class="panel-kicker">OPTIONAL</div><p class="flow-sub muted small">Tip: you can re-activate with the same code to get your setup link again. <a href="/faq/">Need help? FAQ</a></p>
+</div>
+</section>
+</div>
+</main>
+<script src="/assets/js/app.js" type="module"></script>
+<footer class="site-footer" role="contentinfo">
+<div class="site-footer__inner">
+<a class="site-footer__link" href="/privacy/">Privacy</a>
+<span class="site-footer__sep">•</span>
+<a class="site-footer__link" href="mailto:chiccanto@wearrs.com">chiccanto@wearrs.com</a>
+</div>
+</footer>
 </body>
 </html>

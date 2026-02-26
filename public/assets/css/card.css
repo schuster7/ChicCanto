@@ -492,8 +492,8 @@ border-radius: var(--scratch-tile-radius);
   display: block;
   width: var(--scratch-icon-size);
   height: var(--scratch-icon-size);
-  max-width: 90%;
-  max-height: 90%;
+  width: 100%;
+  height: 100%;
 }
 
 
