@@ -2341,3 +2341,9 @@ button.btn::-moz-focus-inner {
   background: rgba(242, 244, 247, 1);
   color: rgba(17, 24, 39, .98);
 }
+
+
+
+[data-page="fulfill"] .cselect.is-empty .cselect__value {
+  color: rgba(238, 240, 246, .55);
+}

@@ -36,18 +36,17 @@
 <div class="fulfill-grid-2">
 <div class="field">
 <label class="sr-only" for="cardKey">Card type</label>
-<select aria-hidden="true" aria-label="Card type" class="select native-select" id="cardKey" tabindex="-1">
-
+<select aria-hidden="true" aria-label="Card type" class="select native-select" id="cardKey" tabindex="-1"><option disabled="disabled" selected="selected" value="">Select card type</option>
 <option value="men-novice1">Men card (standard)</option>
 <option value="men-novice-birthday1">Men card (birthday)</option>
-</select><div class="cselect" data-select="#cardKey"><button aria-expanded="false" aria-haspopup="listbox" class="cselect__btn" type="button"><span class="cselect__value"></span><span aria-hidden="true" class="cselect__chev">▾</span></button><div class="cselect__menu" role="listbox" tabindex="-1"></div></div>
+</select><div class="cselect" data-placeholder="Select card type" data-require="true" data-select="#cardKey"><button aria-expanded="false" aria-haspopup="listbox" class="cselect__btn" type="button"><span class="cselect__value"></span><span aria-hidden="true" class="cselect__chev">▾</span></button><div class="cselect__menu" role="listbox" tabindex="-1"></div></div>
 </div>
 <div class="field">
 <label class="sr-only" for="quantity">Quantity</label>
 <select aria-hidden="true" aria-label="Quantity" class="select native-select" id="quantity" tabindex="-1">
-<option value="1">1 card</option>
+<option selected="selected" value="1">1 card</option>
 <option value="4">Full set (4 cards)</option>
-</select><div class="cselect" data-select="#quantity"><button aria-expanded="false" aria-haspopup="listbox" class="cselect__btn" type="button"><span class="cselect__value"></span><span aria-hidden="true" class="cselect__chev">▾</span></button><div class="cselect__menu" role="listbox" tabindex="-1"></div></div>
+</select><div class="cselect" data-placeholder="1 card" data-select="#quantity"><button aria-expanded="false" aria-haspopup="listbox" class="cselect__btn" type="button"><span class="cselect__value"></span><span aria-hidden="true" class="cselect__chev">▾</span></button><div class="cselect__menu" role="listbox" tabindex="-1"></div></div>
 </div>
 </div>
 <div class="field">
@@ -93,12 +92,21 @@
     const valEl = root.querySelector('.cselect__value');
     const menu = root.querySelector('.cselect__menu');
 
-    // Build menu from native select options
-    const opts = Array.from(sel.options).filter(o => (o.value || '').trim() !== '');
+    const required = root.dataset.require === 'true';
+    const placeholder = root.dataset.placeholder || '';
+
+    // Build menu from native select options (exclude empty + disabled placeholders)
+    const opts = Array.from(sel.options).filter(o => {
+      const v = (o.value || '').trim();
+      if (!v) return false;
+      if (o.disabled) return false;
+      return true;
+    });
     if (!opts.length) return;
 
-    // If no value selected, default to first option
-    if (!sel.value) sel.value = opts[0].value;
+    // For required selects, keep empty value until user picks.
+    // For non-required selects, default to first option if empty.
+    if (!required && !sel.value) sel.value = opts[0].value;
 
     function renderMenu() {
       menu.innerHTML = '';
@@ -109,7 +117,7 @@
         item.setAttribute('role', 'option');
         item.dataset.value = o.value;
         item.textContent = o.textContent;
-        if (o.value === sel.value) item.setAttribute('aria-selected', 'true');
+        item.setAttribute('aria-selected', o.value === sel.value ? 'true' : 'false');
         item.addEventListener('click', () => {
           setValue(o.value);
           close();
@@ -120,9 +128,14 @@
     }
 
     function syncLabel() {
-      const selected = opts.find(o => o.value === sel.value) || opts[0];
-      valEl.textContent = selected.textContent;
-      // keep aria-selected updated
+      if (required && !sel.value) {
+        valEl.textContent = placeholder || 'Select…';
+        root.classList.add('is-empty');
+      } else {
+        const selected = opts.find(o => o.value === sel.value) || opts[0];
+        valEl.textContent = selected.textContent;
+        root.classList.remove('is-empty');
+      }
       Array.from(menu.querySelectorAll('.cselect__opt')).forEach((n) => {
         n.setAttribute('aria-selected', n.dataset.value === sel.value ? 'true' : 'false');
       });
@@ -140,7 +153,13 @@
       btn.setAttribute('aria-expanded', 'true');
       renderMenu();
       syncLabel();
-      // Focus first selected option for keyboard
+
+      // Avoid initial highlight when required+empty: focus menu container first.
+      if (required && !sel.value) {
+        menu.focus();
+        return;
+      }
+
       const current = menu.querySelector('.cselect__opt[aria-selected="true"]') || menu.querySelector('.cselect__opt');
       current && current.focus();
     }
@@ -170,13 +189,24 @@
 
     menu.addEventListener('keydown', (e) => {
       const items = Array.from(menu.querySelectorAll('.cselect__opt'));
-      const idx = items.indexOf(document.activeElement);
+      const active = document.activeElement;
+
       if (e.key === 'Escape') {
         e.preventDefault();
         close();
         btn.focus();
         return;
       }
+
+      // If menu container is focused, ArrowDown focuses first option
+      if (active === menu && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        const first = items[0];
+        first && first.focus();
+        return;
+      }
+
+      const idx = items.indexOf(active);
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         const next = items[Math.min(items.length - 1, idx + 1)] || items[0];
@@ -191,9 +221,8 @@
       }
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        const el = document.activeElement;
-        if (el && el.dataset && el.dataset.value) {
-          setValue(el.dataset.value);
+        if (active && active.dataset && active.dataset.value) {
+          setValue(active.dataset.value);
           close();
           btn.focus();
         }
