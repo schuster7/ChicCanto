@@ -305,48 +305,6 @@ function renderCardHeaderActions(card, revealed){
   };
 
   const copyBtn = mkBtn('Copy link');
-// Separate Surprise button (outside the prize grid)
-const surpriseBtn = qs('#surpriseBtn', root);
-if (surpriseBtn){
-  surpriseBtn.addEventListener('click', async () => {
-    if (card && card.configured) return;
-
-    // If user clicks again mid-countdown, treat it as a reset.
-    if (pending) cancelPending();
-
-    const choice = RANDOM_KEY;
-    const chosen = pickRandomOption();
-
-    // Confirm before we start the lock countdown (prevents accidental taps).
-    const confirmMsg = 'Confirm Surprise me? This locks a random prize tier and cannot be changed.';
-    if (!window.confirm(confirmMsg)) return;
-
-    // Micro-step: brief lock countdown with a Cancel option.
-    setChoiceButtonsEnabled(false);
-
-    let secondsLeft = 5;
-    showPending(choice, chosen, secondsLeft);
-
-    pending = { interval: null, choice, chosen };
-    pending.interval = setInterval(async () => {
-      secondsLeft -= 1;
-
-      if (!pending) return;
-
-      if (secondsLeft <= 0){
-        try{ clearInterval(pending.interval); }catch{}
-        const finalChoice = pending.choice;
-        const finalChosen = pending.chosen;
-        pending = null;
-        await lockChoice(finalChoice, finalChosen);
-        return;
-      }
-
-      showPending(choice, chosen, secondsLeft);
-    }, 1000);
-  });
-}
-
   copyBtn.addEventListener('click', async () => {
     await safeCopyLink(url, 'Scratch card link');
   }, { passive: true });
@@ -820,7 +778,7 @@ function renderSetup(root, card, container){
       <span class="small muted">Optional</span>
     </div>
     <div class="small muted">Let ChicCanto pick one of the four prizes for you.</div>
-    <button class="btn outline w-full" id="surpriseBtn" type="button" style="margin-top:12px;">Surprise me (we choose)</button>
+    <button class="btn outline w-full" data-choice="${RANDOM_KEY}" type="button" style="margin-top:12px;">Surprise me (we choose)</button>
 
 <div class="small muted" style="margin-top:10px;">You can still lock the result and share the link the same way.</div>
   </div>
@@ -887,13 +845,6 @@ const shareUrlEl = qs('#shareUrl', root);
       b.style.pointerEvents = enabled ? 'auto' : 'none';
       b.style.opacity = enabled ? '1' : '0.6';
     });
-    // Also include the separate Surprise button (outside the grid)
-    const sb = qs('#surpriseBtn', root);
-    if (sb){
-      sb.disabled = !enabled;
-      sb.style.pointerEvents = enabled ? 'auto' : 'none';
-      sb.style.opacity = enabled ? '1' : '0.6';
-    }
   }
 
   function resetShareUI(){
@@ -1000,6 +951,11 @@ const shareUrlEl = qs('#shareUrl', root);
       if (choice === RANDOM_KEY) chosen = pickRandomOption();
       else chosen = REVEAL_OPTIONS.find(o => o.key === choice) || REVEAL_OPTIONS[0];
 
+      // IMPORTANT: persist the actual chosen tier key, not RANDOM_KEY.
+      // Some backends treat unknown choice keys as a default and may ignore reveal_amount.
+      // By storing the real tier key, the random pick becomes real and stable for the recipient.
+      const effectiveChoice = (choice === RANDOM_KEY) ? (chosen?.key || REVEAL_OPTIONS[0].key) : choice;
+
       // Confirm before we start the lock countdown (prevents accidental taps).
       const confirmMsg = (choice === RANDOM_KEY)
         ? 'Confirm Surprise me? This locks a random prize tier and cannot be changed.'
@@ -1013,7 +969,7 @@ const shareUrlEl = qs('#shareUrl', root);
       let secondsLeft = 5;
       showPending(choice, chosen, secondsLeft);
 
-      pending = { interval: null, choice, chosen };
+      pending = { interval: null, choice: effectiveChoice, chosen, displayChoice: choice };
       pending.interval = setInterval(async () => {
         secondsLeft -= 1;
 
