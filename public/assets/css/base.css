@@ -2347,3 +2347,26 @@ button.btn::-moz-focus-inner {
 [data-page="fulfill"] .cselect.is-empty .cselect__value {
   color: rgba(238, 240, 246, .55);
 }
+
+/* ---------------------------------------------------------------
+   Fulfillment structure cleanup (hero + copy button placement)
+---------------------------------------------------------------- */
+
+[data-page="fulfill"] .fulfill-hero .lead.panel-meta {
+  margin-top: 10px;
+}
+
+[data-page="fulfill"] .fulfill-copy-row {
+  margin-top: 10px;
+}
+
+[data-page="fulfill"] .fulfill-copy-row .btn {
+  width: 100%;
+}
+
+@media (min-width: 680px) {
+  [data-page="fulfill"] .fulfill-copy-row .btn {
+    width: auto;
+    min-width: 140px;
+  }
+}
