@@ -305,6 +305,47 @@ function renderCardHeaderActions(card, revealed){
   };
 
   const copyBtn = mkBtn('Copy link');
+  // Surprise button (random choice) lives outside the prize grid, so it needs its own handler.
+  const surpriseBtn = qs('#surpriseBtn', root);
+  if (surpriseBtn){
+    surpriseBtn.addEventListener('click', async () => {
+      if (card && card.configured) return;
+
+      // If user clicks again mid-countdown, treat it as a reset.
+      if (pending) cancelPending();
+
+      const choice = RANDOM_KEY;
+      const chosen = pickRandomOption();
+
+      const confirmMsg = 'Confirm Surprise me? This locks a random prize tier and cannot be changed.';
+      if (!window.confirm(confirmMsg)) return;
+
+      // Micro-step: brief lock countdown with a Cancel option.
+      setChoiceButtonsEnabled(false);
+
+      let secondsLeft = 5;
+      showPending(choice, chosen, secondsLeft);
+
+      pending = { interval: null, choice, chosen };
+      pending.interval = setInterval(async () => {
+        secondsLeft -= 1;
+
+        if (!pending) return;
+
+        if (secondsLeft <= 0){
+          try{ clearInterval(pending.interval); }catch{}
+          const finalChoice = pending.choice;
+          const finalChosen = pending.chosen;
+          pending = null;
+          await lockChoice(finalChoice, finalChosen);
+          return;
+        }
+
+        showPending(choice, chosen, secondsLeft);
+      }, 1000);
+    });
+  }
+
   copyBtn.addEventListener('click', async () => {
     await safeCopyLink(url, 'Scratch card link');
   }, { passive: true });
