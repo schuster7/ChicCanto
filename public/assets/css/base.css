@@ -2223,3 +2223,31 @@ button.btn::-moz-focus-inner {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+
+[data-page="fulfill"] select.select {
+  color-scheme: dark;
+}
+
+/* Dropdown list styling (browser support varies) */
+[data-page="fulfill"] select.select option {
+  background-color: rgba(4, 8, 18, .98);
+  color: rgba(238, 240, 246, .96);
+  padding: 10px 14px;
+}
+
+/* Selected/hover states (best-effort; native selects are limited) */
+[data-page="fulfill"] select.select option:checked {
+  background-color: rgba(255, 255, 255, .10);
+  color: rgba(255, 255, 255, .98);
+}
+[data-page="fulfill"] select.select option:hover {
+  background-color: rgba(255, 255, 255, .08);
+  color: rgba(255, 255, 255, .98);
+}
+
+/* Message textarea is light; its placeholder must be dark enough */
+[data-page="fulfill"] #message::placeholder {
+  color: rgba(17, 24, 39, 0.55) !important;
+  opacity: 1 !important;
+}
