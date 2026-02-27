@@ -1,60 +1,83 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ChicCanto | Preview</title>
-  <link rel="icon" href="/favicon.ico">
-  <link rel="stylesheet" href="/assets/css/base.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>ChicCanto | Preview</title>
+<link href="/favicon.ico" rel="icon"/>
+<link href="/assets/css/base.css" rel="stylesheet"/>
+<style>
+  /* Preview-only polish. Keep scoped and minimal. */
+  .preview-grid{display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center;}
+  .preview-hero{width:360px;max-width:38vw;}
+  .preview-heroCard{position:relative;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.10);box-shadow:0 22px 70px rgba(0,0,0,.55);transform:none;}
+  .preview-heroCard::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,.20) 0%, rgba(0,0,0,.10) 35%, rgba(0,0,0,.55) 100%);pointer-events:none;}
+  .preview-heroImg{display:block;width:100%;height:auto;}
+  .preview-heroMeta{position:absolute;left:14px;right:14px;bottom:12px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;color:rgba(255,255,255,.72);}
+  .preview-heroMeta strong{font-weight:600;color:rgba(255,255,255,.90);}
+
+  @media (max-width: 860px){
+    .preview-grid{grid-template-columns:1fr;}
+    .preview-hero{width:100%;max-width:520px;}
+    .preview-heroCard{transform:none;}
+  }
+</style>
 </head>
 
 <body class="theme-default" data-page="redeem">
-  <header class="site-header">
-    <div class="site-header__inner">
-      <a class="brand" href="/activate/"><img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto"></a>
-    </div>
-  </header>
+<header class="site-header">
+<div class="site-header__inner">
+<a class="brand" href="/activate/"><img alt="ChicCanto" class="brand__logo" src="/assets/img/logo1.svg"/></a>
+</div>
+</header>
 
-  <main class="page-main">
-    <div class="container">
-      <section class="flow-screen">
-        <div class="flow-layout">
-          <div class="flow-intro">
-            <h1 class="flow-title">Preview</h1>
-            <p class="flow-lead muted panel-meta">Open a sample card to see how it feels.</p>
-          </div>
+<main class="page-main">
+<div class="container">
+<section class="flow-screen">
+<div class="flow-layout">
+<div class="flow-intro">
+<h1 class="flow-title">Preview</h1>
+<p class="flow-lead muted panel-meta">Open a sample card to see how it feels.</p>
+</div>
 
-          <div class="panel-kicker">TRY A SAMPLE</div>
-          <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Preview controls">
-            <div class="panel-meta">
-              <div>Step 1 - Sample card</div>
-              <div class="flow-panel__hint">No activation needed</div>
-            </div>
+<div class="panel-kicker">TRY A SAMPLE</div>
+<section aria-label="Preview controls" class="flow-panel--combined panel panel--glass panel--padded">
+<div class="panel-meta">
+<div>Step 1 - Sample card</div>
+<div class="flow-panel__hint">No activation needed</div>
+</div>
 
-            <div class="stack">
-              <p class="muted no-m">This is a demo experience. Your own card is created using the activation code from Etsy.</p>
+<div class="preview-grid">
+<div class="preview-copy">
+<p class="no-m">This is a demo experience. Your own card is created using the activation code from Etsy.</p>
+<div class="sharebar__actions" aria-label="Preview actions" style="margin-top:14px;">
+<a class="btn primary" href="/card/?preview=1" onclick="sessionStorage.removeItem('sc:preview_token');">Open sample card</a>
+<a class="btn" href="/activate/">Activate a real card</a>
+</div>
+<p class="muted small" style="margin-top:12px;">Tip: Activate, pick what they can win, then share the recipient link.</p>
+</div>
 
-              <div class="sharebar__actions" aria-label="Preview actions">
-                <a class="btn primary" href="/card/?preview=1" onclick="sessionStorage.removeItem('sc:preview_token');">Open sample card</a>
-                <a class="btn outline" href="/activate/">Activate a real card</a>
-              </div>
+<aside class="preview-hero" aria-label="Demo card preview image">
+<div class="preview-heroCard">
+<img class="preview-heroImg" src="/assets/img/thumb_men-novice1.jpg" alt="Demo card preview" loading="lazy"/>
+</div>
+</aside>
+</div>
+</section>
 
-              <p class="muted small no-m">Tip: Activate, pick what they can win, then share the recipient link.</p>
-            </div>
-          </section>
-        </div>
-      </section>
-    </div>
-  </main>
+</div>
+</section>
+</div>
+</main>
 
-  <script type="module" src="/assets/js/app.js"></script>
+<script src="/assets/js/app.js" type="module"></script>
 
-  <footer class="site-footer" role="contentinfo">
-    <div class="site-footer__inner">
-      <a class="site-footer__link" href="/privacy/">Privacy</a>
-      <span class="site-footer__sep">•</span>
-      <a class="site-footer__link" href="mailto:chiccanto@wearrs.com">chiccanto@wearrs.com</a>
-    </div>
-  </footer>
+<footer class="site-footer" role="contentinfo">
+<div class="site-footer__inner">
+<a class="site-footer__link" href="/privacy/">Privacy</a>
+<span class="site-footer__sep">•</span>
+<a class="site-footer__link" href="mailto:chiccanto@wearrs.com">chiccanto@wearrs.com</a>
+</div>
+</footer>
 </body>
 </html>
