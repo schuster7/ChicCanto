@@ -741,6 +741,15 @@ function renderSetup(root, card, container){
       <button class="btn" data-choice="${o.key}" type="button">${o.label}</button>
     `).join('');
 
+  const theme = getCardTheme(card.card_key);
+  const thumbSrc = (theme && theme.thumbSrc) ? theme.thumbSrc : '/assets/img/thumb_men-novice1.jpg';
+  const cardName = (() => {
+    const raw = String(card.card_key || '').trim();
+    if (!raw) return 'Selected card';
+    const cleaned = raw.replace(/\d+$/, '').replace(/-/g, ' ').trim();
+    return cleaned.split(/\s+/).map(w => w ? (w[0].toUpperCase() + w.slice(1)) : '').join(' ');
+  })();
+
   root.innerHTML = `
     <div class="flow-screen stack">
       <div class="flow-layout">
@@ -762,13 +771,13 @@ function renderSetup(root, card, container){
             <div class="setup-left stack">
   <div class="setup-thumb">
     <div class="setup-thumb__media">
-      <img class="card-preview__img" src="/assets/img/thumb_men-novice1.jpg" alt="Card thumbnail" />
+      <img class="card-preview__img" src="${thumbSrc}" alt="Card thumbnail" />
     </div>
     <div class="setup-thumb__info">
       <div class="mini-panel__kicker">Selected card</div>
-      <div class="h3">Men card (birthday)</div>
+      <div class="h3">${cardName}</div>
       <div class="small muted">This is the card they will scratch.</div>
-      <div class="small muted" style="margin-top:6px;">Verified from your activation code</div>
+      <div class="small muted" style="margin-top:6px;">Linked to your activation code</div>
     </div>
   </div>
 
