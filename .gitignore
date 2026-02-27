@@ -1,2 +1,39 @@
 # Local Netlify folder
-.netlify
+# Dependencies
+node_modules/
+
+# Cloudflare Wrangler (local dev state)
+.wrangler/
+.wrangler/state/
+
+# Build output / caches (if any tooling adds these)
+dist/
+build/
+.cache/
+.tmp/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Netlify leftovers (legacy)
+.netlify/
+
+# Coverage
+coverage/
+
