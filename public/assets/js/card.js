@@ -697,6 +697,16 @@ function render(container, token, card){
   const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
   const hasSetupAccess = PREVIEW_MODE ? false : !!(setupParam && card.setup_key && setupParam === card.setup_key);
 
+  // If a setup param is present, cache it for this token so we can recover sender setup
+  // even if the backend redacts setup_key in intermediate responses (KV propagation, etc.).
+  if (!PREVIEW_MODE && token && setupParam){
+    const looksLikeKey = /^[A-Za-z0-9_-]{10,}$/.test(String(setupParam));
+    if (looksLikeKey){
+      try{ localStorage.setItem(`sc:setup:${token}`, String(setupParam)); }catch(_e){}
+    }
+  }
+
+
 // Persist sender setup key locally so we can recover from accidentally opening the recipient link (token-only).
 if (!PREVIEW_MODE && hasSetupAccess && token && card && card.setup_key){
   try{ localStorage.setItem(`sc:setup:${token}`, String(card.setup_key)); }catch(_e){}

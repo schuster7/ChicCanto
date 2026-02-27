@@ -337,6 +337,7 @@ function renderMultiCards(result){
   }
 
   result.cards.forEach((c, idx) => {
+    try{ if (c && c.token && c.setup_key) localStorage.setItem(`sc:setup:${c.token}`, String(c.setup_key)); }catch(_e){}
     const links = buildCardLinks(c);
 
     const block = document.createElement('div');
@@ -568,6 +569,8 @@ export function bootRedeem(){
             const params = new URLSearchParams();
             params.set('token', only.token);
             params.set('setup', only.setup_key);
+            try{ localStorage.setItem(`sc:setup:${only.token}`, String(only.setup_key)); }catch(_e){}
+
             if (statusChip) setStatusChip(statusChip, 'ok', result.existing ? 'Link retrieved' : 'Activated');
             window.location.href = '/card/?' + params.toString();
             return;
