@@ -4,20 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>FAQ | ChicCanto</title>
-
+  <link rel="icon" href="/favicon.ico" />
   <link rel="stylesheet" href="/assets/css/base.css" />
 </head>
 
-<body class="theme-default" data-page="faq">
+<body class="theme-default" data-page="redeem">
   <header class="site-header">
-      <div class="site-header__inner">
-        <a class="brand" href="/activate/"><img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto"></a>
-
-        <div class="site-actions">
-          <a class="btn ghost" href="/preview/">Preview</a>
-          <a class="btn" href="/activate/">Activate</a>
-        </div>
-      </div>
+    <div class="site-header__inner">
+      <a class="brand" href="/activate/">
+        <img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto" />
+      </a>
+    </div>
   </header>
 
   <main class="page-main">
@@ -25,12 +22,18 @@
       <section class="flow-screen">
         <div class="flow-layout">
           <div class="flow-intro">
-            <div class="flow-kicker">FAQ</div>
-            <h1 class="flow-title">Common questions</h1>
-            <p class="flow-lead muted">Quick answers to the most common questions about activation, links, and setup.</p>
+            <h1 class="flow-title">FAQ</h1>
+            <p class="flow-lead muted panel-meta">Quick answers about activation, setup links, and scratching.</p>
           </div>
 
-          <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="FAQ">
+          <div class="panel-kicker">HELP</div>
+
+          <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Frequently asked questions">
+            <div class="panel-meta">
+              <div>Common questions</div>
+              <div class="flow-panel__hint">Short and practical</div>
+            </div>
+
             <div class="faq-box">
               <details class="faq-item">
                 <summary>Where do I find my activation code?</summary>
@@ -56,9 +59,7 @@
               <details class="faq-item">
                 <summary>Scratching doesn’t work when I open the link in Messenger</summary>
                 <div class="faq-answer">
-                  Some messaging apps open the link inside an in-app browser. That browser can interfere with the
-                  scratch effect and may cause the screen to move or reset the tiles. Tap the three dots in the bottom
-                  right and choose “Open in external browser” (Safari or Chrome), then scratch again.
+                  Some messaging apps open the link inside an in-app browser. That browser can interfere with the scratch effect and may cause the screen to move or reset the tiles. Use the menu in the app and choose “Open in external browser” (Safari or Chrome), then try again.
                 </div>
               </details>
 
@@ -79,14 +80,14 @@
               <details class="faq-item">
                 <summary>Why does it say “Not ready yet”?</summary>
                 <div class="faq-answer">
-                  The sender has not finished setup. Ask the sender to open their setup link, choose what the recipient can win, and send you the recipient link.
+                  The sender has not finished setup. Ask the sender to open their setup link, choose what the recipient can win, and then send you the recipient link.
                 </div>
               </details>
 
               <details class="faq-item">
                 <summary>Does the scratch card work on mobile?</summary>
                 <div class="faq-answer">
-                  Yes. For the best scratch experience, rotate to landscape if prompted.
+                  Yes. For the best scratch experience, open the link in Safari or Chrome. If prompted, rotate to landscape.
                 </div>
               </details>
 
@@ -96,19 +97,17 @@
                   Yes. Use Preview to try the scratch experience. Activate when you are ready to create your links.
                 </div>
               </details>
+            </div>
+          </section>
 
-              </div>
-              </section>
-
-          <p class="flow-sub muted small">Go back to <a href="/activate/">Activate</a>.</p>
+          <div class="panel-kicker">NEXT</div>
+          <p class="flow-sub muted small">Ready to create a real card? <a href="/activate/">Activate</a>. Want to try first? <a href="/preview/">Preview</a>.</p>
         </div>
       </section>
     </div>
   </main>
 
   <script type="module" src="/assets/js/app.js"></script>
-
-  <!-- FAQ styling is expected to live in base.css; if not, append the patch I sent earlier -->
 
   <footer class="site-footer" role="contentinfo">
     <div class="site-footer__inner">
