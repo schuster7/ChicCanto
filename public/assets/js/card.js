@@ -697,6 +697,11 @@ function render(container, token, card){
   const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
   const hasSetupAccess = PREVIEW_MODE ? false : !!(setupParam && card.setup_key && setupParam === card.setup_key);
 
+// Persist sender setup key locally so we can recover from accidentally opening the recipient link (token-only).
+if (!PREVIEW_MODE && hasSetupAccess && token && card && card.setup_key){
+  try{ localStorage.setItem(`sc:setup:${token}`, String(card.setup_key)); }catch(_e){}
+}
+
 const previewCta = PREVIEW_MODE ? `
   <div class="preview-line" role="note" aria-label="Preview notice">
     <span class="muted">Preview mode. Scratch for free. Activate to create a recipient link.</span>
@@ -1019,49 +1024,86 @@ const shareUrlEl = qs('#shareUrl', root);
 
 function renderNotReady(root, card){
   const url = window.location.href;
+  const params = new URLSearchParams(window.location.search);
+  const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
+  const tokenParam = params.get('token') || (card && card.token) || '';
+  let storedSetup = '';
+  if (!setupParam && tokenParam){
+    try{ storedSetup = localStorage.getItem(`sc:setup:${tokenParam}`) || ''; }catch(_e){}
+  }
+
+  const isRecipientLink = !setupParam;
+  const canRecoverSender = isRecipientLink && !!(tokenParam && storedSetup);
+
+  const mainCopy = isRecipientLink
+    ? 'This is the recipient link. It cannot be used to set up the card.'
+    : 'The sender is still setting it up. Ask them for the recipient link, or try again in a moment.';
+
+  const senderHint = canRecoverSender
+    ? 'If you are the sender on this device, you can jump to your setup link now.'
+    : 'If you are the sender, open your setup link (it includes an extra setup code).';
 
   root.innerHTML = `
     <div class="card stack">
       <h2>Not ready yet</h2>
-      <p>The sender is still setting it up. Ask them for the recipient link, or try again in a moment.</p>
+      <p>${mainCopy}</p>
 
       <div class="row" style="gap:10px; flex-wrap:wrap;">
-        <button class="btn primary" type="button" data-action="refresh">Refresh</button>
+        ${canRecoverSender
+          ? '<button class="btn primary" type="button" data-action="sender">Open sender setup</button>'
+          : '<button class="btn primary" type="button" data-action="refresh">Refresh</button>'}
         <button class="btn" type="button" data-action="copy">Copy this link</button>
         <button class="btn" type="button" data-action="share">Share</button>
       </div>
 
       <hr>
 
-      <p class="small">If you are the sender, open your setup link. This recipient link cannot be configured.</p>
+      <p class="small">${senderHint}</p>
     </div>
   `;
 
   const btnRefresh = root.querySelector('[data-action="refresh"]');
+  const btnSender = root.querySelector('[data-action="sender"]');
   const btnCopy = root.querySelector('[data-action="copy"]');
   const btnShare = root.querySelector('[data-action="share"]');
 
   if (btnRefresh){
-    btnRefresh.addEventListener('click', () => location.reload());
+    btnRefresh.addEventListener('click', () => window.location.reload());
   }
 
-  if (btnCopy){
-    btnCopy.addEventListener('click', async () => {
-      await safeCopyLink(url);
+  if (btnSender){
+    btnSender.addEventListener('click', () => {
+      if (!tokenParam || !storedSetup) return;
+      const next = `${window.location.pathname}?token=${encodeURIComponent(tokenParam)}&setup=${encodeURIComponent(storedSetup)}`;
+      window.location.assign(next);
     });
   }
 
-  if (btnShare){
-    btnShare.addEventListener('click', async () => {
-      try{
-        if (navigator.share){
-          await navigator.share({ title: 'ChicCanto', url });
-          return;
-        }
-      }catch{}
-      await safeShareLink(url, 'Scratch card link');
-    });
-  }
+  btnCopy.addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(url);
+      btnCopy.textContent = 'Copied';
+      setTimeout(() => (btnCopy.textContent = 'Copy this link'), 1200);
+    }catch(_e){
+      window.prompt('Copy this link:', url);
+    }
+  });
+
+  btnShare.addEventListener('click', async () => {
+    try{
+      if (navigator.share){
+        await navigator.share({ url });
+        return;
+      }
+    }catch(_e){}
+    try{
+      await navigator.clipboard.writeText(url);
+      btnShare.textContent = 'Copied';
+      setTimeout(() => (btnShare.textContent = 'Share'), 1200);
+    }catch(_e){
+      window.prompt('Share this link:', url);
+    }
+  });
 }
 
 function escapeHtml(value){
