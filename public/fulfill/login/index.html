@@ -6,30 +6,35 @@
   <title>ChicCanto Fulfillment Login</title>
   <link rel="stylesheet" href="/assets/css/base.css" />
 </head>
-<body>
+<body data-page="fulfill">
   <header class="site-header">
     <div class="site-header__inner">
-      <a class="brand" href="/login/"><img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto"></a>
+      <a class="brand" href="/fulfill/"><img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto"></a>
       <div class="site-actions"></div>
     </div>
   </header>
 
   <main class="page-main">
     <div class="container flow-layout">
-      <div class="flow-intro">
-        <div class="kicker">FULFILLMENT</div>
-        <h1>Fulfillment</h1>
-        <p class="lead">Sign in to access the internal fulfillment tool.</p>
+      <div class="flow-intro fulfill-hero">
+        <div>
+          <h1>Fulfillment Login</h1>
+          <p class="panel-meta lead">Sign in to access the internal fulfillment tool</p>
+        </div>
       </div>
 
-      <section class="flow-panel">
+      <div class="panel-kicker">SIGN IN</div>
+
+      <section class="flow-panel fulfill-panel">
+        <div class="panel-meta"><span>Step 0 - Access</span><span>Enter password</span></div>
+
         <form id="loginForm" class="stack">
           <div class="field">
-            <label class="label" for="key">Password</label>
+            <label class="sr-only" for="key">Password</label>
             <input id="key" class="input" type="password" autocomplete="current-password" placeholder="Shared password" />
           </div>
 
-          <button id="loginBtn" class="btn primary" type="submit">Sign in</button>
+          <button id="loginBtn" class="btn outline full" type="submit">Sign in</button>
           <p id="status" class="muted" aria-live="polite"></p>
         </form>
       </section>
