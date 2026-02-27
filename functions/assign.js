@@ -344,7 +344,8 @@ async function verifySessionCookie(request, sessionSecret){
 
   let payloadJson = '';
   try{
-    payloadJson = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
+    const payloadBytes = base64UrlToUint8Array(payloadB64);
+    payloadJson = new TextDecoder().decode(payloadBytes);
   } catch {
     return false;
   }
