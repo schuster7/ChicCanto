@@ -8,41 +8,43 @@
   <link rel="stylesheet" href="/assets/css/base.css">
 </head>
 
-<body class="theme-default" data-page="preview">
+<body data-page="preview">
   <header class="site-header">
     <div class="site-header__inner">
-      <a class="brand" href="/activate/"><img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto"></a>
+      <a class="brand" href="/"><img class="brand__logo" src="/assets/img/logo1.svg" alt="ChicCanto"></a>
       <div class="site-actions">
-        <a class="btn ghost" href="/activate/">Activate</a>
+        <a class="btn outline sm" href="/activate/">Activate</a>
       </div>
     </div>
   </header>
 
   <main class="page-main">
-    <div class="container">
-      <section class="flow-screen">
-        <div class="flow-layout">
-          <div class="flow-intro">
-            <div class="flow-kicker">Preview</div>
-            <h1 class="flow-title">Try a sample ChicCanto card</h1>
-            <p class="flow-lead muted">This is a preview experience. To create your own card, use the activation code from your Etsy download.</p>
+    <div class="container flow-layout">
+      <div class="flow-intro">
+        <div>
+          <h1>Preview</h1>
+          <p class="panel-meta lead">Open a sample card to see how it feels</p>
+        </div>
+      </div>
+
+      <div class="panel-kicker">TRY A SAMPLE</div>
+      <section class="flow-panel" aria-label="Preview controls">
+        <div class="panel-meta"><span>Step 1 - Sample card</span><span>No activation needed</span></div>
+
+        <div class="stack">
+          <p class="muted">This is a demo experience. Your own card is created using the activation code from Etsy.</p>
+
+          <div class="row gap">
+            <a
+              class="btn outline"
+              href="/card/?preview=1"
+              onclick="sessionStorage.removeItem('sc:preview_token');"
+            >Open sample card</a>
+
+            <a class="btn outline" href="/activate/">Activate a real card</a>
           </div>
 
-          <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Preview controls">
-            <div class="control-grid">
-              <div class="sharebar__actions" aria-label="Preview actions">
-                <a
-                  class="btn primary"
-                  href="/card/?preview=1"
-                  onclick="sessionStorage.removeItem('sc:preview_token');"
-                >Open sample card</a>
-                <a class="btn" href="/activate/">Activate card</a>
-              </div>
-
-              <p class="muted small">Try scratching. Activate to create your setup link and recipient link.</p>
-              <p class="muted small">Want the full flow? Activate, choose what they can win, then send the recipient link.</p>
-            </div>
-          </section>
+          <p class="footnote panel-meta">Tip: Activate, pick what they can win, then share the recipient link.</p>
         </div>
       </section>
     </div>
