@@ -36,6 +36,25 @@ function sanitizeCardForClient(card, token, { includeSetupKey = false } = {}){
   return out;
 }
 
+function getSetupParamFromRequest(request){
+  try{
+    const url = new URL(request.url);
+    return String(
+      url.searchParams.get('setup') ||
+      url.searchParams.get('setup_key') ||
+      url.searchParams.get('setupKey') ||
+      ''
+    ).trim();
+  }catch{}
+  return '';
+}
+
+function hasSetupAccess(card, request){
+  if (!card || typeof card !== 'object') return false;
+  const setupParam = getSetupParamFromRequest(request);
+  return !!(setupParam && card.setup_key && setupParam === card.setup_key);
+}
+
 function isValidChoice(value){
   return typeof value === 'string' && value.length > 0 && value.length <= 64;
 }
@@ -48,38 +67,42 @@ function isValidIndexList(value){
   return Array.isArray(value) && value.every(v => Number.isInteger(v) && v >= 0 && v < 100);
 }
 
-function applyAllowedUpdates(existing, body){
+function applyAllowedUpdates(existing, body, { allowSender = false } = {}){
   const next = { ...existing };
 
-  // Mutable state fields only.
-  if ('configured' in body) next.configured = !!body.configured;
+  // Sender-only mutable fields.
+  // These must NOT be writable from the recipient link (token-only).
+  if (allowSender){
+    if ('configured' in body) next.configured = !!body.configured;
 
-  if ('choice' in body){
-    next.choice = (body.choice == null) ? null : (isValidChoice(body.choice) ? body.choice : next.choice);
-  }
+    if ('choice' in body){
+      next.choice = (body.choice == null) ? null : (isValidChoice(body.choice) ? body.choice : next.choice);
+    }
 
-  if ('reveal_amount' in body){
-    if (body.reveal_amount == null){
-      next.reveal_amount = null;
-    } else {
-      const n = Number(body.reveal_amount);
-      if (Number.isFinite(n) && n >= 0 && n <= 1000000) next.reveal_amount = n;
+    if ('reveal_amount' in body){
+      if (body.reveal_amount == null){
+        next.reveal_amount = null;
+      } else {
+        const n = Number(body.reveal_amount);
+        if (Number.isFinite(n) && n >= 0 && n <= 1000000) next.reveal_amount = n;
+      }
+    }
+
+    if ('fields' in body){
+      const n = Number(body.fields);
+      if (Number.isInteger(n) && n >= 1 && n <= 9) next.fields = n;
+    }
+
+    if ('board' in body){
+      next.board = (body.board == null) ? null : (isValidTierBoard(body.board) ? body.board : next.board);
     }
   }
 
+  // Recipient-writable fields.
   if ('revealed' in body) next.revealed = !!body.revealed;
 
   if ('revealed_at' in body){
     next.revealed_at = (body.revealed_at == null) ? null : String(body.revealed_at);
-  }
-
-  if ('fields' in body){
-    const n = Number(body.fields);
-    if (Number.isInteger(n) && n >= 1 && n <= 9) next.fields = n;
-  }
-
-  if ('board' in body){
-    next.board = (body.board == null) ? null : (isValidTierBoard(body.board) ? body.board : next.board);
   }
 
   if ('scratched_indices' in body){
@@ -112,14 +135,7 @@ export async function onRequestGet(context){
   try{
     const card = JSON.parse(raw);
     if (card && typeof card === 'object'){
-      const url = new URL(request.url);
-      const setupParam = String(
-        url.searchParams.get('setup') ||
-        url.searchParams.get('setup_key') ||
-        url.searchParams.get('setupKey') ||
-        ''
-      ).trim();
-      const includeSetupKey = !!(setupParam && card.setup_key && setupParam === card.setup_key);
+      const includeSetupKey = hasSetupAccess(card, request);
 
       return json(sanitizeCardForClient(card, token, { includeSetupKey }), 200);
     }
@@ -162,8 +178,10 @@ export async function onRequestPut(context){
     return json({ ok: false, error: 'Corrupt card record.' }, 500);
   }
 
+  const allowSender = hasSetupAccess(existing, request);
+
   // Ignore attempts to mutate server-owned/sender-only fields (token/setup/card identity/created_at).
-  const next = applyAllowedUpdates(existing, body);
+  const next = applyAllowedUpdates(existing, body, { allowSender });
   next.token = token;
 
   await env.CARDS_KV.put(token, JSON.stringify(next));

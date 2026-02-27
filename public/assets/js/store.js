@@ -140,7 +140,24 @@ async function _apiGetCard(token, { timeoutMs = 4500 } = {}){
 
 async function _apiPutCard(card, { timeoutMs = 4500 } = {}){
   if (!card || !card.token) return null;
-  const r = await _apiRequest('PUT', '/token/' + encodeURIComponent(card.token), card, { timeoutMs });
+
+  let path = '/token/' + encodeURIComponent(card.token);
+
+  // Forward sender setup key when available so the backend can
+  // authorize sender-only updates (configured/choice/reveal_amount/etc.).
+  try{
+    const params = new URLSearchParams(window.location.search);
+    let setup = String(params.get('setup') || params.get('setup_key') || params.get('setupKey') || '').trim();
+    if (!setup){
+      // Fallback: recover cached sender setup key for this token.
+      setup = String(window.localStorage.getItem('sc:setup:' + card.token) || '').trim();
+    }
+    if (setup){
+      path += '?setup=' + encodeURIComponent(setup);
+    }
+  }catch{}
+
+  const r = await _apiRequest('PUT', path, card, { timeoutMs });
   if (!r.ok) return null;
 
   // Prefer a returned card object.
