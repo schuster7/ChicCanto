@@ -211,7 +211,7 @@ function statusBadge(card){
 
 function makeAbsoluteCardLink(token){
   const url = new URL(window.location.href);
-  url.pathname = '/open/';
+  url.pathname = '/card/';
 
   // If token is malformed, don't build a share link.
   if (!TOKEN_RE.test(token)) return null;
@@ -1056,29 +1056,42 @@ function renderNotReady(root, card){
 
   const mainCopy = isRecipientLink
     ? 'This is the recipient link. It cannot be used to set up the card.'
-    : 'The sender is still setting it up. Ask them for the recipient link, or try again in a moment.';
+    : 'The sender is still setting it up. Try again in a moment.';
 
   const senderHint = canRecoverSender
     ? 'If you are the sender on this device, you can jump to your setup link now.'
     : 'If you are the sender, open your setup link (it includes an extra setup code).';
 
   root.innerHTML = `
-    <div class="card stack">
-      <h2>Not ready yet</h2>
-      <p>${mainCopy}</p>
+    <section class="flow-screen">
+      <div class="flow-layout">
+        <div class="flow-intro">
+          <h1 class="flow-title">Not ready yet</h1>
+          <p class="flow-lead muted panel-meta">${mainCopy}</p>
+        </div>
 
-      <div class="row" style="gap:10px; flex-wrap:wrap;">
-        ${canRecoverSender
-          ? '<button class="btn primary" type="button" data-action="sender">Open sender setup</button>'
-          : '<button class="btn primary" type="button" data-action="refresh">Refresh</button>'}
-        <button class="btn" type="button" data-action="copy">Copy this link</button>
-        <button class="btn" type="button" data-action="share">Share</button>
+        <div class="panel-kicker">NEXT STEP</div>
+
+        <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Not ready">
+          <div class="panel-meta">
+            <div>Step 1</div>
+            <div class="flow-panel__hint">${canRecoverSender ? 'Open sender setup' : 'Try again soon'}</div>
+          </div>
+
+          <div class="control-grid">
+            <div class="actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+              ${canRecoverSender
+                ? '<button class="btn primary" type="button" data-action="sender">Open sender setup</button>'
+                : '<button class="btn primary" type="button" data-action="refresh">Refresh</button>'}
+              <button class="btn outline" type="button" data-action="copy">Copy this link</button>
+              <button class="btn outline" type="button" data-action="share">Share</button>
+            </div>
+
+            <p class="muted small" style="margin-top: 10px;">${senderHint}</p>
+          </div>
+        </section>
       </div>
-
-      <hr>
-
-      <p class="small">${senderHint}</p>
-    </div>
+    </section>
   `;
 
   const btnRefresh = root.querySelector('[data-action="refresh"]');
