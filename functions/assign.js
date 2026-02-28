@@ -89,7 +89,11 @@ Manual option:
 1. Open: ${base}
 2. Paste your activation code and follow the steps on screen
 
-This is quick, private, and works on both phone and desktop. If you ever need to access it again, just use the same code.
+This is quick, private, and works on both phone and desktop.
+
+Sharing tip (important):
+When you share the card with the recipient, use the link you get after setup. It will start on an Open page that helps avoid Messenger/Instagram in-app browser issues.
+P.S. If you ever need to access it again, just use the same code.
 
 Need help?
 FAQ: ${faq}
@@ -119,7 +123,11 @@ Manual option:
 1. Open: ${base}
 2. Paste your activation code and follow the steps on screen
 
-This is quick, private, and works on both phone and desktop. If you ever need to access it again, just use the same code.
+This is quick, private, and works on both phone and desktop.
+
+Sharing tip (important):
+When you share the card with the recipient, use the link you get after setup. It will start on an Open page that helps avoid Messenger/Instagram in-app browser issues.
+P.S. If you ever need to access it again, just use the same code.
 
 Need help?
 FAQ: ${faq}
@@ -344,8 +352,7 @@ async function verifySessionCookie(request, sessionSecret){
 
   let payloadJson = '';
   try{
-    const payloadBytes = base64UrlToUint8Array(payloadB64);
-    payloadJson = new TextDecoder().decode(payloadBytes);
+    payloadJson = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
   } catch {
     return false;
   }
