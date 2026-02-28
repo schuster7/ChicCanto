@@ -764,7 +764,6 @@ function renderSetup(root, card, container){
     <div class="flow-screen stack">
       <div class="flow-layout">
         <div class="flow-intro">
-          <div class="panel-kicker">SENDER SETUP</div>
           <h1 class="flow-title">Select the prize</h1>
           <p class="flow-lead muted">Choose what they can win, then send the recipient link.</p>
           <div class="flow-sub muted small">After you confirm, you have 5 seconds to change your mind.</div>
@@ -1069,9 +1068,6 @@ function renderNotReady(root, card){
           <h1 class="flow-title">Not ready yet</h1>
           <p class="flow-lead muted panel-meta">${mainCopy}</p>
         </div>
-
-        <div class="panel-kicker">NEXT STEP</div>
-
         <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Not ready">
           <div class="panel-meta">
             <div>Step 1</div>
@@ -1289,12 +1285,6 @@ function renderScratch(root, card){
   setTileSet(cardKey);
 
   const theme = getCardTheme(cardKey);
-  // Scratch foil mode (silver by default; gold for birthday cards)
-  const foilMode = (theme && theme.foil)
-    ? String(theme.foil)
-    : (cardKey.includes('birthday') ? 'gold' : 'silver');
-  document.documentElement.dataset.foil = (foilMode === 'gold') ? 'gold' : 'silver';
-
   const titleSrc = (theme && theme.titleSrc) ? theme.titleSrc : '/assets/cards/men-novice1/title.svg';
 
   const bgDesktopSrc = (theme && theme.bgDesktopSrc) ? theme.bgDesktopSrc : '/assets/cards/men-novice1/bg-desktop.jpg';
