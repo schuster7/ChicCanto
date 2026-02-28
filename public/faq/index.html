@@ -6,9 +6,34 @@
   <title>FAQ | ChicCanto</title>
   <link rel="icon" href="/favicon.ico" />
   <link rel="stylesheet" href="/assets/css/base.css" />
+  <style>
+    /* FAQ spacing upgrade (keep native <details> behavior) */
+    [data-page="faq"] .faq-box{
+      margin-top: var(--gap-xl);
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    [data-page="faq"] .faq-item{
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      background: rgba(0,0,0,0.35);
+      overflow: hidden;
+    }
+    [data-page="faq"] .faq-item + .faq-item{
+      border-top: none;
+    }
+    [data-page="faq"] .faq-item>summary{
+      padding: 16px 48px 16px 16px;
+    }
+    [data-page="faq"] .faq-answer{
+      padding: 0 16px 16px 16px;
+    }
+  </style>
 </head>
 
-<body class="theme-default" data-page="redeem">
+<body class="theme-default" data-page="faq">
   <header class="site-header">
     <div class="site-header__inner">
       <a class="brand" href="/activate/">
@@ -52,14 +77,14 @@
               <details class="faq-item">
                 <summary>What link do I send to the recipient?</summary>
                 <div class="faq-answer">
-                  Send the recipient link. Do not send the setup link. The recipient link opens the scratch card.
+                  Send the recipient link you get after setup. It starts on an Open page that helps avoid Messenger and Instagram in-app browser issues.
                 </div>
               </details>
 
               <details class="faq-item">
                 <summary>Scratching doesn’t work when I open the link in Messenger</summary>
                 <div class="faq-answer">
-                  Some messaging apps open the link inside an in-app browser. That browser can interfere with the scratch effect and may cause the screen to move or reset the tiles. Use the menu in the app and choose “Open in external browser” (Safari or Chrome), then try again.
+                  Messenger and Instagram often open links inside an in-app browser. That browser can break scratching and reset the card. Use the menu and choose Open in Safari or Open in external browser. If you cannot find it, copy the link and paste it into Safari or Chrome.
                 </div>
               </details>
 
@@ -87,7 +112,7 @@
               <details class="faq-item">
                 <summary>Does the scratch card work on mobile?</summary>
                 <div class="faq-answer">
-                  Yes. For the best scratch experience, open the link in Safari or Chrome. If prompted, rotate to landscape.
+                  Yes. For the best scratch experience, open the link in Safari or Chrome. Avoid in-app browsers.
                 </div>
               </details>
 
