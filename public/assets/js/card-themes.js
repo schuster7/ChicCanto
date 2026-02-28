@@ -12,6 +12,7 @@ export const CARD_THEMES = {
   },
   'men-novice-birthday1': {
     key: 'men-novice-birthday1',
+    foil: 'gold',
     titleSrc: '/assets/cards/men-novice-birthday1/title.svg',
     thumbSrc: '/assets/img/thumb_men-novice-birthday1.jpg',
     bgDesktopSrc: '/assets/cards/men-novice-birthday1/bg-desktop.jpg',

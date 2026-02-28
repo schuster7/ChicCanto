@@ -211,7 +211,7 @@ function statusBadge(card){
 
 function makeAbsoluteCardLink(token){
   const url = new URL(window.location.href);
-  url.pathname = '/open/';
+  url.pathname = '/card/';
 
   // If token is malformed, don't build a share link.
   if (!TOKEN_RE.test(token)) return null;
@@ -1289,6 +1289,12 @@ function renderScratch(root, card){
   setTileSet(cardKey);
 
   const theme = getCardTheme(cardKey);
+  // Scratch foil mode (silver by default; gold for birthday cards)
+  const foilMode = (theme && theme.foil)
+    ? String(theme.foil)
+    : (cardKey.includes('birthday') ? 'gold' : 'silver');
+  document.documentElement.dataset.foil = (foilMode === 'gold') ? 'gold' : 'silver';
+
   const titleSrc = (theme && theme.titleSrc) ? theme.titleSrc : '/assets/cards/men-novice1/title.svg';
 
   const bgDesktopSrc = (theme && theme.bgDesktopSrc) ? theme.bgDesktopSrc : '/assets/cards/men-novice1/bg-desktop.jpg';
@@ -1596,10 +1602,16 @@ export async function bootCard(){
     return;
   }
 
-  // Resolve via getCardAsync so API-backed links stay authoritative.
-  // This prevents stale local mirrors from causing persistent "Not ready yet".
-  // getCardAsync respects store=local|memory and local-only pages.
-  const card = await getCardAsync(token);
+  const storeParam = (params.get('store') || '').toLowerCase();
+
+  // Fast path: local mirror (works for same-device refreshes)
+  let card = getCard(token);
+
+  // If we didn't find a local record, try the API (same-origin on live/staging).
+  const isForceLocal = storeParam === 'local' || storeParam === 'memory';
+  if (!card && !isForceLocal){
+    card = await getCardAsync(token);
+  }
 
   if (!card){
     renderInvalidToken(container, token);
