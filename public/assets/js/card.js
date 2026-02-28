@@ -785,7 +785,6 @@ function renderSetup(root, card, container){
     <div class="setup-thumb__info">
       <div class="mini-panel__kicker">Selected card</div>
       <div class="h3">${cardName}</div>
-      <div class="small muted" style="margin-top:6px;">Linked to your activation code</div>
     </div>
   </div>
 
