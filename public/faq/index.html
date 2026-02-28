@@ -6,29 +6,128 @@
   <title>FAQ | ChicCanto</title>
   <link rel="icon" href="/favicon.ico" />
   <link rel="stylesheet" href="/assets/css/base.css" />
+
   <style>
-    /* FAQ spacing upgrade (keep native <details> behavior) */
+    /* ChicCanto FAQ: animated accordion (button + aria-expanded) */
     [data-page="faq"] .faq-box{
       margin-top: var(--gap-xl);
+    }
+
+    [data-page="faq"] .faq-list{
+      list-style: none;
       padding: 0;
+      margin: 0;
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
+
     [data-page="faq"] .faq-item{
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 18px;
       background: rgba(0,0,0,0.35);
       overflow: hidden;
     }
-    [data-page="faq"] .faq-item + .faq-item{
-      border-top: none;
+
+    [data-page="faq"] .faq-q{
+      width: 100%;
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      padding: 16px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      cursor: pointer;
     }
-    [data-page="faq"] .faq-item>summary{
-      padding: 16px 48px 16px 16px;
+
+    [data-page="faq"] .faq-q:focus-visible{
+      outline: 2px solid rgba(255,255,255,0.18);
+      outline-offset: -2px;
+      border-radius: 18px;
     }
-    [data-page="faq"] .faq-answer{
-      padding: 0 16px 16px 16px;
+
+    [data-page="faq"] .faq-qtext{
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    /* Icon: animated plus -> minus */
+    [data-page="faq"] .faq-icon{
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      position: relative;
+      flex: 0 0 28px;
+      transition: transform 220ms ease, background 220ms ease, border-color 220ms ease;
+    }
+
+    [data-page="faq"] .faq-icon::before,
+    [data-page="faq"] .faq-icon::after{
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 12px;
+      height: 2px;
+      background: rgba(255,255,255,0.78);
+      transform: translate(-50%, -50%);
+      transition: transform 220ms ease, opacity 220ms ease;
+    }
+
+    [data-page="faq"] .faq-icon::after{
+      transform: translate(-50%, -50%) rotate(90deg);
+    }
+
+    [data-page="faq"] .faq-item.is-open .faq-icon{
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(255,255,255,0.18);
+      transform: rotate(180deg);
+    }
+
+    [data-page="faq"] .faq-item.is-open .faq-icon::after{
+      opacity: 0;
+    }
+
+    /* Answer animation */
+    [data-page="faq"] .faq-a{
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 260ms ease;
+    }
+
+    [data-page="faq"] .faq-a > .faq-in{
+      overflow: hidden;
+      padding: 0 16px;
+    }
+
+    [data-page="faq"] .faq-item.is-open .faq-a{
+      grid-template-rows: 1fr;
+    }
+
+    [data-page="faq"] .faq-item.is-open .faq-a > .faq-in{
+      padding-bottom: 16px;
+    }
+
+    [data-page="faq"] .faq-ans{
+      color: rgba(255,255,255,0.78);
+      line-height: 1.55;
+      padding-top: 2px;
+    }
+
+    /* Reduce motion */
+    @media (prefers-reduced-motion: reduce){
+      [data-page="faq"] .faq-a,
+      [data-page="faq"] .faq-icon,
+      [data-page="faq"] .faq-icon::before,
+      [data-page="faq"] .faq-icon::after{
+        transition: none !important;
+      }
     }
   </style>
 </head>
@@ -60,68 +159,133 @@
             </div>
 
             <div class="faq-box">
-              <details class="faq-item">
-                <summary>Where do I find my activation code?</summary>
-                <div class="faq-answer">
-                  Your activation code is in your Etsy download (the PDF you received after purchase). Copy it exactly and paste it on the activation page.
-                </div>
-              </details>
+              <ul class="faq-list" role="list">
+                <li class="faq-item">
+                  <button class="faq-q" type="button" aria-expanded="false" aria-controls="faq-a1" id="faq-q1">
+                    <span class="faq-qtext">Where do I find my activation code?</span>
+                    <span class="faq-icon" aria-hidden="true"></span>
+                  </button>
+                  <div class="faq-a" id="faq-a1" role="region" aria-labelledby="faq-q1" aria-hidden="true">
+                    <div class="faq-in">
+                      <div class="faq-ans">
+                        Your activation code is in your Etsy download (the PDF you received after purchase). Copy it exactly and paste it on the activation page.
+                      </div>
+                    </div>
+                  </div>
+                </li>
 
-              <details class="faq-item">
-                <summary>What is the setup link?</summary>
-                <div class="faq-answer">
-                  The setup link is for the sender only. It lets you choose what the recipient can win and gives you the recipient link to send.
-                </div>
-              </details>
+                <li class="faq-item">
+                  <button class="faq-q" type="button" aria-expanded="false" aria-controls="faq-a2" id="faq-q2">
+                    <span class="faq-qtext">What is the setup link?</span>
+                    <span class="faq-icon" aria-hidden="true"></span>
+                  </button>
+                  <div class="faq-a" id="faq-a2" role="region" aria-labelledby="faq-q2" aria-hidden="true">
+                    <div class="faq-in">
+                      <div class="faq-ans">
+                        The setup link is for the sender only. It lets you choose what the recipient can win and gives you the recipient link to send.
+                      </div>
+                    </div>
+                  </div>
+                </li>
 
-              <details class="faq-item">
-                <summary>What link do I send to the recipient?</summary>
-                <div class="faq-answer">
-                  Send the recipient link you get after setup. It starts on an Open page that helps avoid Messenger and Instagram in-app browser issues.
-                </div>
-              </details>
+                <li class="faq-item">
+                  <button class="faq-q" type="button" aria-expanded="false" aria-controls="faq-a3" id="faq-q3">
+                    <span class="faq-qtext">What link do I send to the recipient?</span>
+                    <span class="faq-icon" aria-hidden="true"></span>
+                  </button>
+                  <div class="faq-a" id="faq-a3" role="region" aria-labelledby="faq-q3" aria-hidden="true">
+                    <div class="faq-in">
+                      <div class="faq-ans">
+                        Send the recipient link you get after setup. It starts on an Open page that helps avoid Messenger and Instagram in-app browser issues.
+                      </div>
+                    </div>
+                  </div>
+                </li>
 
-              <details class="faq-item">
-                <summary>Scratching doesn’t work when I open the link in Messenger</summary>
-                <div class="faq-answer">
-                  Messenger and Instagram often open links inside an in-app browser. That browser can break scratching and reset the card. Use the menu and choose Open in Safari or Open in external browser. If you cannot find it, copy the link and paste it into Safari or Chrome.
-                </div>
-              </details>
+                <li class="faq-item">
+                  <button class="faq-q" type="button" aria-expanded="false" aria-controls="faq-a4" id="faq-q4">
+                    <span class="faq-qtext">Scratching doesn’t work when I open the link in Messenger</span>
+                    <span class="faq-icon" aria-hidden="true"></span>
+                  </button>
+                  <div class="faq-a" id="faq-a4" role="region" aria-labelledby="faq-q4" aria-hidden="true">
+                    <div class="faq-in">
+                      <div class="faq-ans">
+                        Messenger and Instagram often open links inside an in-app browser. That browser can break scratching and reset the card. Use the menu and choose Open in Safari or Open in external browser. If you cannot find it, copy the link and paste it into Safari or Chrome.
+                      </div>
+                    </div>
+                  </div>
+                </li>
 
-              <details class="faq-item">
-                <summary>Can I change the prize after I confirm?</summary>
-                <div class="faq-answer">
-                  No. After confirmation, the choice locks. There is a short countdown that lets you change your mind before it locks.
-                </div>
-              </details>
+                <li class="faq-item">
+                  <button class="faq-q" type="button" aria-expanded="false" aria-controls="faq-a5" id="faq-q5">
+                    <span class="faq-qtext">Can I change the prize after I confirm?</span>
+                    <span class="faq-icon" aria-hidden="true"></span>
+                  </button>
+                  <div class="faq-a" id="faq-a5" role="region" aria-labelledby="faq-q5" aria-hidden="true">
+                    <div class="faq-in">
+                      <div class="faq-ans">
+                        No. After confirmation, the choice locks. There is a short countdown that lets you change your mind before it locks.
+                      </div>
+                    </div>
+                  </div>
+                </li>
 
-              <details class="faq-item">
-                <summary>I lost my setup link. What now?</summary>
-                <div class="faq-answer">
-                  Go back to activation and enter the same activation code again. It will unlock your setup link again.
-                </div>
-              </details>
+                <li class="faq-item">
+                  <button class="faq-q" type="button" aria-expanded="false" aria-controls="faq-a6" id="faq-q6">
+                    <span class="faq-qtext">I lost my setup link. What now?</span>
+                    <span class="faq-icon" aria-hidden="true"></span>
+                  </button>
+                  <div class="faq-a" id="faq-a6" role="region" aria-labelledby="faq-q6" aria-hidden="true">
+                    <div class="faq-in">
+                      <div class="faq-ans">
+                        Go back to activation and enter the same activation code again. It will unlock your setup link again.
+                      </div>
+                    </div>
+                  </div>
+                </li>
 
-              <details class="faq-item">
-                <summary>Why does it say “Not ready yet”?</summary>
-                <div class="faq-answer">
-                  The sender has not finished setup. Ask the sender to open their setup link, choose what the recipient can win, and then send you the recipient link.
-                </div>
-              </details>
+                <li class="faq-item">
+                  <button class="faq-q" type="button" aria-expanded="false" aria-controls="faq-a7" id="faq-q7">
+                    <span class="faq-qtext">Why does it say “Not ready yet”?</span>
+                    <span class="faq-icon" aria-hidden="true"></span>
+                  </button>
+                  <div class="faq-a" id="faq-a7" role="region" aria-labelledby="faq-q7" aria-hidden="true">
+                    <div class="faq-in">
+                      <div class="faq-ans">
+                        The sender has not finished setup. Ask the sender to open their setup link, choose what the recipient can win, and then send you the recipient link.
+                      </div>
+                    </div>
+                  </div>
+                </li>
 
-              <details class="faq-item">
-                <summary>Does the scratch card work on mobile?</summary>
-                <div class="faq-answer">
-                  Yes. For the best scratch experience, open the link in Safari or Chrome. Avoid in-app browsers.
-                </div>
-              </details>
+                <li class="faq-item">
+                  <button class="faq-q" type="button" aria-expanded="false" aria-controls="faq-a8" id="faq-q8">
+                    <span class="faq-qtext">Does the scratch card work on mobile?</span>
+                    <span class="faq-icon" aria-hidden="true"></span>
+                  </button>
+                  <div class="faq-a" id="faq-a8" role="region" aria-labelledby="faq-q8" aria-hidden="true">
+                    <div class="faq-in">
+                      <div class="faq-ans">
+                        Yes. For the best scratch experience, open the link in Safari or Chrome. Avoid in-app browsers.
+                      </div>
+                    </div>
+                  </div>
+                </li>
 
-              <details class="faq-item">
-                <summary>Can I preview without activating?</summary>
-                <div class="faq-answer">
-                  Yes. Use Preview to try the scratch experience. Activate when you are ready to create your links.
-                </div>
-              </details>
+                <li class="faq-item">
+                  <button class="faq-q" type="button" aria-expanded="false" aria-controls="faq-a9" id="faq-q9">
+                    <span class="faq-qtext">Can I preview without activating?</span>
+                    <span class="faq-icon" aria-hidden="true"></span>
+                  </button>
+                  <div class="faq-a" id="faq-a9" role="region" aria-labelledby="faq-q9" aria-hidden="true">
+                    <div class="faq-in">
+                      <div class="faq-ans">
+                        Yes. Use Preview to try the scratch experience. Activate when you are ready to create your links.
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              </ul>
             </div>
           </section>
 
@@ -132,6 +296,7 @@
     </div>
   </main>
 
+  <script src="/assets/js/faq.js" defer></script>
   <script type="module" src="/assets/js/app.js"></script>
 
   <footer class="site-footer" role="contentinfo">
