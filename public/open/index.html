@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ChicCanto | Open</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/assets/css/base.css" />
+</head>
+<body class="theme-default" data-page="redeem">
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="/">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__text">ChicCanto</span>
+      </a>
+      <nav class="site-header__actions">
+        <a class="btn outline" href="/faq/">FAQ</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="flow-layout">
+    <section class="flow-hero">
+      <div class="flow-hero__inner">
+        <div class="flow-kicker">Open to play</div>
+        <h1 class="flow-title">This link is optimized for sharing</h1>
+        <p class="flow-lead muted">Some in-app browsers (especially Facebook Messenger and Instagram) can break the scratch experience. Open the card in your browser for a stable reveal.</p>
+      </div>
+    </section>
+
+    <section class="flow-content">
+      <div class="flow-content__inner">
+        <div class="flow-panel flow-panel--combined panel--glass">
+          <div class="panel-meta">
+            <span class="panel-step">Step 1</span>
+            <span class="panel-hint muted">Opens the card in your browser</span>
+          </div>
+
+          <div class="flow-panel__body">
+            <div class="field">
+              <label class="label" for="cardLink">Card link</label>
+              <div class="sharebar" style="margin-top:8px;">
+                <div class="sharebar__url" id="cardLink">Missing token</div>
+                <div class="sharebar__actions">
+                  <button class="btn" id="openBtn" type="button" disabled>Open</button>
+                  <button class="btn outline" id="copyBtn" type="button" disabled>Copy</button>
+                </div>
+              </div>
+              <p class="small muted" id="envHint" style="margin-top:10px;"></p>
+            </div>
+
+            <div class="flow-divider" role="separator" aria-hidden="true"></div>
+
+            <div class="small muted">
+              If you are viewing this inside Messenger on iPhone: tap the <strong>…</strong> menu and choose <strong>Open in Safari</strong>.
+              If you cannot find it, use <strong>Copy</strong>, paste into Safari/Chrome, then open.
+            </div>
+
+            <div style="margin-top:14px;">
+              <a class="small muted" id="continueHere" href="#" style="text-decoration:underline;">Continue here anyway</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  (function(){
+    const params = new URLSearchParams(window.location.search);
+    const token = (params.get('token') || '').trim();
+    const tokenRe = /^[a-f0-9]{8}-[a-f0-9]{4}$/i;
+
+    const linkEl = document.getElementById('cardLink');
+    const openBtn = document.getElementById('openBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const continueHere = document.getElementById('continueHere');
+    const envHint = document.getElementById('envHint');
+
+    function absUrl(pathname, searchParams){
+      const u = new URL(window.location.href);
+      u.pathname = pathname;
+      u.search = searchParams ? ('?' + searchParams.toString()) : '';
+      u.hash = '';
+      return u.toString();
+    }
+
+    if (!tokenRe.test(token)){
+      linkEl.textContent = 'Invalid or missing token';
+      envHint.textContent = '';
+      continueHere.href = '/';
+      return;
+    }
+
+    const cardParams = new URLSearchParams();
+    cardParams.set('token', token);
+
+    const cardUrl = absUrl('/card/', cardParams);
+    linkEl.textContent = cardUrl;
+    openBtn.disabled = false;
+    copyBtn.disabled = false;
+    continueHere.href = cardUrl;
+
+    // Environment hint (only shown when it matters)
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const isFB = /FBAN|FBAV|FB_IAB|FB4A/i.test(ua);
+    const isIG = /Instagram/i.test(ua);
+
+    if (isIOS && (isFB || isIG)){
+      envHint.textContent = 'You are in an in-app browser. For scratch to work, open in Safari/Chrome.';
+    } else {
+      envHint.textContent = '';
+    }
+
+    openBtn.addEventListener('click', function(){
+      // Best effort. If the host blocks it, user can copy.
+      window.open(cardUrl, '_blank', 'noopener,noreferrer');
+      // Also navigate in-place (helps some in-app browsers)
+      setTimeout(() => { window.location.href = cardUrl; }, 150);
+    });
+
+    copyBtn.addEventListener('click', async function(){
+      try{
+        await navigator.clipboard.writeText(cardUrl);
+        copyBtn.textContent = 'Copied';
+        setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1200);
+      } catch(e){
+        // Fallback: select via prompt
+        window.prompt('Copy this link:', cardUrl);
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
