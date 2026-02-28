@@ -1,35 +1,68 @@
-import { qs, qsa, copyText, formatIso, getTokenFromUrl } from './utils.js';
-import { REVEAL_OPTIONS, RANDOM_KEY, tierIconSrc, setTileSet } from './config.js';
-import { getCardTheme } from './card-themes.js';
-import { getCard, getCardAsync, ensureCard, setConfigured, setConfiguredAndWait, setRevealed } from './store.js';
-import { attachScratchTile } from './scratch.js';
+import {
+  qs,
+  qsa,
+  copyText,
+  formatIso,
+  getTokenFromUrl
+} from './utils.js';
+import {
+  REVEAL_OPTIONS,
+  RANDOM_KEY,
+  tierIconSrc,
+  setTileSet
+} from './config.js';
+import {
+  getCardTheme
+} from './card-themes.js';
+import {
+  getCard,
+  getCardAsync,
+  ensureCard,
+  setConfigured,
+  setConfiguredAndWait,
+  setRevealed
+} from './store.js';
+import {
+  attachScratchTile
+} from './scratch.js';
 
 // --- Patch: ensure "configured" persists so share links work ---
 // Some flows update choice/reveal_amount but forget to flip card.configured.
 // This helper force-merges the configured state into localStorage for the current token.
-function _scStorageKey(token){
+function _scStorageKey(token) {
   return `sc:card:${token}`;
 }
 
-function _forcePersistConfiguredCard(token, nextCard){
-  try{
+function _forcePersistConfiguredCard(token, nextCard) {
+  try {
     const key = _scStorageKey(token);
     const raw = localStorage.getItem(key);
-    if(raw){
-      try{
+    if (raw) {
+      try {
         const obj = JSON.parse(raw);
-        if(obj && typeof obj === 'object' && obj.card && typeof obj.card === 'object'){
-          localStorage.setItem(key, JSON.stringify({ ...obj, card: { ...obj.card, ...nextCard } }));
+        if (obj && typeof obj === 'object' && obj.card && typeof obj.card === 'object') {
+          localStorage.setItem(key, JSON.stringify({
+            ...obj,
+            card: {
+              ...obj.card,
+              ...nextCard
+            }
+          }));
           return;
         }
-        if(obj && typeof obj === 'object'){
-          localStorage.setItem(key, JSON.stringify({ ...obj, ...nextCard }));
+        if (obj && typeof obj === 'object') {
+          localStorage.setItem(key, JSON.stringify({
+            ...obj,
+            ...nextCard
+          }));
           return;
         }
-      }catch(_e){}
+      } catch (_e) {}
     }
-    localStorage.setItem(key, JSON.stringify({ ...nextCard }));
-  }catch(_e){
+    localStorage.setItem(key, JSON.stringify({
+      ...nextCard
+    }));
+  } catch (_e) {
     // Ignore storage failures (private mode/quota/etc.)
   }
 }
@@ -49,10 +82,11 @@ let PREVIEW_MODE = false;
 
 // --- UX helpers: toast + safe copy/share (iPhone friendly) ---
 let _toastTimer = null;
-function toast(message){
-  try{
+
+function toast(message) {
+  try {
     let el = document.getElementById('appToast');
-    if (!el){
+    if (!el) {
       el = document.createElement('div');
       el.id = 'appToast';
       el.style.position = 'fixed';
@@ -80,19 +114,19 @@ function toast(message){
     _toastTimer = setTimeout(() => {
       el.style.opacity = '0';
     }, 1600);
-  }catch{
+  } catch {
     // no-op
   }
 }
 
-function isLocalhost(){
+function isLocalhost() {
   const h = String(window.location.hostname || '').toLowerCase();
   return h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0';
 }
 
-async function safeCopyLink(url){
+async function safeCopyLink(url) {
   if (!url) return false;
-  if (isLocalhost()){
+  if (isLocalhost()) {
     toast('You are on localhost. Use your LAN IP to share links across devices.');
   }
   // Always copy URL only (no prefix text), but resolve relative URLs safely.
@@ -102,19 +136,22 @@ async function safeCopyLink(url){
   return ok;
 }
 
-async function safeShareLink(url, text){
+async function safeShareLink(url, text) {
   if (!url) return false;
-  if (isLocalhost()){
+  if (isLocalhost()) {
     toast('You are on localhost. Use your LAN IP to share links across devices.');
   }
   const u = String(new URL(url, window.location.href));
 
   // iOS (especially on http) is picky. Share URL-only first for max compatibility.
-  if (navigator.share){
-    try{
-      await navigator.share({ title: 'ChicCanto', url: u });
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'ChicCanto',
+        url: u
+      });
       return true;
-    }catch{
+    } catch {
       // cancelled or failed, fall back to copy
     }
   }
@@ -135,7 +172,9 @@ async function _fetchSvgMarkup(url) {
   const abs = new URL(url, window.location.href).toString();
   if (_INLINE_SVG_CACHE.has(abs)) return _INLINE_SVG_CACHE.get(abs);
 
-  const p = fetch(abs, { cache: 'force-cache' })
+  const p = fetch(abs, {
+      cache: 'force-cache'
+    })
     .then((r) => {
       if (!r.ok) throw new Error(`Failed to fetch SVG: ${r.status} ${r.statusText}`);
       return r.text();
@@ -203,13 +242,13 @@ async function hydrateInlineSvgs(root = document) {
   );
 }
 
-function statusBadge(card){
+function statusBadge(card) {
   if (!card.configured) return '<span class="badge warn">Not configured</span>';
   if (card.revealed) return '<span class="badge ok">Revealed</span>';
   return '<span class="badge">Ready</span>';
 }
 
-function makeAbsoluteCardLink(token){
+function makeAbsoluteCardLink(token) {
   const url = new URL(window.location.href);
   url.pathname = '/card/';
 
@@ -223,21 +262,23 @@ function makeAbsoluteCardLink(token){
   return url.toString();
 }
 
-function uniq(arr){ return Array.from(new Set(arr)); }
+function uniq(arr) {
+  return Array.from(new Set(arr));
+}
 
-function clearActionsBar(){
+function clearActionsBar() {
   const el = document.getElementById('cardActions');
   if (el) el.innerHTML = '';
 }
 
-function renderCardHeaderActions(card, revealed){
+function renderCardHeaderActions(card, revealed) {
   clearActionsBar();
   const el = document.getElementById('cardActions');
   if (!el || !card) return;
 
   // Preview mode: no copy/share link (token is not meant to be shared).
   // Only show result actions after reveal.
-  if (PREVIEW_MODE){
+  if (PREVIEW_MODE) {
 
     const mkBtn = (label) => {
       const b = document.createElement('button');
@@ -251,36 +292,40 @@ function renderCardHeaderActions(card, revealed){
     saveBtn.id = 'savePngBtn';
     saveBtn.addEventListener('click', async () => {
       if (saveBtn.disabled) return;
-      try{
+      try {
         saveBtn.disabled = true;
         const prev = saveBtn.textContent;
         saveBtn.textContent = 'Saving...';
         await exportRevealedPng(card);
         saveBtn.textContent = prev;
-      }catch (err){
+      } catch (err) {
         console.error('PNG export failed:', err);
         alert('Could not export PNG. Please try again.');
-      }finally{
+      } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save PNG';
       }
-    }, { passive: true });
+    }, {
+      passive: true
+    });
     el.appendChild(saveBtn);
 
     const shareBtn = mkBtn('Share result');
     shareBtn.id = 'shareResultBtn';
     shareBtn.addEventListener('click', async () => {
-      try{
+      try {
         // In preview, sharing the URL is not meaningful, but you may still want the share sheet.
         // If you prefer, change this to share text only.
         const url = makeAbsoluteCardLink(card.token);
         const opt = resolveOptionFromCard(card);
         const label = opt && opt.label ? `Scratch card result: ${opt.label}` : 'Scratch card result';
         await safeShareLink(url, label);
-      }catch (e){
+      } catch (e) {
         console.error('Share error:', e);
       }
-    }, { passive: true });
+    }, {
+      passive: true
+    });
     el.appendChild(shareBtn);
 
     // Preview-only: let testers jump to activation at any time.
@@ -307,7 +352,9 @@ function renderCardHeaderActions(card, revealed){
   const copyBtn = mkBtn('Copy link');
   copyBtn.addEventListener('click', async () => {
     await safeCopyLink(url, 'Scratch card link');
-  }, { passive: true });
+  }, {
+    passive: true
+  });
 
   el.appendChild(copyBtn);
 
@@ -317,47 +364,51 @@ function renderCardHeaderActions(card, revealed){
   saveBtn.id = 'savePngBtn';
   saveBtn.addEventListener('click', async () => {
     if (saveBtn.disabled) return;
-    try{
+    try {
       saveBtn.disabled = true;
       const prev = saveBtn.textContent;
       saveBtn.textContent = 'Saving...';
       await exportRevealedPng(card);
       saveBtn.textContent = prev;
-    }catch (err){
+    } catch (err) {
       console.error('PNG export failed:', err);
       alert('Could not export PNG. Please try again.');
-    }finally{
+    } finally {
       saveBtn.disabled = false;
       saveBtn.textContent = 'Save PNG';
     }
-  }, { passive: true });
+  }, {
+    passive: true
+  });
 
   el.appendChild(saveBtn);
 
   const shareBtn = mkBtn('Share result');
   shareBtn.id = 'shareResultBtn';
   shareBtn.addEventListener('click', async () => {
-    try{
+    try {
       const opt = resolveOptionFromCard(card);
       const label = opt && opt.label ? `Scratch card result: ${opt.label}` : 'Scratch card result';
       await safeShareLink(url, label);
-    }catch (e){
+    } catch (e) {
       console.error('Share error:', e);
       await safeCopyLink(url, 'Scratch card result');
     }
-  }, { passive: true });
+  }, {
+    passive: true
+  });
 
   el.appendChild(shareBtn);
 }
 
 
 
-function renderRevealedActions(card){
+function renderRevealedActions(card) {
   // Always show header actions (Copy link). Extra actions only when revealed.
   renderCardHeaderActions(card, !!(card && card.revealed));
 }
 
-function _blobDownload(blob, filename){
+function _blobDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -368,8 +419,10 @@ function _blobDownload(blob, filename){
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-async function _fetchAsDataUrl(url){
-  const res = await fetch(url, { cache: 'force-cache' });
+async function _fetchAsDataUrl(url) {
+  const res = await fetch(url, {
+    cache: 'force-cache'
+  });
   if (!res.ok) throw new Error('Fetch failed: ' + url + ' (' + res.status + ')');
   const buf = await res.arrayBuffer();
   const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -384,18 +437,26 @@ async function _fetchAsDataUrl(url){
   return `data:${mime};base64,${b64}`;
 }
 
-async function _embedInterFontCss(){
+async function _embedInterFontCss() {
   // Best-effort: embed the self-hosted Inter fonts into the SVG snapshot.
   // If any file is missing, we continue without embedding.
-  const candidates = [
-    { weight: 400, path: '/assets/fonts/inter-v20-latin-regular.woff2' },
-    { weight: 500, path: '/assets/fonts/inter-v20-latin-500.woff2' },
-    { weight: 700, path: '/assets/fonts/inter-v20-latin-700.woff2' },
+  const candidates = [{
+      weight: 400,
+      path: '/assets/fonts/inter-v20-latin-regular.woff2'
+    },
+    {
+      weight: 500,
+      path: '/assets/fonts/inter-v20-latin-500.woff2'
+    },
+    {
+      weight: 700,
+      path: '/assets/fonts/inter-v20-latin-700.woff2'
+    },
   ];
 
   const rules = [];
-  for (const c of candidates){
-    try{
+  for (const c of candidates) {
+    try {
       const dataUrl = await _fetchAsDataUrl(c.path);
       rules.push(`
 @font-face{
@@ -412,10 +473,10 @@ async function _embedInterFontCss(){
   return rules.join('\n');
 }
 
-function _copyComputedStyles(sourceEl, targetEl){
+function _copyComputedStyles(sourceEl, targetEl) {
   const cs = getComputedStyle(sourceEl);
   let cssText = '';
-  for (let i = 0; i < cs.length; i++){
+  for (let i = 0; i < cs.length; i++) {
     const prop = cs[i];
     const val = cs.getPropertyValue(prop);
     // Skip properties that can break XML parsing or are irrelevant.
@@ -425,11 +486,11 @@ function _copyComputedStyles(sourceEl, targetEl){
   targetEl.setAttribute('style', cssText);
 }
 
-function _inlineStylesDeep(sourceRoot, targetRoot){
+function _inlineStylesDeep(sourceRoot, targetRoot) {
   const sourceEls = [sourceRoot, ...sourceRoot.querySelectorAll('*')];
   const targetEls = [targetRoot, ...targetRoot.querySelectorAll('*')];
 
-  for (let i = 0; i < sourceEls.length; i++){
+  for (let i = 0; i < sourceEls.length; i++) {
     const s = sourceEls[i];
     const t = targetEls[i];
     if (!t) continue;
@@ -437,7 +498,7 @@ function _inlineStylesDeep(sourceRoot, targetRoot){
   }
 }
 
-function _makeSvgSnapshotMarkup(node, width, height, embeddedCss){
+function _makeSvgSnapshotMarkup(node, width, height, embeddedCss) {
   const serializer = new XMLSerializer();
   const xhtml = serializer.serializeToString(node);
 
@@ -453,12 +514,12 @@ function _makeSvgSnapshotMarkup(node, width, height, embeddedCss){
 </svg>`.trim();
 }
 
-async function exportRevealedPng(card, opts = {}){
+async function exportRevealedPng(card, opts = {}) {
   // Only run on revealed state.
   if (!card || !card.revealed) throw new Error('Card not revealed');
 
   // Ensure the current view is fully rendered and fonts are ready.
-  if (document.fonts && document.fonts.ready){
+  if (document.fonts && document.fonts.ready) {
     // Avoid hanging forever.
     await Promise.race([
       document.fonts.ready,
@@ -479,17 +540,17 @@ async function exportRevealedPng(card, opts = {}){
   clone.style.filter = 'none';
 
   // Best-effort: inline pattern URL to data URL so it renders inside SVG snapshot.
-  try{
+  try {
     const innerSrc = stage.querySelector('.scratch-stage__inner');
     const innerDst = clone.querySelector('.scratch-stage__inner');
-    if (innerSrc && innerDst){
+    if (innerSrc && innerDst) {
       const cs = getComputedStyle(innerSrc);
       const bgImg = cs.getPropertyValue('background-image') || '';
       const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
-      if (m && m[1]){
+      if (m && m[1]) {
         const url = m[1];
         // Only inline same-origin assets (avoid CORS).
-        if (url.startsWith('/') || url.startsWith(window.location.origin)){
+        if (url.startsWith('/') || url.startsWith(window.location.origin)) {
           const abs = url.startsWith('http') ? url : (window.location.origin + url);
           const dataUrl = await _fetchAsDataUrl(abs);
           innerDst.style.backgroundImage = `url("${dataUrl}")`;
@@ -497,39 +558,39 @@ async function exportRevealedPng(card, opts = {}){
       }
     }
 
-  // Inline any <img> sources inside the export root so foreignObject renders reliably.
-  try{
-    const imgsSrc = stage.querySelectorAll('img');
-    const imgsDst = clone.querySelectorAll('img');
-    const n = Math.min(imgsSrc.length, imgsDst.length);
-    for (let i = 0; i < n; i++){
-      const src = imgsSrc[i].getAttribute('src') || '';
-      if (!src) continue;
-      if (!(src.startsWith('/') || src.startsWith(window.location.origin))) continue;
-      const abs = src.startsWith('http') ? src : (window.location.origin + src);
-      const dataUrl = await _fetchAsDataUrl(abs);
-      imgsDst[i].setAttribute('src', dataUrl);
-    }
-  } catch {
-    // ignore
-  }
-
-  // Inline stage background image if present (used by image-backed cards).
-  try{
-    const csStage = getComputedStyle(stage);
-    const bgImg = csStage.getPropertyValue('background-image') || '';
-    const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
-    if (m && m[1]){
-      const url = m[1];
-      if (url.startsWith('/') || url.startsWith(window.location.origin)){
-        const abs = url.startsWith('http') ? url : (window.location.origin + url);
+    // Inline any <img> sources inside the export root so foreignObject renders reliably.
+    try {
+      const imgsSrc = stage.querySelectorAll('img');
+      const imgsDst = clone.querySelectorAll('img');
+      const n = Math.min(imgsSrc.length, imgsDst.length);
+      for (let i = 0; i < n; i++) {
+        const src = imgsSrc[i].getAttribute('src') || '';
+        if (!src) continue;
+        if (!(src.startsWith('/') || src.startsWith(window.location.origin))) continue;
+        const abs = src.startsWith('http') ? src : (window.location.origin + src);
         const dataUrl = await _fetchAsDataUrl(abs);
-        clone.style.backgroundImage = `url("${dataUrl}")`;
+        imgsDst[i].setAttribute('src', dataUrl);
       }
+    } catch {
+      // ignore
     }
-  } catch {
-    // ignore
-  }
+
+    // Inline stage background image if present (used by image-backed cards).
+    try {
+      const csStage = getComputedStyle(stage);
+      const bgImg = csStage.getPropertyValue('background-image') || '';
+      const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
+      if (m && m[1]) {
+        const url = m[1];
+        if (url.startsWith('/') || url.startsWith(window.location.origin)) {
+          const abs = url.startsWith('http') ? url : (window.location.origin + url);
+          const dataUrl = await _fetchAsDataUrl(abs);
+          clone.style.backgroundImage = `url("${dataUrl}")`;
+        }
+      }
+    } catch {
+      // ignore
+    }
   } catch {
     // ignore
   }
@@ -546,31 +607,31 @@ async function exportRevealedPng(card, opts = {}){
   wrap.appendChild(clone);
   document.body.appendChild(wrap);
 
-  try{
+  try {
     // Inline all computed CSS into the clone.
     _inlineStylesDeep(stage, clone);
 
     const rect = stage.getBoundingClientRect();
 
-// Export scale: 1 = same pixel size as on-screen.
-// Increase to 2 if you want higher-resolution PNGs.
-const scale = 2;
+    // Export scale: 1 = same pixel size as on-screen.
+    // Increase to 2 if you want higher-resolution PNGs.
+    const scale = 2;
 
-const w0 = Math.max(1, Math.round(rect.width));
-const h0 = Math.max(1, Math.round(rect.height));
+    const w0 = Math.max(1, Math.round(rect.width));
+    const h0 = Math.max(1, Math.round(rect.height));
 
-// Force the cloned root to the exact on-screen size so % widths resolve.
-clone.style.width = w0 + 'px';
-clone.style.height = h0 + 'px';
-clone.style.maxWidth = 'none';
-clone.style.margin = '0';
-clone.style.display = 'block';
+    // Force the cloned root to the exact on-screen size so % widths resolve.
+    clone.style.width = w0 + 'px';
+    clone.style.height = h0 + 'px';
+    clone.style.maxWidth = 'none';
+    clone.style.margin = '0';
+    clone.style.display = 'block';
 
-const embeddedFontCss = await _embedInterFontCss();
+    const embeddedFontCss = await _embedInterFontCss();
 
-// SVG is authored at on-screen size; canvas handles pixel scaling.
-const svgMarkup = _makeSvgSnapshotMarkup(clone, w0, h0, embeddedFontCss);
-const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
+    // SVG is authored at on-screen size; canvas handles pixel scaling.
+    const svgMarkup = _makeSvgSnapshotMarkup(clone, w0, h0, embeddedFontCss);
+    const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
 
     const img = new Image();
     img.decoding = 'async';
@@ -582,14 +643,14 @@ const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgM
     });
 
     const canvas = document.createElement('canvas');
-canvas.width = Math.max(1, Math.round(w0 * scale));
-canvas.height = Math.max(1, Math.round(h0 * scale));
-const ctx = canvas.getContext('2d');
-if (!ctx) throw new Error('No canvas context');
+    canvas.width = Math.max(1, Math.round(w0 * scale));
+    canvas.height = Math.max(1, Math.round(h0 * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('No canvas context');
 
-// Scale drawing so the image fills the canvas (no empty area).
-ctx.setTransform(scale, 0, 0, scale, 0, 0);
-ctx.drawImage(img, 0, 0);
+    // Scale drawing so the image fills the canvas (no empty area).
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.drawImage(img, 0, 0);
 
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
     if (!blob) throw new Error('PNG encode failed');
@@ -607,17 +668,17 @@ ctx.drawImage(img, 0, 0);
   }
 }
 
-function pickRandomOption(){
+function pickRandomOption() {
   const idx = Math.floor(Math.random() * REVEAL_OPTIONS.length);
   return REVEAL_OPTIONS[idx];
 }
 
-function resolveOptionFromCard(card){
-  if (card?.choice){
+function resolveOptionFromCard(card) {
+  if (card ? .choice) {
     const o1 = REVEAL_OPTIONS.find(o => o.key === card.choice);
     if (o1) return o1;
   }
-  if (card?.reveal_amount){
+  if (card ? .reveal_amount) {
     const o2 = REVEAL_OPTIONS.find(o => o.amount === card.reveal_amount);
     if (o2) return o2;
   }
@@ -625,16 +686,17 @@ function resolveOptionFromCard(card){
 }
 
 // --- Deterministic board (no persistence needed) ---
-function xfnv1a(str){
+function xfnv1a(str) {
   let h = 2166136261 >>> 0;
-  for (let i = 0; i < str.length; i++){
+  for (let i = 0; i < str.length; i++) {
     h ^= str.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
   return h >>> 0;
 }
-function mulberry32(a){
-  return function(){
+
+function mulberry32(a) {
+  return function () {
     a |= 0;
     a = a + 0x6D2B79F5 | 0;
     let t = Math.imul(a ^ a >>> 15, 1 | a);
@@ -642,10 +704,13 @@ function mulberry32(a){
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
-function seededRng(seedStr){ return mulberry32(xfnv1a(seedStr)); }
 
-function shuffleWithRng(arr, rng){
-  for (let i = arr.length - 1; i > 0; i--){
+function seededRng(seedStr) {
+  return mulberry32(xfnv1a(seedStr));
+}
+
+function shuffleWithRng(arr, rng) {
+  for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
@@ -654,21 +719,23 @@ function shuffleWithRng(arr, rng){
 
 // Only the winning tier appears 3 times. Other tiers appear at most 2 times.
 
-function buildMatch3Board(totalTiles, winTier, tiers, seedKey){
+function buildMatch3Board(totalTiles, winTier, tiers, seedKey) {
   const total = Math.max(1, Math.min(9, Number(totalTiles) || 9));
   const rng = seededRng(seedKey);
 
-  const allTiers = tiers && tiers.length ? tiers.slice() : ['t1','t2','t3','t4'];
+  const allTiers = tiers && tiers.length ? tiers.slice() : ['t1', 't2', 't3', 't4'];
   const others = allTiers.filter(t => t !== winTier);
 
   const board = [winTier, winTier, winTier];
-  const counts = { [winTier]: 3 };
+  const counts = {
+    [winTier]: 3
+  };
   let remaining = total - 3;
 
-  for (const t of others){
+  for (const t of others) {
     if (remaining <= 0) break;
     const add = Math.min(2, remaining);
-    for (let i = 0; i < add; i++){
+    for (let i = 0; i < add; i++) {
       board.push(t);
       counts[t] = (counts[t] || 0) + 1;
     }
@@ -676,7 +743,7 @@ function buildMatch3Board(totalTiles, winTier, tiers, seedKey){
   }
 
   let guard = 0;
-  while (remaining > 0 && guard++ < 200){
+  while (remaining > 0 && guard++ < 200) {
     const t = others[Math.floor(rng() * others.length)];
     if ((counts[t] || 0) >= 2) continue;
     board.push(t);
@@ -687,7 +754,7 @@ function buildMatch3Board(totalTiles, winTier, tiers, seedKey){
   return shuffleWithRng(board, rng);
 }
 
-function render(container, token, card){
+function render(container, token, card) {
   // Card is expected to already exist in storage (redeem/setup creates it).
   applyTheme(card.theme_id);
 
@@ -699,20 +766,24 @@ function render(container, token, card){
 
   // If a setup param is present, cache it for this token so we can recover sender setup
   // even if the backend redacts setup_key in intermediate responses (KV propagation, etc.).
-  if (!PREVIEW_MODE && token && setupParam){
+  if (!PREVIEW_MODE && token && setupParam) {
     const looksLikeKey = /^[A-Za-z0-9_-]{10,}$/.test(String(setupParam));
-    if (looksLikeKey){
-      try{ localStorage.setItem(`sc:setup:${token}`, String(setupParam)); }catch(_e){}
+    if (looksLikeKey) {
+      try {
+        localStorage.setItem(`sc:setup:${token}`, String(setupParam));
+      } catch (_e) {}
     }
   }
 
 
-// Persist sender setup key locally so we can recover from accidentally opening the recipient link (token-only).
-if (!PREVIEW_MODE && hasSetupAccess && token && card && card.setup_key){
-  try{ localStorage.setItem(`sc:setup:${token}`, String(card.setup_key)); }catch(_e){}
-}
+  // Persist sender setup key locally so we can recover from accidentally opening the recipient link (token-only).
+  if (!PREVIEW_MODE && hasSetupAccess && token && card && card.setup_key) {
+    try {
+      localStorage.setItem(`sc:setup:${token}`, String(card.setup_key));
+    } catch (_e) {}
+  }
 
-const previewCta = PREVIEW_MODE ? `
+  const previewCta = PREVIEW_MODE ? `
   <div class="preview-line" role="note" aria-label="Preview notice">
     <span class="muted">Preview mode. Scratch for free. Activate to create a recipient link.</span>
   </div>
@@ -726,19 +797,19 @@ const previewCta = PREVIEW_MODE ? `
 
   const content = qs('#' + contentId, container);
 
-  if (card.revealed){
+  if (card.revealed) {
     renderRevealed(content, card);
     return;
   }
 
   // Sender private link (setup param) should always show setup UI (even after configured),
   // so the buyer can copy/share the recipient link.
-  if (hasSetupAccess){
+  if (hasSetupAccess) {
     renderSetup(content, card, container);
     return;
   }
 
-  if (!card.configured){
+  if (!card.configured) {
     renderNotReady(content, card);
     return;
   }
@@ -746,7 +817,7 @@ const previewCta = PREVIEW_MODE ? `
   renderScratch(content, card);
 }
 
-function renderSetup(root, card, container){
+function renderSetup(root, card, container) {
   const tierOptions = REVEAL_OPTIONS.map(o => `
       <button class="btn" data-choice="${o.key}" type="button">${o.label}</button>
     `).join('');
@@ -797,9 +868,11 @@ function renderSetup(root, card, container){
     <div class="small muted">Let ChicCanto pick one of the four prizes for you.</div>
     <button class="btn outline w-full" data-choice="${RANDOM_KEY}" type="button" style="margin-top:12px;">Surprise me (we choose)</button>
 
-<div class="small muted" style="margin-top:10px;">You can still lock the result and share the link the same way.</div>
+
   </div>
-</div><div class="setup-right">
+</div>
+
+<div class="setup-right">
               <div class="flow-section" aria-label="Prize level">
                 <div class="flow-panel__head">
                   <div class="flow-panel__title">Prize level</div>
@@ -843,7 +916,7 @@ function renderSetup(root, card, container){
       </div>
     </div>
 `;
-const shareUrlEl = qs('#shareUrl', root);
+  const shareUrlEl = qs('#shareUrl', root);
   const copyBtn = qs('#copyBtn', root);
   const shareBtn = qs('#shareBtn', root);
   const openBtn = qs('#openBtn', root);
@@ -856,7 +929,7 @@ const shareUrlEl = qs('#shareUrl', root);
   // Pending lock timer (lets first-time buyers realize it's irreversible without adding extra clicks)
   let pending = null; // { interval, choice, chosen }
 
-  function setChoiceButtonsEnabled(enabled){
+  function setChoiceButtonsEnabled(enabled) {
     qsa('button[data-choice]', root).forEach(b => {
       b.disabled = !enabled;
       b.style.pointerEvents = enabled ? 'auto' : 'none';
@@ -864,7 +937,7 @@ const shareUrlEl = qs('#shareUrl', root);
     });
   }
 
-  function resetShareUI(){
+  function resetShareUI() {
     shareUrl = null;
     shareUrlEl.textContent = 'Pick a prize to generate the link.';
     copyBtn.disabled = true;
@@ -876,7 +949,7 @@ const shareUrlEl = qs('#shareUrl', root);
     lockHintEl.textContent = '';
   }
 
-  function enableShare(){
+  function enableShare() {
     shareUrlEl.textContent = shareUrl;
     copyBtn.disabled = false;
     if (shareBtn) shareBtn.disabled = false;
@@ -887,8 +960,8 @@ const shareUrlEl = qs('#shareUrl', root);
     lockHintEl.textContent = '';
   }
 
-  function showPending(choice, chosen, secondsLeft){
-    const label = chosen?.label || 'Your choice';
+  function showPending(choice, chosen, secondsLeft) {
+    const label = chosen ? .label || 'Your choice';
     shareUrlEl.textContent = `Selected ${label}. Locking in ${secondsLeft}…`;
     copyBtn.disabled = true;
     if (shareBtn) shareBtn.disabled = true;
@@ -900,15 +973,17 @@ const shareUrlEl = qs('#shareUrl', root);
     lockHintEl.textContent = 'You can cancel until it locks.';
   }
 
-  function cancelPending(){
+  function cancelPending() {
     if (!pending) return;
-    try{ clearInterval(pending.interval); }catch{}
+    try {
+      clearInterval(pending.interval);
+    } catch {}
     pending = null;
     setChoiceButtonsEnabled(true);
     resetShareUI();
   }
 
-  async function lockChoice(choice, chosen){
+  async function lockChoice(choice, chosen) {
     const nextCard = {
       ...card,
       configured: true,
@@ -926,7 +1001,7 @@ const shareUrlEl = qs('#shareUrl', root);
       card_key: card.card_key
     });
 
-    if (!saved){
+    if (!saved) {
       // Keep local mirror for sender UX, but do not enable sharing until server confirms.
       _forcePersistConfiguredCard(card.token, nextCard);
       setChoiceButtonsEnabled(true);
@@ -936,7 +1011,10 @@ const shareUrlEl = qs('#shareUrl', root);
     }
 
     // Also keep local mirror aligned (helps if the browser reloads immediately).
-    _forcePersistConfiguredCard(card.token, { ...nextCard, ...saved });
+    _forcePersistConfiguredCard(card.token, {
+      ...nextCard,
+      ...saved
+    });
 
     shareUrl = makeAbsoluteCardLink(card.token);
     enableShare();
@@ -949,7 +1027,7 @@ const shareUrlEl = qs('#shareUrl', root);
 
   // If the card is already configured (e.g. returning to the private setup link),
   // show the recipient link immediately and prevent changing the outcome.
-  if (card && card.configured){
+  if (card && card.configured) {
     shareUrl = makeAbsoluteCardLink(card.token);
     enableShare();
     setChoiceButtonsEnabled(false);
@@ -971,12 +1049,12 @@ const shareUrlEl = qs('#shareUrl', root);
       // IMPORTANT: persist the actual chosen tier key, not RANDOM_KEY.
       // Some backends treat unknown choice keys as a default and may ignore reveal_amount.
       // By storing the real tier key, the random pick becomes real and stable for the recipient.
-      const effectiveChoice = (choice === RANDOM_KEY) ? (chosen?.key || REVEAL_OPTIONS[0].key) : choice;
+      const effectiveChoice = (choice === RANDOM_KEY) ? (chosen ? .key || REVEAL_OPTIONS[0].key) : choice;
 
       // Confirm before we start the lock countdown (prevents accidental taps).
-      const confirmMsg = (choice === RANDOM_KEY)
-        ? 'Confirm Surprise me? This locks a random prize tier and cannot be changed.'
-        : `Confirm ${chosen.label}? This locks your choice and cannot be changed.`;
+      const confirmMsg = (choice === RANDOM_KEY) ?
+        'Confirm Surprise me? This locks a random prize tier and cannot be changed.' :
+        `Confirm ${chosen.label}? This locks your choice and cannot be changed.`;
 
       if (!window.confirm(confirmMsg)) return;
 
@@ -986,14 +1064,21 @@ const shareUrlEl = qs('#shareUrl', root);
       let secondsLeft = 5;
       showPending(choice, chosen, secondsLeft);
 
-      pending = { interval: null, choice: effectiveChoice, chosen, displayChoice: choice };
+      pending = {
+        interval: null,
+        choice: effectiveChoice,
+        chosen,
+        displayChoice: choice
+      };
       pending.interval = setInterval(async () => {
         secondsLeft -= 1;
 
         if (!pending) return;
 
-        if (secondsLeft <= 0){
-          try{ clearInterval(pending.interval); }catch{}
+        if (secondsLeft <= 0) {
+          try {
+            clearInterval(pending.interval);
+          } catch {}
           const finalChoice = pending.choice;
           const finalChosen = pending.chosen;
           pending = null;
@@ -1011,7 +1096,7 @@ const shareUrlEl = qs('#shareUrl', root);
     await safeCopyLink(shareUrl);
   });
 
-  if (shareBtn){
+  if (shareBtn) {
     shareBtn.addEventListener('click', async () => {
       if (!shareUrl) return;
       await safeShareLink(shareUrl, 'ChicCanto card');
@@ -1020,40 +1105,42 @@ const shareUrlEl = qs('#shareUrl', root);
 
   // Open recipient link in a new tab/window so the sender can keep setup open.
   // (Previously this was treated like an <a href>, but the UI uses a <button>.)
-  if (openBtn){
+  if (openBtn) {
     openBtn.addEventListener('click', () => {
       if (!shareUrl) return;
-      try{
+      try {
         const w = window.open(shareUrl, '_blank', 'noopener,noreferrer');
         // If blocked, fall back to same-tab navigation.
         if (!w) window.location.href = shareUrl;
-      }catch{
+      } catch {
         window.location.href = shareUrl;
       }
     });
   }
 }
 
-function renderNotReady(root, card){
+function renderNotReady(root, card) {
   const url = window.location.href;
   const params = new URLSearchParams(window.location.search);
   const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
   const tokenParam = params.get('token') || (card && card.token) || '';
   let storedSetup = '';
-  if (!setupParam && tokenParam){
-    try{ storedSetup = localStorage.getItem(`sc:setup:${tokenParam}`) || ''; }catch(_e){}
+  if (!setupParam && tokenParam) {
+    try {
+      storedSetup = localStorage.getItem(`sc:setup:${tokenParam}`) || '';
+    } catch (_e) {}
   }
 
   const isRecipientLink = !setupParam;
   const canRecoverSender = isRecipientLink && !!(tokenParam && storedSetup);
 
-  const mainCopy = isRecipientLink
-    ? 'This is the recipient link. It cannot be used to set up the card.'
-    : 'The sender is still setting it up. Try again in a moment.';
+  const mainCopy = isRecipientLink ?
+    'This is the recipient link. It cannot be used to set up the card.' :
+    'The sender is still setting it up. Try again in a moment.';
 
-  const senderHint = canRecoverSender
-    ? 'If you are the sender on this device, you can jump to your setup link now.'
-    : 'If you are the sender, open your setup link (it includes an extra setup code).';
+  const senderHint = canRecoverSender ?
+    'If you are the sender on this device, you can jump to your setup link now.' :
+    'If you are the sender, open your setup link (it includes an extra setup code).';
 
   root.innerHTML = `
     <section class="flow-screen">
@@ -1089,11 +1176,11 @@ function renderNotReady(root, card){
   const btnCopy = root.querySelector('[data-action="copy"]');
   const btnShare = root.querySelector('[data-action="share"]');
 
-  if (btnRefresh){
+  if (btnRefresh) {
     btnRefresh.addEventListener('click', () => window.location.reload());
   }
 
-  if (btnSender){
+  if (btnSender) {
     btnSender.addEventListener('click', () => {
       if (!tokenParam || !storedSetup) return;
       const next = `${window.location.pathname}?token=${encodeURIComponent(tokenParam)}&setup=${encodeURIComponent(storedSetup)}`;
@@ -1102,43 +1189,45 @@ function renderNotReady(root, card){
   }
 
   btnCopy.addEventListener('click', async () => {
-    try{
+    try {
       await navigator.clipboard.writeText(url);
       btnCopy.textContent = 'Copied';
       setTimeout(() => (btnCopy.textContent = 'Copy this link'), 1200);
-    }catch(_e){
+    } catch (_e) {
       window.prompt('Copy this link:', url);
     }
   });
 
   btnShare.addEventListener('click', async () => {
-    try{
-      if (navigator.share){
-        await navigator.share({ url });
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          url
+        });
         return;
       }
-    }catch(_e){}
-    try{
+    } catch (_e) {}
+    try {
       await navigator.clipboard.writeText(url);
       btnShare.textContent = 'Copied';
       setTimeout(() => (btnShare.textContent = 'Share'), 1200);
-    }catch(_e){
+    } catch (_e) {
       window.prompt('Share this link:', url);
     }
   });
 }
 
-function escapeHtml(value){
+function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (c) => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
     "'": '&#39;'
-  }[c]));
+  } [c]));
 }
 
-function renderInvalidToken(container, token){
+function renderInvalidToken(container, token) {
   const safeToken = escapeHtml(token);
   container.innerHTML = `
     <div class="card stack">
@@ -1153,7 +1242,7 @@ function renderInvalidToken(container, token){
   `;
 
   const btnCopy = container.querySelector('[data-action="copy"]');
-  if (btnCopy){
+  if (btnCopy) {
     btnCopy.addEventListener('click', async () => {
       const ok = await copyText(window.location.href);
       btnCopy.textContent = ok ? 'Copied' : 'Copy failed';
@@ -1162,7 +1251,7 @@ function renderInvalidToken(container, token){
   }
 }
 
-function renderApiUnavailable(container, token){
+function renderApiUnavailable(container, token) {
   const safeToken = escapeHtml(token);
   container.innerHTML = `
     <div class="card stack">
@@ -1177,11 +1266,11 @@ function renderApiUnavailable(container, token){
     </div>
   `;
 
-  container.querySelector('[data-action="retry"]')?.addEventListener('click', () => {
+  container.querySelector('[data-action="retry"]') ? .addEventListener('click', () => {
     window.location.reload();
   });
 
-  container.querySelector('[data-action="local"]')?.addEventListener('click', () => {
+  container.querySelector('[data-action="local"]') ? .addEventListener('click', () => {
     const u = new URL(window.location.href);
     u.searchParams.set('store', 'local');
     window.location.href = u.toString();
@@ -1189,7 +1278,7 @@ function renderApiUnavailable(container, token){
 }
 
 
-function renderLegendPanel(opt){
+function renderLegendPanel(opt) {
   const rows = REVEAL_OPTIONS.map((o, idx) => {
     const prizeNo = idx + 1;
     const src = tierIconSrc ? tierIconSrc(o.tier) : `/assets/img/${o.tier}.svg`;
@@ -1217,7 +1306,7 @@ function renderLegendPanel(opt){
 }
 
 
-function applyCardStageTheme(stageEl, theme){
+function applyCardStageTheme(stageEl, theme) {
   if (!stageEl || !theme || !theme.background) return;
 
   const bg = theme.background;
@@ -1235,20 +1324,20 @@ function applyCardStageTheme(stageEl, theme){
 
   const inner = stageEl.querySelector('.scratch-stage__inner');
 
-  if (bg.type === 'image' && bg.imageSrc){
+  if (bg.type === 'image' && bg.imageSrc) {
     // Use the stage background for full-cover images.
     stageEl.style.backgroundColor = bg.color || '#000';
     stageEl.style.backgroundImage = `url("${bg.imageSrc}")`;
 
-  // Apply per-card visuals (title is set via template, background/pattern here).
-  const stageEl = root.querySelector('.scratch-stage');
-  if (stageEl) applyCardStageTheme(stageEl, theme);
+    // Apply per-card visuals (title is set via template, background/pattern here).
+    const stageEl = root.querySelector('.scratch-stage');
+    if (stageEl) applyCardStageTheme(stageEl, theme);
     stageEl.style.backgroundRepeat = 'no-repeat';
     stageEl.style.backgroundSize = 'cover';
     stageEl.style.backgroundPosition = 'center';
 
     // Disable the pattern layer.
-    if (inner){
+    if (inner) {
       inner.style.backgroundImage = 'none';
       inner.style.opacity = '0';
     }
@@ -1258,31 +1347,31 @@ function applyCardStageTheme(stageEl, theme){
   // Default: flat color + optional repeating pattern on inner layer.
   stageEl.style.setProperty('--scratch-card-bg', bg.color || '#1c1e1e');
 
-  if (inner){
+  if (inner) {
     inner.style.opacity = (bg.patternOpacity != null) ? String(bg.patternOpacity) : '1';
   }
 
-  if (bg.patternSrc){
+  if (bg.patternSrc) {
     stageEl.style.setProperty('--scratch-card-pattern', `url("${bg.patternSrc}")`);
   } else {
     stageEl.style.setProperty('--scratch-card-pattern', 'none');
     if (inner) inner.style.opacity = '0';
   }
 
-  if (bg.patternSize){
+  if (bg.patternSize) {
     stageEl.style.setProperty('--scratch-card-pattern-size', String(bg.patternSize));
   }
 }
 
-function renderScratch(root, card){
-  const cardKey = String(card?.card_key || '').trim() || 'men-novice1';
+function renderScratch(root, card) {
+  const cardKey = String(card ? .card_key || '').trim() || 'men-novice1';
   setTileSet(cardKey);
 
   const theme = getCardTheme(cardKey);
   const titleSrc = (theme && theme.titleSrc) ? theme.titleSrc : '/assets/cards/men-novice1/title.svg';
 
   const bgDesktopSrc = (theme && theme.bgDesktopSrc) ? theme.bgDesktopSrc : '/assets/cards/men-novice1/bg-desktop.jpg';
-  const bgMobileSrc  = (theme && theme.bgMobileSrc)  ? theme.bgMobileSrc  : bgDesktopSrc;
+  const bgMobileSrc = (theme && theme.bgMobileSrc) ? theme.bgMobileSrc : bgDesktopSrc;
 
 
   renderCardHeaderActions(card, false);
@@ -1294,9 +1383,9 @@ function renderScratch(root, card){
   const total = Math.max(1, Math.min(9, card.fields || 9));
 
   const generatedBoard = buildMatch3Board(total, winTier, tiers, `${card.token}|${winTier}`);
-  const board = (Array.isArray(card.board) && card.board.length === total)
-    ? card.board
-    : generatedBoard;
+  const board = (Array.isArray(card.board) && card.board.length === total) ?
+    card.board :
+    generatedBoard;
 
   root.innerHTML = `
     <div class="card-screen">
@@ -1335,9 +1424,11 @@ function renderScratch(root, card){
   const counts = {};
   let alreadyWon = false;
 
-  function tierForIndex(i){ return board[i] || winTier; }
+  function tierForIndex(i) {
+    return board[i] || winTier;
+  }
 
-  for (let i = 0; i < total; i++){
+  for (let i = 0; i < total; i++) {
     const tier = tierForIndex(i);
     const src = tierIconSrc ? tierIconSrc(tier) : `/assets/img/${tier}.svg`;
 
@@ -1356,14 +1447,16 @@ function renderScratch(root, card){
     boardEl.appendChild(el);
 
     const canvas = el.querySelector('canvas');
-    attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
+    attachScratchTile(canvas, {
+      onScratched: () => onTileScratched(i, el)
+    });
   }
 
   void hydrateInlineSvgs(root);
 
   installRotateGuard(root);
 
-  
+
   // Exporter (Puppeteer) waits for this flag when present.
 
   async function markExportReadyWhenStable() {
@@ -1383,7 +1476,9 @@ function renderScratch(root, card){
       const root = document.querySelector('[data-export-root="1"]') || document.querySelector('.scratch-stage') || document.body;
       const imgs = Array.from(root.querySelectorAll('img'));
       await Promise.race([
-        Promise.all(imgs.map((img) => img.complete ? Promise.resolve() : new Promise((res) => { img.onload = img.onerror = () => res(); }))),
+        Promise.all(imgs.map((img) => img.complete ? Promise.resolve() : new Promise((res) => {
+          img.onload = img.onerror = () => res();
+        }))),
         new Promise((r) => setTimeout(r, 2000))
       ]);
 
@@ -1391,9 +1486,10 @@ function renderScratch(root, card){
 
     }
   }
-// Signal to the server exporter that the card is ready to be captured.
+  // Signal to the server exporter that the card is ready to be captured.
   markExportReadyWhenStable();
-function clearLegendState(){
+
+  function clearLegendState() {
     qsa('.prize-row__tag[data-role="prize-tag"]', root).forEach(el => {
       el.hidden = true;
       el.textContent = '';
@@ -1401,19 +1497,19 @@ function clearLegendState(){
     qsa('.prize-row.is-winner', root).forEach(el => el.classList.remove('is-winner'));
   }
 
-  function markLegendWinner(tier){
+  function markLegendWinner(tier) {
     clearLegendState();
     const winRow = qs(`.prize-row[data-tier="${tier}"]`, root);
-    if (winRow){
+    if (winRow) {
       winRow.classList.add('is-winner');
       const tag = qs('[data-role="prize-tag"]', winRow);
-      if (tag){
+      if (tag) {
         tag.hidden = false;
       }
     }
   }
 
-  function showWinUI(){
+  function showWinUI() {
     // Show the result in the rules panel only.
     markLegendWinner(opt.tier);
 
@@ -1421,7 +1517,7 @@ function clearLegendState(){
 
   }
 
-  function onTileScratched(i, el){
+  function onTileScratched(i, el) {
 
     if (scratched[i]) return;
 
@@ -1431,12 +1527,15 @@ function clearLegendState(){
     const tier = tierForIndex(i);
     counts[tier] = (counts[tier] || 0) + 1;
 
-    if (!alreadyWon && counts[winTier] >= 3){
+    if (!alreadyWon && counts[winTier] >= 3) {
       alreadyWon = true;
       const scratched_indices = scratched
         .map((v, idx) => v ? idx : -1)
         .filter(idx => idx !== -1);
-      setRevealed(card.token, { board, scratched_indices });
+      setRevealed(card.token, {
+        board,
+        scratched_indices
+      });
       // Show Save PNG immediately on reveal (no refresh required)
       renderRevealedActions(getCard(card.token) || card);
       fireWinTurboFlash();
@@ -1445,16 +1544,16 @@ function clearLegendState(){
   }
 }
 
-function renderRevealed(root, card){
+function renderRevealed(root, card) {
   renderRevealedActions(card);
 
-  const cardKey = String(card?.card_key || '').trim() || 'men-novice1';
+  const cardKey = String(card ? .card_key || '').trim() || 'men-novice1';
   setTileSet(cardKey);
 
   const theme = getCardTheme(cardKey);
   const titleSrc = (theme && theme.titleSrc) ? theme.titleSrc : '/assets/cards/men-novice1/title.svg';
   const bgDesktopSrc = (theme && theme.bgDesktopSrc) ? theme.bgDesktopSrc : '/assets/cards/men-novice1/bg-desktop.jpg';
-  const bgMobileSrc  = (theme && theme.bgMobileSrc)  ? theme.bgMobileSrc  : bgDesktopSrc;
+  const bgMobileSrc = (theme && theme.bgMobileSrc) ? theme.bgMobileSrc : bgDesktopSrc;
 
   const opt = resolveOptionFromCard(card);
   const winTier = opt.tier || 't1';
@@ -1462,9 +1561,9 @@ function renderRevealed(root, card){
   const total = Math.max(1, Math.min(9, card.fields || 9));
 
   const generatedBoard = buildMatch3Board(total, winTier, tiers, `${card.token}|${winTier}`);
-  const board = (Array.isArray(card.board) && card.board.length === total)
-    ? card.board
-    : generatedBoard;
+  const board = (Array.isArray(card.board) && card.board.length === total) ?
+    card.board :
+    generatedBoard;
 
   root.innerHTML = `
     <div class="card-screen">
@@ -1493,7 +1592,7 @@ function renderRevealed(root, card){
   `;
 
   const boardEl = qs('#boardStatic', root);
-  for (let i = 0; i < board.length; i++){
+  for (let i = 0; i < board.length; i++) {
     const tier = board[i];
     const src = tierIconSrc(tier);
     const el = document.createElement('div');
@@ -1519,14 +1618,14 @@ function renderRevealed(root, card){
   });
   qsa('.prize-row.is-winner', root).forEach(el => el.classList.remove('is-winner'));
   const winRow = qs(`.prize-row[data-tier="${opt.tier}"]`, root);
-  if (winRow){
+  if (winRow) {
     winRow.classList.add('is-winner');
     const tag = qs('[data-role="prize-tag"]', winRow);
     if (tag) tag.hidden = true;
   }
 }
 
-export async function bootCard(){
+export async function bootCard() {
   const container = qs('#app');
 
   const params = new URLSearchParams(window.location.search);
@@ -1536,37 +1635,45 @@ export async function bootCard(){
   PREVIEW_MODE = params.has('preview') && !token;
 
   // Public preview: allow scratch without a shareable token in the URL.
-  if (!token && PREVIEW_MODE){
+  if (!token && PREVIEW_MODE) {
     // Keep a stable token per tab session so the preview doesn't reset mid-try.
     const key = 'sc:preview_token';
     let t = '';
-    try{ t = sessionStorage.getItem(key) || ''; }catch{}
-    if (!TOKEN_RE.test(t)){
-      try{
+    try {
+      t = sessionStorage.getItem(key) || '';
+    } catch {}
+    if (!TOKEN_RE.test(t)) {
+      try {
         t = (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Math.random().toString(16).slice(2) + '-0000');
-      }catch{
+      } catch {
         t = (Math.random().toString(16).slice(2) + '-0000');
       }
-      try{ sessionStorage.setItem(key, t); }catch{}
+      try {
+        sessionStorage.setItem(key, t);
+      } catch {}
     }
     token = t;
 
     // Ensure a configured preview card exists (recipient scratch flow only).
     const card0 = ensureCard(token);
-    if (!card0.configured){
+    if (!card0.configured) {
       const opt = pickRandomOption();
-      setConfigured(token, { choice: opt.key, reveal_amount: opt.amount, fields: Number(card0.fields || 9) });
+      setConfigured(token, {
+        choice: opt.key,
+        reveal_amount: opt.amount,
+        fields: Number(card0.fields || 9)
+      });
     }
 
     const card = getCard(token);
-    if (card){
+    if (card) {
       render(container, token, card);
       return;
     }
     // If storage is blocked and we can't create a card, fall through to the missing-link screen.
   }
 
-  if (!token){
+  if (!token) {
     container.innerHTML = `
       <div class="card">
         <h2>Link missing</h2>
@@ -1581,7 +1688,7 @@ export async function bootCard(){
   }
 
   // If the token doesn't even match expected format, treat as an invalid link immediately.
-  if (!TOKEN_RE.test(token)){
+  if (!TOKEN_RE.test(token)) {
     renderInvalidToken(container, token);
     return;
   }
@@ -1593,11 +1700,11 @@ export async function bootCard(){
 
   // If we didn't find a local record, try the API (same-origin on live/staging).
   const isForceLocal = storeParam === 'local' || storeParam === 'memory';
-  if (!card && !isForceLocal){
+  if (!card && !isForceLocal) {
     card = await getCardAsync(token);
   }
 
-  if (!card){
+  if (!card) {
     renderInvalidToken(container, token);
     return;
   }
@@ -1607,23 +1714,23 @@ export async function bootCard(){
 
 // --- Orientation / minimum tile size guard (mobile) ---
 
-function applyTheme(themeId){
-  try{
+function applyTheme(themeId) {
+  try {
     const body = document.body;
     // remove existing theme-* classes
     body.className.split(/\s+/).forEach(c => {
       if (c && c.startsWith('theme-')) body.classList.remove(c);
     });
-    if (typeof themeId === 'string' && themeId.startsWith('theme-')){
+    if (typeof themeId === 'string' && themeId.startsWith('theme-')) {
       body.classList.add(themeId);
     }
-  }catch{}
+  } catch {}
 }
 
 const CC_MIN_TILE_PX = 56;
 let rotateGuardInstalled = false;
 
-function ensureRotateOverlay(){
+function ensureRotateOverlay() {
   let el = document.getElementById('rotateOverlay');
   if (el) return el;
 
@@ -1642,7 +1749,7 @@ function ensureRotateOverlay(){
   return el;
 }
 
-function updateRotateGuard(){
+function updateRotateGuard() {
   const overlay = ensureRotateOverlay();
   const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
 
@@ -1657,18 +1764,22 @@ function updateRotateGuard(){
   overlay.setAttribute('aria-hidden', needsLandscape ? 'false' : 'true');
 }
 
-function installRotateGuard(){
+function installRotateGuard() {
   ensureRotateOverlay();
   updateRotateGuard();
 
   if (rotateGuardInstalled) return;
   rotateGuardInstalled = true;
 
-  window.addEventListener('resize', updateRotateGuard, { passive: true });
-  window.addEventListener('orientationchange', updateRotateGuard, { passive: true });
+  window.addEventListener('resize', updateRotateGuard, {
+    passive: true
+  });
+  window.addEventListener('orientationchange', updateRotateGuard, {
+    passive: true
+  });
 }
 
-function prefersReducedMotion(){
+function prefersReducedMotion() {
   return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
@@ -1677,24 +1788,28 @@ function prefersReducedMotion(){
 // Replaces the old fireworks lib (which can freeze iOS Safari and fails on repeated runs).
 // Goal: quick, fun "burst" with minimal main-thread work, safe on mobile.
 
-function _ccIsMobile(){
-  try{
+function _ccIsMobile() {
+  try {
     return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-  }catch(_){ return false; }
+  } catch (_) {
+    return false;
+  }
 }
 
-function _ccLowEndHint(){
+function _ccLowEndHint() {
   // Conservative: treat unknown as not-low-end.
-  try{
+  try {
     const cores = Number(navigator.hardwareConcurrency || 0);
     const mem = Number(navigator.deviceMemory || 0);
     return (_ccIsMobile() && ((cores && cores <= 4) || (mem && mem <= 4)));
-  }catch(_){ return false; }
+  } catch (_) {
+    return false;
+  }
 }
 
 let _ccBurst = null;
 
-function _ccEnsureBurstCanvas(){
+function _ccEnsureBurstCanvas() {
   if (_ccBurst && _ccBurst.canvas && _ccBurst.ctx) return _ccBurst;
 
   const canvas = document.createElement('canvas');
@@ -1711,21 +1826,31 @@ function _ccEnsureBurstCanvas(){
   });
   document.body.appendChild(canvas);
 
-  const ctx = canvas.getContext('2d', { alpha: true });
+  const ctx = canvas.getContext('2d', {
+    alpha: true
+  });
 
-  _ccBurst = { canvas, ctx, raf: 0, running: false, particles: [] };
+  _ccBurst = {
+    canvas,
+    ctx,
+    raf: 0,
+    running: false,
+    particles: []
+  };
   _ccResizeBurstCanvas();
-  window.addEventListener('resize', _ccResizeBurstCanvas, { passive: true });
+  window.addEventListener('resize', _ccResizeBurstCanvas, {
+    passive: true
+  });
 
   // Warm-up: avoid "first draw" jank later.
-  try{
+  try {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }catch(_){}
+  } catch (_) {}
 
   return _ccBurst;
 }
 
-function _ccResizeBurstCanvas(){
+function _ccResizeBurstCanvas() {
   if (!_ccBurst || !_ccBurst.canvas) return;
   const dpr = Math.min(2, window.devicePixelRatio || 1); // cap DPR for perf
   const w = Math.max(1, Math.floor(window.innerWidth * dpr));
@@ -1736,24 +1861,30 @@ function _ccResizeBurstCanvas(){
   _ccBurst.dpr = dpr;
 }
 
-function _ccGetBurstOrigin(){
+function _ccGetBurstOrigin() {
   // Try to burst from the center of the card stage.
   const el = document.querySelector('.scratch-stage, .cc-card, .cc-card-wrap, .card-shell');
-  if (el){
+  if (el) {
     const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    return {
+      x: r.left + r.width / 2,
+      y: r.top + r.height / 2
+    };
   }
-  return { x: window.innerWidth / 2, y: window.innerHeight * 0.58 };
+  return {
+    x: window.innerWidth / 2,
+    y: window.innerHeight * 0.58
+  };
 }
 
-function _ccCreateFoilParticles(px, py, dpr, config){
+function _ccCreateFoilParticles(px, py, dpr, config) {
   const particles = [];
   const count = config.count;
   const spread = config.spread; // radians-ish factor
   const minSpeed = config.minSpeed;
   const maxSpeed = config.maxSpeed;
 
-  for (let i = 0; i < count; i++){
+  for (let i = 0; i < count; i++) {
     // Direction roughly upward with wide spread
     const angle = (-Math.PI / 2) + (Math.random() - 0.5) * spread;
     const speed = (minSpeed + Math.random() * (maxSpeed - minSpeed)) * dpr;
@@ -1780,15 +1911,21 @@ function _ccCreateFoilParticles(px, py, dpr, config){
   return particles;
 }
 
-function _ccDrawFoil(ctx, p, alpha){
+function _ccDrawFoil(ctx, p, alpha) {
   // Color: mostly silver/white with a hint of warm/cool variation
   let r, g, b;
-  if (p.tone < 0.7){
-    r = 235; g = 235; b = 245; // cool silver
-  } else if (p.tone < 0.9){
-    r = 245; g = 240; b = 230; // warm pearl
+  if (p.tone < 0.7) {
+    r = 235;
+    g = 235;
+    b = 245; // cool silver
+  } else if (p.tone < 0.9) {
+    r = 245;
+    g = 240;
+    b = 230; // warm pearl
   } else {
-    r = 220; g = 240; b = 255; // icy sparkle
+    r = 220;
+    g = 240;
+    b = 255; // icy sparkle
   }
 
   ctx.globalAlpha = alpha;
@@ -1801,7 +1938,7 @@ function _ccDrawFoil(ctx, p, alpha){
   ctx.restore();
 
   // Tiny sparkle cross (very cheap)
-  if (alpha > 0.4 && p.life < 260){
+  if (alpha > 0.4 && p.life < 260) {
     ctx.globalAlpha = alpha * 0.55;
     ctx.strokeStyle = `rgb(${255},${255},${255})`;
     ctx.lineWidth = 1;
@@ -1814,19 +1951,19 @@ function _ccDrawFoil(ctx, p, alpha){
   }
 }
 
-function _ccStopBurst(){
+function _ccStopBurst() {
   if (!_ccBurst) return;
   _ccBurst.running = false;
   if (_ccBurst.raf) cancelAnimationFrame(_ccBurst.raf);
   _ccBurst.raf = 0;
   _ccBurst.particles = [];
-  try{
+  try {
     _ccBurst.ctx.clearRect(0, 0, _ccBurst.canvas.width, _ccBurst.canvas.height);
-  }catch(_){}
+  } catch (_) {}
   _ccBurst.canvas.style.display = 'none';
 }
 
-function _ccStartFoilBurst(originCssX, originCssY){
+function _ccStartFoilBurst(originCssX, originCssY) {
   const b = _ccEnsureBurstCanvas();
   if (!b.ctx) return;
 
@@ -1865,9 +2002,12 @@ function _ccStartFoilBurst(originCssX, originCssY){
   let start = 0;
   let last = 0;
 
-  function step(t){
+  function step(t) {
     if (!b.running) return;
-    if (!start){ start = t; last = t; }
+    if (!start) {
+      start = t;
+      last = t;
+    }
 
     const dt = Math.min(0.033, (t - last) / 1000); // clamp dt
     last = t;
@@ -1877,7 +2017,7 @@ function _ccStartFoilBurst(originCssX, originCssY){
 
     ctx.clearRect(0, 0, b.canvas.width, b.canvas.height);
 
-    for (let i = 0; i < b.particles.length; i++){
+    for (let i = 0; i < b.particles.length; i++) {
       const part = b.particles[i];
       part.life = elapsed;
 
@@ -1893,7 +2033,7 @@ function _ccStartFoilBurst(originCssX, originCssY){
       _ccDrawFoil(ctx, part, alpha);
     }
 
-    if (elapsed < config.durationMs){
+    if (elapsed < config.durationMs) {
       b.raf = requestAnimationFrame(step);
     } else {
       _ccStopBurst();
@@ -1913,7 +2053,7 @@ const _ccBurstShown = new Set();
 
 let _ccWinFxStyleInjected = false;
 
-function _ccInjectWinFxStyles(){
+function _ccInjectWinFxStyles() {
   if (_ccWinFxStyleInjected) return;
   _ccWinFxStyleInjected = true;
   const css = `
@@ -1984,8 +2124,8 @@ function _ccInjectWinFxStyles(){
 }
 
 
-function fireWinTurboFlash(){
-  try{
+function fireWinTurboFlash() {
+  try {
     if (prefersReducedMotion()) return;
     const fx = document.querySelector('.scratch-fx');
     if (!fx) return;
@@ -1998,11 +2138,11 @@ function fireWinTurboFlash(){
     window.setTimeout(() => {
       fx.classList.remove('cc-win-turbo');
     }, 1000);
-  } catch(_){}
+  } catch (_) {}
 }
 
-function fireWinPulse(){
-  try{
+function fireWinPulse() {
+  try {
     if (prefersReducedMotion()) return;
     _ccInjectWinFxStyles();
     const fx = document.querySelector('.scratch-fx');
@@ -2017,12 +2157,12 @@ function fireWinPulse(){
     window.setTimeout(() => {
       fx.classList.remove('cc-win-pulse');
     }, 800);
-  } catch(_){}
+  } catch (_) {}
 }
 
 
-function fireSparkleBurst(){
-  try{
+function fireSparkleBurst() {
+  try {
     if (prefersReducedMotion()) return;
 
     _ccInjectWinFxStyles();
@@ -2046,7 +2186,7 @@ function fireSparkleBurst(){
     const count = lowEnd ? 8 : (isMobile ? 12 : 16);
     const maxR = lowEnd ? 60 : (isMobile ? 85 : 110);
 
-    for (let i = 0; i < count; i++){
+    for (let i = 0; i < count; i++) {
       const s = document.createElement('span');
       s.className = 'cc-sparkle';
 
@@ -2076,16 +2216,18 @@ function fireSparkleBurst(){
 
     // Clean up after animation
     window.setTimeout(() => {
-      try{ wrap.remove(); } catch(_){}
+      try {
+        wrap.remove();
+      } catch (_) {}
     }, 900);
-  } catch(_){}
+  } catch (_) {}
 }
 
 
-function fireFoilBurst(token){
+function fireFoilBurst(token) {
   // Burst FX is deprecated (kept for compatibility).
   return;
-// Public entry point: safe, fast, and repeatable across multiple cards in one session.
+  // Public entry point: safe, fast, and repeatable across multiple cards in one session.
   if (prefersReducedMotion()) return;
   if (typeof window.CC_REVEAL_FX === 'string' && window.CC_REVEAL_FX.toLowerCase() === 'off') return;
   if (!token) token = 'no-token';
