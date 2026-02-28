@@ -788,10 +788,6 @@ function renderSetup(root, card, container){
     </div>
   </div>
 
-  <div class="mini-panel">
-    <div class="mini-panel__kicker">What happens next</div>
-    <div class="small muted">Pick one prize level or choose Surprise me. Then lock it and copy the recipient link.</div>
-  </div>
 
   <div class="mini-panel">
     <div class="mini-panel__kicker" style="display:flex; align-items:center; justify-content:space-between;">
