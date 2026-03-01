@@ -1,5 +1,5 @@
 import { qs, qsa, copyText, formatIso, getTokenFromUrl } from './utils.js';
-import { REVEAL_OPTIONS, RANDOM_KEY, tierIconSrc, setTileSet } from './config.js';
+import { getRevealOptions, RANDOM_KEY, tierIconSrc, setTileSet } from './config.js';
 import { getCardTheme } from './card-themes.js';
 import { getCard, getCardAsync, ensureCard, setConfigured, setConfiguredAndWait, setRevealed } from './store.js';
 import { attachScratchTile } from './scratch.js';
@@ -608,20 +608,20 @@ ctx.drawImage(img, 0, 0);
 }
 
 function pickRandomOption(){
-  const idx = Math.floor(Math.random() * REVEAL_OPTIONS.length);
-  return REVEAL_OPTIONS[idx];
+  const idx = Math.floor(Math.random() * getRevealOptions().length);
+  return getRevealOptions()[idx];
 }
 
 function resolveOptionFromCard(card){
   if (card?.choice){
-    const o1 = REVEAL_OPTIONS.find(o => o.key === card.choice);
+    const o1 = getRevealOptions().find(o => o.key === card.choice);
     if (o1) return o1;
   }
   if (card?.reveal_amount){
-    const o2 = REVEAL_OPTIONS.find(o => o.amount === card.reveal_amount);
+    const o2 = getRevealOptions().find(o => o.amount === card.reveal_amount);
     if (o2) return o2;
   }
-  return REVEAL_OPTIONS[0];
+  return getRevealOptions()[0];
 }
 
 // --- Deterministic board (no persistence needed) ---
@@ -747,7 +747,7 @@ const previewCta = PREVIEW_MODE ? `
 }
 
 function renderSetup(root, card, container){
-  const tierOptions = REVEAL_OPTIONS.map(o => `
+  const tierOptions = getRevealOptions().map(o => `
       <button class="btn" data-choice="${o.key}" type="button">${o.label}</button>
     `).join('');
 
@@ -1001,12 +1001,12 @@ const shareUrlEl = qs('#shareUrl', root);
 
       let chosen = null;
       if (choice === RANDOM_KEY) chosen = pickRandomOption();
-      else chosen = REVEAL_OPTIONS.find(o => o.key === choice) || REVEAL_OPTIONS[0];
+      else chosen = getRevealOptions().find(o => o.key === choice) || getRevealOptions()[0];
 
       // IMPORTANT: persist the actual chosen tier key, not RANDOM_KEY.
       // Some backends treat unknown choice keys as a default and may ignore reveal_amount.
       // By storing the real tier key, the random pick becomes real and stable for the recipient.
-      const effectiveChoice = (choice === RANDOM_KEY) ? (chosen?.key || REVEAL_OPTIONS[0].key) : choice;
+      const effectiveChoice = (choice === RANDOM_KEY) ? (chosen?.key || getRevealOptions()[0].key) : choice;
 
       // Confirm before we start the lock countdown (prevents accidental taps).
       const confirmMsg = (choice === RANDOM_KEY)
@@ -1225,7 +1225,7 @@ function renderApiUnavailable(container, token){
 
 
 function renderLegendPanel(opt){
-  const rows = REVEAL_OPTIONS.map((o, idx) => {
+  const rows = getRevealOptions().map((o, idx) => {
     const prizeNo = idx + 1;
     const src = tierIconSrc ? tierIconSrc(o.tier) : `/assets/img/${o.tier}.svg`;
     return `
@@ -1328,7 +1328,7 @@ function renderScratch(root, card){
 
   const opt = resolveOptionFromCard(card);
   const winTier = opt.tier || 't1';
-  const tiers = uniq(REVEAL_OPTIONS.map(o => o.tier)).filter(Boolean);
+  const tiers = uniq(getRevealOptions().map(o => o.tier)).filter(Boolean);
   const total = Math.max(1, Math.min(9, card.fields || 9));
 
   const generatedBoard = buildMatch3Board(total, winTier, tiers, `${card.token}|${winTier}`);
@@ -1496,7 +1496,7 @@ function renderRevealed(root, card){
 
   const opt = resolveOptionFromCard(card);
   const winTier = opt.tier || 't1';
-  const tiers = uniq(REVEAL_OPTIONS.map(o => o.tier)).filter(Boolean);
+  const tiers = uniq(getRevealOptions().map(o => o.tier)).filter(Boolean);
   const total = Math.max(1, Math.min(9, card.fields || 9));
 
   const generatedBoard = buildMatch3Board(total, winTier, tiers, `${card.token}|${winTier}`);
