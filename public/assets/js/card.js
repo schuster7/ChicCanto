@@ -1054,19 +1054,19 @@ const shareUrlEl = qs('#shareUrl', root);
   }
 
   // Open recipient link in a new tab/window so the sender can keep setup open.
-  // (Previously this was treated like an <a href>, but the UI uses a <button>.)
-  if (openBtn){
-    openBtn.addEventListener('click', () => {
-      if (!shareUrl) return;
-      try{
-        const w = window.open(shareUrl, '_blank', 'noopener,noreferrer');
-        // If blocked, fall back to same-tab navigation.
-        if (!w) window.location.href = shareUrl;
-      }catch{
-        window.location.href = shareUrl;
-      }
-    });
-  }
+// IMPORTANT: do not fall back to same-tab navigation, because some in-app browsers
+// can return null from window.open() even when they still open a new view.
+if (openBtn){
+  openBtn.onclick = () => {
+    if (!shareUrl) return;
+    try{
+      window.open(shareUrl, '_blank', 'noopener,noreferrer');
+    }catch{
+      // If window.open is blocked, we intentionally do nothing here.
+      // The user can use Copy/Share instead.
+    }
+  };
+}
 }
 
 function renderNotReady(root, card){
