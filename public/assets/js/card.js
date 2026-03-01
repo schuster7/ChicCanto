@@ -1276,103 +1276,13 @@ function applyCardStageTheme(stageEl, theme){
 }
 
 function renderScratch(root, card){
-  // Mobile in-app browsers (Messenger/Instagram/etc.) can break scratch interactions.
-  // If we detect that environment, block the scratch UI and force copy-out to an external browser.
-  try {
-    const ua = navigator.userAgent || '';
-    const isMobile = /(iPhone|iPad|iPod|Android|Mobi)/i.test(ua);
-    const isInApp = /(FBAN|FBAV|FB_IAB|FB4A|FBMD|Instagram|Messenger)/i.test(ua);
-    const qs = new URLSearchParams(window.location.search);
-    const setupParam = qs.get('setup');
-    if (isMobile && isInApp && !setupParam) {
-      const token = qs.get('token') || '';
-      const origin = window.location.origin;
-      const shareUrl = token ? `${origin}/card/?token=${encodeURIComponent(token)}` : window.location.href;
-
-      root.innerHTML = `
-        <header class="site-header">
-          <div class="site-header__inner">
-            <a class="brand" href="/activate/" aria-label="ChicCanto activate">
-              <img alt="ChicCanto" class="brand__logo" src="/assets/img/logo1.svg"/>
-            </a>
-            <div class="site-header__actions">
-              <a class="btn outline" href="/faq/">FAQ</a>
-            </div>
-          </div>
-        </header>
-
-        <main class="page-main">
-          <div class="container">
-            <section class="flow-screen">
-              <div class="flow-layout">
-                <div class="flow-intro">
-                  <h1 class="flow-title">Open in your browser</h1>
-                  <p class="flow-lead muted panel-meta">
-                    This page opened inside a built-in browser. That can reset the card while scratching.
-                    Copy the link and open it in your phone’s browser.
-                  </p>
-                </div>
-
-                <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Open card in browser">
-                  <div class="panel-meta">
-                    <div>Step 1</div>
-                    <div class="flow-panel__hint">Copy link</div>
-                  </div>
-
-                  <div class="control-grid">
-                    <div class="field">
-                      <label class="label" for="ccCopyLink">Card link</label>
-                      <input class="input" id="ccCopyLink" readonly type="text" value="${shareUrl}"/>
-                    </div>
-
-                    <div class="actions">
-                      <button class="btn primary" id="ccCopyBtn" type="button">Copy link</button>
-                    </div>
-
-                    <div class="muted small" style="margin-top: 2px;">
-                      Use the <strong>…</strong> menu in your app and choose <strong>Open in browser</strong> (or similar).
-                      If you can’t find that option, paste the copied link into your phone’s browser.
-                    </div>
-                  </div>
-                </section>
-              </div>
-            </section>
-
-            <footer class="site-footer">
-              <a class="footer-link" href="/privacy/">Privacy</a>
-              <span class="dot">•</span>
-              <a class="footer-link" href="mailto:chiccanto@wearrs.com">chiccanto@wearrs.com</a>
-            </footer>
-          </div>
-        </main>
-      `;
-
-      const input = root.querySelector('#ccCopyLink');
-      const btn = root.querySelector('#ccCopyBtn');
-      btn.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(shareUrl);
-          btn.textContent = 'Copied';
-          window.setTimeout(() => (btn.textContent = 'Copy link'), 1200);
-        } catch (e) {
-          input.focus();
-          input.select();
-          document.execCommand('copy');
-          btn.textContent = 'Copied';
-          window.setTimeout(() => (btn.textContent = 'Copy link'), 1200);
-        }
-      });
-
-      return;
-    }
-  } catch (e) {
-    // If detection fails, continue with normal scratch render.
-  }
-
   const cardKey = String(card?.card_key || '').trim() || 'men-novice1';
   setTileSet(cardKey);
 
   const theme = getCardTheme(cardKey);
+  // Scratch foil (silver default, gold for birthday themes)
+  const foil = (theme && theme.foil) ? theme.foil : (String(cardKey).includes('birthday') ? 'gold' : 'silver');
+  document.documentElement.dataset.foil = foil;
   const titleSrc = (theme && theme.titleSrc) ? theme.titleSrc : '/assets/cards/men-novice1/title.svg';
 
   const bgDesktopSrc = (theme && theme.bgDesktopSrc) ? theme.bgDesktopSrc : '/assets/cards/men-novice1/bg-desktop.jpg';
