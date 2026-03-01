@@ -10,6 +10,13 @@ export const CARD_THEMES = {
     bgDesktopSrc: '/assets/cards/men-novice1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/men-novice1/bg-mobile.jpg'
   },
+  'women-novice1': {
+    key: 'women-novice1',
+    titleSrc: '/assets/cards/women-novice1/title.svg',
+    thumbSrc: '/assets/img/thumb_women-novice1.jpg',
+    bgDesktopSrc: '/assets/cards/women-novice1/bg-desktop.jpg',
+    bgMobileSrc: '/assets/cards/women-novice1/bg-mobile.jpg'
+  },
   'men-novice-birthday1': {
     key: 'men-novice-birthday1',
     foil: 'gold',
