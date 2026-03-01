@@ -28,7 +28,7 @@
           <div class="flow-intro">
             <h1 class="flow-title">Open in your browser</h1>
             <p class="flow-lead muted panel-meta">
-              Some chat apps open links inside an in-app browser. That can reset the card while scratching.
+              Some chat apps open links inside a built-in browser. That can reset the card while scratching.
               For a stable reveal, open this link in your phone’s browser.
             </p>
           </div>
@@ -51,7 +51,7 @@
               </div>
 
               <div class="muted small" id="helpText" style="margin-top: 2px;">
-                If your app shows the card inside a built-in browser, use the <strong>…</strong> menu and choose <strong>Open in browser</strong>.
+                If your app shows the card inside a built-in browser, use the <strong>…</strong> menu and choose <strong>Open in browser</strong> (or similar).
                 If you can’t find that option, paste the copied link into your browser.
               </div>
 
@@ -78,11 +78,12 @@
       const cardUrl = token ? `${origin}/card/?token=${encodeURIComponent(token)}` : `${origin}/`;
 
       const ua = navigator.userAgent || "";
+      const isMobile = /(iPhone|iPad|iPod|Android|Mobi)/i.test(ua);
       const isInApp = /(FBAN|FBAV|FB_IAB|FB4A|FBMD|Instagram|Messenger)/i.test(ua);
 
       const input = document.getElementById("cardLink");
-      const copyBtn = document.getElementById("copyBtn");
       const openBtn = document.getElementById("openBtn");
+      const copyBtn = document.getElementById("copyBtn");
       const continueLink = document.getElementById("continueLink");
       const hintRight = document.getElementById("hintRight");
       const helpText = document.getElementById("helpText");
@@ -107,24 +108,25 @@
         }
       });
 
-      if (isInApp) {
-        hintRight.textContent = "Copy the link, then open it in your browser";
-        openBtn.textContent = "Open here";
-        helpText.innerHTML =
-          "If your app shows the card inside a built-in browser, use the <strong>…</strong> menu and choose <strong>Open in browser</strong> (or similar). " +
-          "If you can’t find that option, paste the copied link into your browser.";
-      } else {
-        hintRight.textContent = "Open the card";
-        helpText.textContent = "If the card behaves strangely in a chat app, copy the link and open it in your browser.";
-      }
-
       openBtn.addEventListener("click", () => {
         window.location.href = cardUrl;
       });
 
+      // Desktop: Open is useful. Mobile in-app: Open is misleading (still in-app).
+      if (isInApp && isMobile) {
+        openBtn.style.display = "none";
+        hintRight.textContent = "Copy the link, then open it in your browser";
+        helpText.innerHTML =
+          "This link opened inside a built-in browser. Tap <strong>Copy link</strong>, then paste into your phone’s browser. " +
+          "If your app offers an <strong>Open in browser</strong> option in the <strong>…</strong> menu, you can use that instead.";
+      } else if (!isInApp) {
+        hintRight.textContent = "Open the card";
+        helpText.textContent = "If the card behaves strangely in a chat app, copy the link and open it in your browser.";
+      }
+
       if (!token) {
-        copyBtn.disabled = true;
         openBtn.disabled = true;
+        copyBtn.disabled = true;
         continueLink.style.display = "none";
         input.value = "Missing token in link.";
         hintRight.textContent = "Missing token";
