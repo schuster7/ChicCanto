@@ -868,22 +868,42 @@ const shareUrlEl = qs('#shareUrl', root);
   function resetShareUI(){
     shareUrl = null;
     shareUrlEl.textContent = 'Pick a prize to generate the link.';
+    // Disable actions until a prize is selected
     copyBtn.disabled = true;
-    if (shareBtn) shareBtn.disabled = true;
-    openBtn.href = '#';
-    openBtn.style.pointerEvents = 'none';
+    copyBtn.style.opacity = '.5';
+    copyBtn.style.pointerEvents = 'none';
+
+    if (shareBtn){
+      shareBtn.disabled = true;
+      shareBtn.style.opacity = '.5';
+      shareBtn.style.pointerEvents = 'none';
+    }
+
+    openBtn.disabled = true;
     openBtn.style.opacity = '.5';
+    openBtn.style.pointerEvents = 'none';
+
     changeRow.style.display = 'none';
     lockHintEl.textContent = '';
   }
 
   function enableShare(){
     shareUrlEl.textContent = shareUrl;
+
     copyBtn.disabled = false;
-    if (shareBtn) shareBtn.disabled = false;
-    openBtn.href = shareUrl;
-    openBtn.style.pointerEvents = 'auto';
+    copyBtn.style.opacity = '1';
+    copyBtn.style.pointerEvents = 'auto';
+
+    if (shareBtn){
+      shareBtn.disabled = false;
+      shareBtn.style.opacity = '1';
+      shareBtn.style.pointerEvents = 'auto';
+    }
+
+    openBtn.disabled = false;
     openBtn.style.opacity = '1';
+    openBtn.style.pointerEvents = 'auto';
+
     changeRow.style.display = 'none';
     lockHintEl.textContent = '';
   }
@@ -891,11 +911,20 @@ const shareUrlEl = qs('#shareUrl', root);
   function showPending(choice, chosen, secondsLeft){
     const label = chosen?.label || 'Your choice';
     shareUrlEl.textContent = `Selected ${label}. Locking in ${secondsLeft}…`;
+
     copyBtn.disabled = true;
-    if (shareBtn) shareBtn.disabled = true;
-    openBtn.href = '#';
-    openBtn.style.pointerEvents = 'none';
+    copyBtn.style.opacity = '.5';
+    copyBtn.style.pointerEvents = 'none';
+
+    if (shareBtn){
+      shareBtn.disabled = true;
+      shareBtn.style.opacity = '.5';
+      shareBtn.style.pointerEvents = 'none';
+    }
+
+    openBtn.disabled = true;
     openBtn.style.opacity = '.5';
+    openBtn.style.pointerEvents = 'none';
 
     changeRow.style.display = 'flex';
     lockHintEl.textContent = 'You can cancel until it locks.';
@@ -947,6 +976,11 @@ const shareUrlEl = qs('#shareUrl', root);
   }
 
   changeBtn.addEventListener('click', cancelPending);
+
+  // If the card is already configured
+
+  // Default state: actions look disabled until a prize is selected
+  resetShareUI();
 
   // If the card is already configured (e.g. returning to the private setup link),
   // show the recipient link immediately and prevent changing the outcome.
