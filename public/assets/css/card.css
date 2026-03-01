@@ -460,7 +460,7 @@
 .scratch-board .scratch-tile{
   position: relative;
   border-radius: var(--scratch-tile-radius);
-  background: var(--scratch-tile-under);
+  background: transparent;
   border: 1px solid var(--scratch-tile-border);
   overflow: hidden;
   aspect-ratio: 1 / 1;
