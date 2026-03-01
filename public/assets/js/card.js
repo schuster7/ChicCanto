@@ -211,7 +211,7 @@ function statusBadge(card){
 
 function makeAbsoluteCardLink(token){
   const url = new URL(window.location.href);
-  url.pathname = '/card/';
+  url.pathname = '/open/';
 
   // If token is malformed, don't build a share link.
   if (!TOKEN_RE.test(token)) return null;

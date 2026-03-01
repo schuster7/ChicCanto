@@ -265,7 +265,7 @@ function buildCardLinks(card){
 
   return {
     setupUrl: '/card/?' + setupParams.toString(),
-    recipientUrl: '/card/?' + recipParams.toString()
+    recipientUrl: '/open/?' + recipParams.toString()
   };
 }
 
