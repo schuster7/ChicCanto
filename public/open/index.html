@@ -26,16 +26,16 @@
       <section class="flow-screen">
         <div class="flow-layout">
           <div class="flow-intro">
-            <h1 class="flow-title">Open this link in your browser</h1>
+            <h1 class="flow-title">Open in Safari or Chrome</h1>
             <p class="flow-lead muted panel-meta">
-              Facebook Messenger and Instagram in-app browsers can reset the card while scratching.
-              For a stable reveal, open in Safari or Chrome.
+              Facebook Messenger and Instagram often open links inside an in-app browser. That browser can reset the card while scratching.
             </p>
           </div>
-<section aria-label="Open card" class="flow-panel--combined panel panel--glass panel--padded">
+
+          <section aria-label="Open card" class="flow-panel--combined panel panel--glass panel--padded">
             <div class="panel-meta">
               <div>Step 1</div>
-              <div class="flow-panel__hint">Opens the card in your browser</div>
+              <div class="flow-panel__hint" id="hintRight">Copy the link and open in your browser</div>
             </div>
 
             <div class="control-grid">
@@ -44,15 +44,20 @@
                 <input class="input" id="cardLink" readonly type="text" value=""/>
               </div>
 
-              <div class="actions">
-                <button class="btn primary" id="openBtn" type="button">Open</button>
-                <button class="btn outline" id="copyBtn" type="button">Copy</button>
+              <div class="actions" id="actionsRow">
+                <button class="btn primary" id="copyBtn" type="button">Copy link</button>
+                <button class="btn outline" id="openBrowserBtn" type="button" style="display:none">Open in browser</button>
+                <button class="btn outline" id="openChromeBtn" type="button" style="display:none">Open in Chrome</button>
               </div>
 
-              <p class="muted small" style="margin-top: 2px;">
-                If you are viewing this inside Messenger on iPhone: tap the <strong>…</strong> menu and choose <strong>Open in Safari</strong>.
-                If you cannot find it, tap <strong>Copy</strong>, paste into Safari/Chrome, then open.
-              </p>
+              <div id="iosHelp" class="muted small" style="display:none; margin-top: 2px;">
+                iPhone: tap the <strong>…</strong> menu in Messenger, then choose <strong>Open in Safari</strong>.
+                If you cannot find it, paste the copied link into Safari or Chrome.
+              </div>
+
+              <div id="androidHelp" class="muted small" style="display:none; margin-top: 2px;">
+                Android: use <strong>Open in browser</strong> if your app offers it. If not, paste the copied link into Chrome.
+              </div>
 
               <a class="muted small" href="#" id="continueLink">Continue here anyway</a>
             </div>
@@ -76,37 +81,78 @@
       const origin = window.location.origin;
       const cardUrl = token ? `${origin}/card/?token=${encodeURIComponent(token)}` : `${origin}/`;
 
+      const ua = navigator.userAgent || "";
+      const isIOS = /iPad|iPhone|iPod/i.test(ua);
+      const isAndroid = /Android/i.test(ua);
+
+      // FB/IG in-app browsers typically include these tokens
+      const isFBInApp = /(FBAN|FBAV|FB_IAB|FB4A|FBMD)/i.test(ua);
+      const isIGInApp = /(Instagram)/i.test(ua);
+      const isMessengerInApp = /(Messenger)/i.test(ua);
+      const isInApp = isFBInApp || isIGInApp || isMessengerInApp;
+
       const input = document.getElementById("cardLink");
-      const openBtn = document.getElementById("openBtn");
       const copyBtn = document.getElementById("copyBtn");
+      const openBrowserBtn = document.getElementById("openBrowserBtn");
+      const openChromeBtn = document.getElementById("openChromeBtn");
       const continueLink = document.getElementById("continueLink");
+      const hintRight = document.getElementById("hintRight");
+      const iosHelp = document.getElementById("iosHelp");
+      const androidHelp = document.getElementById("androidHelp");
 
       input.value = cardUrl;
       continueLink.href = cardUrl;
 
-      openBtn.addEventListener("click", () => {
-        window.location.href = cardUrl;
-      });
+      const setCopied = () => {
+        copyBtn.textContent = "Copied";
+        window.setTimeout(() => (copyBtn.textContent = "Copy link"), 1200);
+      };
 
       copyBtn.addEventListener("click", async () => {
         try {
           await navigator.clipboard.writeText(cardUrl);
-          copyBtn.textContent = "Copied";
-          window.setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
+          setCopied();
         } catch (e) {
           input.focus();
           input.select();
           document.execCommand("copy");
-          copyBtn.textContent = "Copied";
-          window.setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
+          setCopied();
         }
       });
 
+      // "Open in browser" is only meaningful outside in-app browsers
+      // In Messenger/Instagram it just opens another in-app view, so we hide it there.
+      if (!isInApp) {
+        openBrowserBtn.style.display = "";
+        openBrowserBtn.addEventListener("click", () => {
+          window.location.href = cardUrl;
+        });
+        hintRight.textContent = "Open in your browser";
+      } else {
+        hintRight.textContent = "Copy the link and open in Safari or Chrome";
+        if (isIOS) iosHelp.style.display = "";
+        if (isAndroid) androidHelp.style.display = "";
+
+        // iOS: try Chrome deep link if installed. If not installed, it will fail silently.
+        // This is optional, but gives a one-tap path for some users.
+        if (isIOS) {
+          openChromeBtn.style.display = "";
+          openChromeBtn.addEventListener("click", () => {
+            const chromeUrl = `googlechromes://${cardUrl.replace(/^https?:\/\//i, "")}`;
+            window.location.href = chromeUrl;
+          });
+        }
+      }
+
       if (!token) {
-        openBtn.disabled = true;
         copyBtn.disabled = true;
+        openBrowserBtn.disabled = true;
+        openChromeBtn.disabled = true;
         continueLink.style.display = "none";
         input.value = "Missing token in link.";
+        hintRight.textContent = "Missing token";
+        iosHelp.style.display = "none";
+        androidHelp.style.display = "none";
       }
     })();
   </script>
