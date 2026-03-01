@@ -747,6 +747,10 @@ const previewCta = PREVIEW_MODE ? `
 }
 
 function renderSetup(root, card, container){
+  // Ensure the correct per-card prize labels/icons are active before rendering the choice buttons.
+  const cardKey = String(card?.card_key || '').trim() || 'men-novice1';
+  setTileSet(cardKey);
+
   const tierOptions = getRevealOptions().map(o => `
       <button class="btn" data-choice="${o.key}" type="button">${o.label}</button>
     `).join('');
