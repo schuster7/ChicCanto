@@ -793,7 +793,7 @@ function renderSetup(root, card, container){
   <div class="mini-panel">
     <div class="mini-panel__kicker" style="display:flex; align-items:center; justify-content:space-between;">
       <span>Prefer not to choose?</span>
-      <span class="small muted">Optional</span>
+      <span class="small muted">We pick</span>
     </div>
     <div class="small muted">Let ChicCanto pick one of the four prizes for you.</div>
     <button class="btn outline w-full" data-choice="${RANDOM_KEY}" type="button" style="margin-top:12px;">Surprise me (we choose)</button>
