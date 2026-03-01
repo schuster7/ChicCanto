@@ -4,6 +4,83 @@ import { getCardTheme } from './card-themes.js';
 import { getCard, getCardAsync, ensureCard, setConfigured, setConfiguredAndWait, setRevealed } from './store.js';
 import { attachScratchTile } from './scratch.js';
 
+function isLikelyInAppBrowser(){
+  const ua = navigator.userAgent || '';
+  // Heuristic: FB/IG/Messenger in-app browsers usually expose these tokens.
+  return /(FBAN|FBAV|FB_IAB|FB4A|FBMD|Instagram|Messenger)/i.test(ua);
+}
+
+function isMobileOrTablet(){
+  const ua = navigator.userAgent || '';
+  // Coarse filter: only gate on handheld devices.
+  return /Android|iPhone|iPad|iPod/i.test(ua);
+}
+
+function renderInAppBlocked(container, token){
+  const origin = window.location.origin;
+  const cardUrl = `${origin}/card/?token=${encodeURIComponent(token)}`;
+
+  container.innerHTML = `
+    <main class="page-main">
+      <div class="container">
+        <section class="flow-screen">
+          <div class="flow-layout">
+            <div class="flow-intro">
+              <h1 class="flow-title">Open in your browser</h1>
+              <p class="flow-lead muted panel-meta">
+                This chat app is opening the card inside an in-app browser. That can reset the card while scratching.
+                Copy the link and open it in your phone’s browser.
+              </p>
+            </div>
+
+            <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Open in browser">
+              <div class="panel-meta">
+                <div>Step 1</div>
+                <div class="flow-panel__hint">Copy the link</div>
+              </div>
+
+              <div class="control-grid">
+                <div class="field">
+                  <label class="label" for="cardLink">Card link</label>
+                  <input class="input" id="cardLink" readonly type="text" value="${cardUrl}" />
+                </div>
+
+                <div class="actions">
+                  <button class="btn primary" id="copyLinkBtn" type="button">Copy link</button>
+                </div>
+
+                <div class="muted small" style="margin-top: 2px;">
+                  Use the <strong>…</strong> menu in your chat app and choose <strong>Open in browser</strong> (or similar).
+                  If you can’t find that option, paste the copied link into your browser.
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </div>
+    </main>
+  `;
+
+  const copyBtn = container.querySelector('#copyLinkBtn');
+  const input = container.querySelector('#cardLink');
+  if (copyBtn && input){
+    copyBtn.addEventListener('click', async () => {
+      try{
+        await navigator.clipboard.writeText(cardUrl);
+        copyBtn.textContent = 'Copied';
+        setTimeout(() => (copyBtn.textContent = 'Copy link'), 1200);
+      }catch{
+        input.focus();
+        input.select();
+        document.execCommand('copy');
+        copyBtn.textContent = 'Copied';
+        setTimeout(() => (copyBtn.textContent = 'Copy link'), 1200);
+      }
+    });
+  }
+}
+
+
 // --- Patch: ensure "configured" persists so share links work ---
 // Some flows update choice/reveal_amount but forget to flip card.configured.
 // This helper force-merges the configured state into localStorage for the current token.
@@ -1628,7 +1705,15 @@ export async function bootCard(){
     return;
   }
 
-  const storeParam = (params.get('store') || '').toLowerCase();
+  
+  const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
+  // Block the scratch page inside mobile/tablet in-app browsers (recipient view only).
+  if (!PREVIEW_MODE && !setupParam && isMobileOrTablet() && isLikelyInAppBrowser()){
+    renderInAppBlocked(container, token);
+    return;
+  }
+
+const storeParam = (params.get('store') || '').toLowerCase();
 
   // Fast path: local mirror (works for same-device refreshes)
   let card = getCard(token);
