@@ -591,28 +591,6 @@ async function exportRevealedPng(card, opts = {}){
     // ignore
   }
 
-  // Force-export background: foreignObject can be flaky with <picture>/<img> + object-fit.
-  // We bake the card background into the stage clone as a CSS background and drop the <picture>.
-  try{
-    const bg = stage.querySelector('.card-bg__img');
-    if (bg){
-      const src = bg.getAttribute('src') || '';
-      const ok = src && (src.startsWith('/') || src.startsWith(window.location.origin) || src.startsWith('http'));
-      if (ok){
-        const abs = src.startsWith('http') ? src : (window.location.origin + src);
-        const dataUrl = await _fetchAsDataUrl(abs);
-        clone.style.backgroundImage = `url("${dataUrl}")`;
-        clone.style.backgroundSize = 'cover';
-        clone.style.backgroundPosition = 'center';
-        clone.style.backgroundRepeat = 'no-repeat';
-        const pic = clone.querySelector('.card-bg');
-        if (pic) pic.remove();
-      }
-    }
-  } catch {
-    // ignore
-  }
-
   // Inline stage background image if present (used by image-backed cards).
   try{
     const csStage = getComputedStyle(stage);
@@ -648,25 +626,6 @@ async function exportRevealedPng(card, opts = {}){
   try{
     // Inline all computed CSS into the clone.
     _inlineStylesDeep(stage, clone);
-
-    // SVG/foreignObject export: backdrop-filter is inconsistently supported and can make panels disappear.
-    // Strip it and slightly strengthen glass panel backgrounds for reliable PNG output.
-    try{
-      const all = clone.querySelectorAll('*');
-      for (const el of all){
-        if (!el || !el.style) continue;
-        el.style.backdropFilter = 'none';
-        el.style.webkitBackdropFilter = 'none';
-      }
-      const panels = clone.querySelectorAll('.panel--glass, .glass, .panel--glass-strong');
-      for (const p of panels){
-        if (!p || !p.style) continue;
-        // Keep it subtle, but visible without blur.
-        p.style.background = 'rgba(18, 22, 32, .72)';
-      }
-    } catch {
-      // ignore
-    }
 
     const rect = stage.getBoundingClientRect();
 
