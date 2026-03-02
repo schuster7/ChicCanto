@@ -445,32 +445,20 @@ function _blobDownload(blob, filename){
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-function _arrayBufferToBase64(buf){
-  const bytes = new Uint8Array(buf);
-  const chunkSize = 0x8000; // 32KB chunks to avoid stack overflow
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += chunkSize){
-    const chunk = bytes.subarray(i, i + chunkSize);
-    binary += String.fromCharCode.apply(null, chunk);
-  }
-  return btoa(binary);
-}
-
 async function _fetchAsDataUrl(url){
   const res = await fetch(url, { cache: 'force-cache' });
   if (!res.ok) throw new Error('Fetch failed: ' + url + ' (' + res.status + ')');
-  const buf = await res.arrayBuffer();
-  const b64 = _arrayBufferToBase64(buf);
-  const ext = url.split('.').pop().toLowerCase();
-  const mime =
-    ext === 'woff2' ? 'font/woff2' :
-    ext === 'woff' ? 'font/woff' :
-    ext === 'svg' ? 'image/svg+xml' :
-    ext === 'png' ? 'image/png' :
-    ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' :
-    'application/octet-stream';
-  return `data:${mime};base64,${b64}`;
+  const blob = await res.blob();
+
+  // Use FileReader to avoid stack/argument limits when base64-encoding large files.
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('FileReader failed: ' + url));
+    reader.readAsDataURL(blob);
+  });
 }
+
 
 async function _embedInterFontCss(){
   // Best-effort: embed the self-hosted Inter fonts into the SVG snapshot.
@@ -565,45 +553,38 @@ async function exportRevealedPng(card, opts = {}){
   // Ensure no shadow/filters on the clone root, regardless of computed styles.
   clone.style.boxShadow = 'none';
   clone.style.filter = 'none';
-  // Export fix: bake the card background (picture/img) into a simple CSS background layer.
-  // Reason: SVG foreignObject can drop <picture>/<img> backgrounds while still rendering text/icons.
-  // Keep this export-only; do not change live UI rendering.
+
+  // Export-only fix: <picture> backgrounds are unreliable inside SVG foreignObject snapshots.
+  // We bake the resolved background image into a simple CSS background layer in the clone.
   try{
-    const bgImgEl = stage.querySelector('.card-bg img');
-    const bgPicClone = clone.querySelector('.card-bg');
-    if (bgImgEl){
-      const src = bgImgEl.currentSrc || bgImgEl.getAttribute('src') || '';
-      if (src && (src.startsWith('/') || src.startsWith(window.location.origin))){
-        const abs = src.startsWith('http') ? src : (window.location.origin + src);
+    const srcPic = stage.querySelector('picture.card-bg');
+    const dstPic = clone.querySelector('picture.card-bg');
+    const srcImg = srcPic ? srcPic.querySelector('img') : null;
+    if (srcImg){
+      const resolved = srcImg.currentSrc || srcImg.getAttribute('src') || '';
+      if (resolved){
+        const abs = resolved.startsWith('http') ? resolved : (window.location.origin + resolved);
         const dataUrl = await _fetchAsDataUrl(abs);
 
-        // Remove picture element from clone (it is the unreliable bit in foreignObject snapshots).
-        if (bgPicClone) bgPicClone.remove();
-
-        // Ensure clone can position an absolute bg layer.
-        if (!clone.style.position) clone.style.position = 'relative';
-
+        // Create a background layer behind the card contents.
         const bg = document.createElement('div');
-        bg.className = 'cc-export-bg';
-        bg.setAttribute('aria-hidden', 'true');
+        bg.setAttribute('data-export-bg', '1');
         bg.style.position = 'absolute';
         bg.style.inset = '0';
         bg.style.backgroundImage = `url("${dataUrl}")`;
         bg.style.backgroundSize = 'cover';
         bg.style.backgroundPosition = 'center';
         bg.style.backgroundRepeat = 'no-repeat';
+        bg.style.zIndex = '-1';
         bg.style.pointerEvents = 'none';
-        bg.style.zIndex = '0';
 
-        // Put bg as first child so everything else paints on top.
-        clone.insertBefore(bg, clone.firstChild);
+        // Ensure the clone forms a stacking context.
+        if (!clone.style.position) clone.style.position = 'relative';
 
-        // Ensure the rest of the clone paints above the bg.
-        Array.from(clone.children).forEach((child) => {
-          if (child === bg) return;
-          if (!child.style.position) child.style.position = 'relative';
-          if (!child.style.zIndex) child.style.zIndex = '1';
-        });
+        clone.prepend(bg);
+
+        // Remove the <picture> element from the export clone to avoid foreignObject quirks.
+        if (dstPic) dstPic.remove();
       }
     }
   } catch {
@@ -631,28 +612,17 @@ async function exportRevealedPng(card, opts = {}){
     }
 
   // Inline any <img> sources inside the export root so foreignObject renders reliably.
-// Important: when the snapshot SVG is loaded via blob/data URL, its origin becomes opaque,
-// and external image references (even same-site) can fail or taint the canvas.
-// So we inline images as data: URLs in the export clone.
   try{
     const imgsSrc = stage.querySelectorAll('img');
     const imgsDst = clone.querySelectorAll('img');
     const n = Math.min(imgsSrc.length, imgsDst.length);
     for (let i = 0; i < n; i++){
-      const sEl = imgsSrc[i];
-      const dEl = imgsDst[i];
-      const src = (sEl && (sEl.currentSrc || sEl.getAttribute('src'))) || dEl.getAttribute('src') || '';
+      const src = imgsSrc[i].getAttribute('src') || '';
       if (!src) continue;
-      if (src.startsWith('data:')) continue;
       if (!(src.startsWith('/') || src.startsWith(window.location.origin))) continue;
-
       const abs = src.startsWith('http') ? src : (window.location.origin + src);
       const dataUrl = await _fetchAsDataUrl(abs);
-
-      dEl.setAttribute('src', dataUrl);
-      // Remove responsive attrs to prevent the renderer from trying to resolve external candidates.
-      dEl.removeAttribute('srcset');
-      dEl.removeAttribute('sizes');
+      imgsDst[i].setAttribute('src', dataUrl);
     }
   } catch {
     // ignore
@@ -714,7 +684,8 @@ const embeddedFontCss = await _embedInterFontCss();
 
 // SVG is authored at on-screen size; canvas handles pixel scaling.
 const svgMarkup = _makeSvgSnapshotMarkup(clone, w0, h0, embeddedFontCss);
-// Use a Blob URL (NOT a data: URL) to avoid URL length limits when styles are inlined.
+
+// Use a Blob URL instead of a data: URL to avoid URL length limits and truncation.
 const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
 const svgUrl = URL.createObjectURL(svgBlob);
 
@@ -722,16 +693,10 @@ const svgUrl = URL.createObjectURL(svgBlob);
     img.decoding = 'async';
 
     await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = () => {
-        try { URL.revokeObjectURL(svgUrl); } catch {}
-        reject(new Error('Snapshot image failed to load'));
-      };
+      img.onload = () => { try{ URL.revokeObjectURL(svgUrl); } catch {} resolve(); };
+      img.onerror = () => { try{ URL.revokeObjectURL(svgUrl); } catch {} reject(new Error('Snapshot image failed to load')); };
       img.src = svgUrl;
     });
-
-    // Cleanup blob URL once decoded.
-    URL.revokeObjectURL(svgUrl);
 
     const canvas = document.createElement('canvas');
 canvas.width = Math.max(1, Math.round(w0 * scale));
