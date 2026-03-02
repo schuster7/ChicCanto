@@ -446,19 +446,39 @@ function _blobDownload(blob, filename){
 }
 
 async function _fetchAsDataUrl(url){
+  // Use Blob + FileReader to avoid stack/argument limits with large files.
   const res = await fetch(url, { cache: 'force-cache' });
   if (!res.ok) throw new Error('Fetch failed: ' + url + ' (' + res.status + ')');
   const blob = await res.blob();
 
-  // Use FileReader to avoid stack/argument limits when base64-encoding large files.
-  return await new Promise((resolve, reject) => {
+  // Derive mime when server returns generic type.
+  let mime = blob.type || '';
+  if (!mime || mime === 'application/octet-stream'){
+    const ext = String(url).split('?')[0].split('#')[0].split('.').pop().toLowerCase();
+    mime =
+      ext === 'woff2' ? 'font/woff2' :
+      ext === 'woff' ? 'font/woff' :
+      ext === 'svg' ? 'image/svg+xml' :
+      ext === 'png' ? 'image/png' :
+      ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' :
+      'application/octet-stream';
+  }
+
+  const dataUrl = await new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = () => reject(new Error('FileReader failed: ' + url));
-    reader.readAsDataURL(blob);
+    reader.onerror = () => reject(new Error('FileReader failed for: ' + url));
+    // Force correct mime by wrapping blob when needed.
+    try{
+      const b = (mime && blob.type !== mime) ? new Blob([blob], { type: mime }) : blob;
+      reader.readAsDataURL(b);
+    }catch(err){
+      reject(err);
+    }
   });
-}
 
+  return dataUrl;
+}
 
 async function _embedInterFontCss(){
   // Best-effort: embed the self-hosted Inter fonts into the SVG snapshot.
@@ -554,44 +574,6 @@ async function exportRevealedPng(card, opts = {}){
   clone.style.boxShadow = 'none';
   clone.style.filter = 'none';
 
-  // Export-only fix: <picture> backgrounds are unreliable inside SVG foreignObject snapshots.
-  // We bake the resolved background image into a simple CSS background layer in the clone.
-  try{
-    const srcPic = stage.querySelector('picture.card-bg');
-    const dstPic = clone.querySelector('picture.card-bg');
-    const srcImg = srcPic ? srcPic.querySelector('img') : null;
-    if (srcImg){
-      const resolved = srcImg.currentSrc || srcImg.getAttribute('src') || '';
-      if (resolved){
-        const abs = resolved.startsWith('http') ? resolved : (window.location.origin + resolved);
-        const dataUrl = await _fetchAsDataUrl(abs);
-
-        // Create a background layer behind the card contents.
-        const bg = document.createElement('div');
-        bg.setAttribute('data-export-bg', '1');
-        bg.style.position = 'absolute';
-        bg.style.inset = '0';
-        bg.style.backgroundImage = `url("${dataUrl}")`;
-        bg.style.backgroundSize = 'cover';
-        bg.style.backgroundPosition = 'center';
-        bg.style.backgroundRepeat = 'no-repeat';
-        bg.style.zIndex = '-1';
-        bg.style.pointerEvents = 'none';
-
-        // Ensure the clone forms a stacking context.
-        if (!clone.style.position) clone.style.position = 'relative';
-
-        clone.prepend(bg);
-
-        // Remove the <picture> element from the export clone to avoid foreignObject quirks.
-        if (dstPic) dstPic.remove();
-      }
-    }
-  } catch {
-    // ignore
-  }
-
-
   // Best-effort: inline pattern URL to data URL so it renders inside SVG snapshot.
   try{
     const innerSrc = stage.querySelector('.scratch-stage__inner');
@@ -685,7 +667,7 @@ const embeddedFontCss = await _embedInterFontCss();
 // SVG is authored at on-screen size; canvas handles pixel scaling.
 const svgMarkup = _makeSvgSnapshotMarkup(clone, w0, h0, embeddedFontCss);
 
-// Use a Blob URL instead of a data: URL to avoid URL length limits and truncation.
+// Use a Blob URL (not a data: URL) to avoid URL length limits and truncation.
 const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
 const svgUrl = URL.createObjectURL(svgBlob);
 
@@ -693,10 +675,16 @@ const svgUrl = URL.createObjectURL(svgBlob);
     img.decoding = 'async';
 
     await new Promise((resolve, reject) => {
-      img.onload = () => { try{ URL.revokeObjectURL(svgUrl); } catch {} resolve(); };
-      img.onerror = () => { try{ URL.revokeObjectURL(svgUrl); } catch {} reject(new Error('Snapshot image failed to load')); };
+      img.onload = resolve;
+      img.onerror = () => {
+        try{ URL.revokeObjectURL(svgUrl); }catch{}
+        reject(new Error('Snapshot image failed to load'));
+      };
       img.src = svgUrl;
     });
+
+    // Cleanup blob URL once decoded.
+    try{ URL.revokeObjectURL(svgUrl); }catch{}
 
     const canvas = document.createElement('canvas');
 canvas.width = Math.max(1, Math.round(w0 * scale));
@@ -1515,7 +1503,7 @@ function renderScratch(root, card){
     boardEl.appendChild(el);
 
     const canvas = el.querySelector('canvas');
-    attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
+    attachScratchTile(canvas, { onScratched: () => { void onTileScratched(i, el); } });
   }
 
   void hydrateInlineSvgs(root);
@@ -1580,7 +1568,7 @@ function clearLegendState(){
 
   }
 
-  function onTileScratched(i, el){
+  async function onTileScratched(i, el){
 
     if (scratched[i]) return;
 
@@ -1595,7 +1583,8 @@ function clearLegendState(){
       const scratched_indices = scratched
         .map((v, idx) => v ? idx : -1)
         .filter(idx => idx !== -1);
-      setRevealed(card.token, { board, scratched_indices });
+      try{ await setRevealed(card.token, { board, scratched_indices }); }
+      catch(err){ console.warn('Failed to persist reveal:', err); }
       // Show Save PNG immediately on reveal (no refresh required)
       renderRevealedActions(getCard(card.token) || card);
       fireWinTurboFlash();
