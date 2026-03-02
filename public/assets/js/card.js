@@ -555,6 +555,42 @@ async function exportRevealedPng(card, opts = {}){
   clone.style.boxShadow = 'none';
   clone.style.filter = 'none';
 
+  // Export reliability: replace <picture class="card-bg"> with a simple CSS background layer.
+  // foreignObject rasterization is often flaky with <picture> + object-fit.
+  try{
+    const imgSrc = stage.querySelector('picture.card-bg img');
+    const picDst = clone.querySelector('picture.card-bg');
+    if (imgSrc && picDst){
+      const srcUrl = imgSrc.currentSrc || imgSrc.getAttribute('src') || '';
+      if (srcUrl && (srcUrl.startsWith('/') || srcUrl.startsWith(window.location.origin))){
+        const abs = srcUrl.startsWith('http') ? srcUrl : (window.location.origin + srcUrl);
+        const dataUrl = await _fetchAsDataUrl(abs);
+
+        const bg = document.createElement('div');
+        bg.setAttribute('data-export-bg', '1');
+        bg.style.position = 'absolute';
+        bg.style.inset = '0';
+        bg.style.backgroundImage = `url("${dataUrl}")`;
+        bg.style.backgroundSize = 'cover';
+        bg.style.backgroundPosition = 'center';
+        bg.style.backgroundRepeat = 'no-repeat';
+        bg.style.zIndex = '-1';
+        bg.style.pointerEvents = 'none';
+
+        // Make sure we have a positioning context for the absolute background.
+        if (!clone.style.position) clone.style.position = 'relative';
+
+        clone.insertBefore(bg, clone.firstChild);
+
+        // Remove the <picture> from the clone.
+        picDst.remove();
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+
   // Best-effort: inline pattern URL to data URL so it renders inside SVG snapshot.
   try{
     const innerSrc = stage.querySelector('.scratch-stage__inner');
