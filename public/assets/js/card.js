@@ -723,13 +723,15 @@ const svgUrl = URL.createObjectURL(svgBlob);
 
     await new Promise((resolve, reject) => {
       img.onload = resolve;
-      img.onerror = () => { try{ URL.revokeObjectURL(svgUrl); }catch{} reject(new Error('Snapshot image failed to load')); };
+      img.onerror = () => {
+        try { URL.revokeObjectURL(svgUrl); } catch {}
+        reject(new Error('Snapshot image failed to load'));
+      };
       img.src = svgUrl;
-    }
+    });
 
     // Cleanup blob URL once decoded.
     URL.revokeObjectURL(svgUrl);
-);
 
     const canvas = document.createElement('canvas');
 canvas.width = Math.max(1, Math.round(w0 * scale));
