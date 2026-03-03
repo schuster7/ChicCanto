@@ -461,6 +461,17 @@ async function _fetchAsDataUrl(url){
   return `data:${mime};base64,${b64}`;
 }
 
+function _resolveInlineableAbsUrl(maybeUrl){
+  if (!maybeUrl) return null;
+  try{
+    const u = new URL(maybeUrl, window.location.href);
+    if (u.origin !== window.location.origin) return null;
+    return u.href;
+  }catch{
+    return null;
+  }
+}
+
 async function _embedInterFontCss(){
   // Best-effort: embed the self-hosted Inter fonts into the SVG snapshot.
   // If any file is missing, we continue without embedding.
@@ -564,10 +575,8 @@ async function exportRevealedPng(card, opts = {}){
       const bgImg = cs.getPropertyValue('background-image') || '';
       const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
       if (m && m[1]){
-        const url = m[1];
-        // Only inline same-origin assets (avoid CORS).
-        if (url.startsWith('/') || url.startsWith(window.location.origin)){
-          const abs = url.startsWith('http') ? url : (window.location.origin + url);
+        const abs = _resolveInlineableAbsUrl(m[1]);
+        if (abs){
           const dataUrl = await _fetchAsDataUrl(abs);
           innerDst.style.backgroundImage = `url("${dataUrl}")`;
         }
@@ -580,10 +589,10 @@ async function exportRevealedPng(card, opts = {}){
     const imgsDst = clone.querySelectorAll('img');
     const n = Math.min(imgsSrc.length, imgsDst.length);
     for (let i = 0; i < n; i++){
-      const src = imgsSrc[i].getAttribute('src') || '';
-      if (!src) continue;
-      if (!(src.startsWith('/') || src.startsWith(window.location.origin))) continue;
-      const abs = src.startsWith('http') ? src : (window.location.origin + src);
+      const srcUrl = imgsSrc[i].getAttribute('src') || '';
+      if (!srcUrl) continue;
+      const abs = _resolveInlineableAbsUrl(srcUrl);
+      if (!abs) continue;
       const dataUrl = await _fetchAsDataUrl(abs);
       imgsDst[i].setAttribute('src', dataUrl);
     }
@@ -597,9 +606,8 @@ async function exportRevealedPng(card, opts = {}){
     const bgImg = csStage.getPropertyValue('background-image') || '';
     const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
     if (m && m[1]){
-      const url = m[1];
-      if (url.startsWith('/') || url.startsWith(window.location.origin)){
-        const abs = url.startsWith('http') ? url : (window.location.origin + url);
+      const abs = _resolveInlineableAbsUrl(m[1]);
+      if (abs){
         const dataUrl = await _fetchAsDataUrl(abs);
         clone.style.backgroundImage = `url("${dataUrl}")`;
       }
