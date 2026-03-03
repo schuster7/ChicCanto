@@ -369,10 +369,9 @@
   /* Theme defaults (override per card via inline style or a theme class) */
   --scratch-card-bg: #1c1e1e;
   --scratch-card-pattern-color: #292929;
-  --scratch-card-pattern: url("/assets/img/pattern-heart_dark.svg");
+  --scratch-card-pattern: none;
   --scratch-card-pattern-size: clamp(160px, 18vw, 280px) clamp(160px, 18vw, 280px);
-  --scratch-card-pattern-opacity: 1;
-
+  --scratch-card-pattern-opacity: 0;
   background: var(--scratch-card-bg);
     box-shadow:
     0 18px 50px rgba(0,0,0,0.35);
@@ -420,12 +419,6 @@
 
 .scratch-stage__inner{
   display: none !important;
-}
-
-/* Ensure the real content sits above the pattern layer */
-.scratch-stage > :not(.scratch-stage__inner):not(.card-bg){
-  position: relative;
-  z-index: 1;
 }
 
 /* Right panel (scratch grid) */
