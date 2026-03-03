@@ -461,17 +461,6 @@ async function _fetchAsDataUrl(url){
   return `data:${mime};base64,${b64}`;
 }
 
-function _resolveInlineableAbsUrl(maybeUrl){
-  if (!maybeUrl) return null;
-  try{
-    const u = new URL(maybeUrl, window.location.href);
-    if (u.origin !== window.location.origin) return null;
-    return u.href;
-  }catch{
-    return null;
-  }
-}
-
 async function _embedInterFontCss(){
   // Best-effort: embed the self-hosted Inter fonts into the SVG snapshot.
   // If any file is missing, we continue without embedding.
@@ -566,47 +555,30 @@ async function exportRevealedPng(card, opts = {}){
   clone.style.boxShadow = 'none';
   clone.style.filter = 'none';
 
-  // Best-effort: inline pattern URL to data URL so it renders inside SVG snapshot.
-  try{
-    const innerSrc = stage.querySelector('.scratch-stage__inner');
-    const innerDst = clone.querySelector('.scratch-stage__inner');
-    if (innerSrc && innerDst){
-      const cs = getComputedStyle(innerSrc);
-      const bgImg = cs.getPropertyValue('background-image') || '';
-      const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
-      if (m && m[1]){
-        const abs = _resolveInlineableAbsUrl(m[1]);
-        if (abs){
-          const dataUrl = await _fetchAsDataUrl(abs);
-          innerDst.style.backgroundImage = `url("${dataUrl}")`;
-        }
-      }
+  // Best-effort: inline any same-origin URLs (CSS backgrounds and <img>) to data URLs
+  // so the SVG <foreignObject> snapshot renders reliably.
+  const _toAbsSameOrigin = (maybeUrl) => {
+    if (!maybeUrl) return null;
+    const u = String(maybeUrl).trim();
+    if (!u) return null;
+    // Ignore already-inlined or non-http(s) urls.
+    if (u.startsWith('data:') || u.startsWith('blob:')) return null;
+    try{
+      const abs = new URL(u, window.location.href);
+      if (abs.origin !== window.location.origin) return null;
+      return abs.href;
+    } catch {
+      return null;
     }
+  };
 
-  // Inline any <img> sources inside the export root so foreignObject renders reliably.
-  try{
-    const imgsSrc = stage.querySelectorAll('img');
-    const imgsDst = clone.querySelectorAll('img');
-    const n = Math.min(imgsSrc.length, imgsDst.length);
-    for (let i = 0; i < n; i++){
-      const srcUrl = imgsSrc[i].getAttribute('src') || '';
-      if (!srcUrl) continue;
-      const abs = _resolveInlineableAbsUrl(srcUrl);
-      if (!abs) continue;
-      const dataUrl = await _fetchAsDataUrl(abs);
-      imgsDst[i].setAttribute('src', dataUrl);
-    }
-  } catch {
-    // ignore
-  }
-
-  // Inline stage background image if present (used by image-backed cards).
+  // Inline stage background image (most cards use this).
   try{
     const csStage = getComputedStyle(stage);
     const bgImg = csStage.getPropertyValue('background-image') || '';
     const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
     if (m && m[1]){
-      const abs = _resolveInlineableAbsUrl(m[1]);
+      const abs = _toAbsSameOrigin(m[1]);
       if (abs){
         const dataUrl = await _fetchAsDataUrl(abs);
         clone.style.backgroundImage = `url("${dataUrl}")`;
@@ -615,6 +587,39 @@ async function exportRevealedPng(card, opts = {}){
   } catch {
     // ignore
   }
+
+  // Inline pattern/inner layer background image if used.
+  try{
+    const innerSrc = stage.querySelector('.scratch-stage__inner');
+    const innerDst = clone.querySelector('.scratch-stage__inner');
+    if (innerSrc && innerDst){
+      const cs = getComputedStyle(innerSrc);
+      const bgImg = cs.getPropertyValue('background-image') || '';
+      const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
+      if (m && m[1]){
+        const abs = _toAbsSameOrigin(m[1]);
+        if (abs){
+          const dataUrl = await _fetchAsDataUrl(abs);
+          innerDst.style.backgroundImage = `url("${dataUrl}")`;
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  // Inline any <img> sources inside the export root so foreignObject renders reliably.
+  try{
+    const imgsSrc = stage.querySelectorAll('img');
+    const imgsDst = clone.querySelectorAll('img');
+    const n = Math.min(imgsSrc.length, imgsDst.length);
+    for (let i = 0; i < n; i++){
+      const src = imgsSrc[i].getAttribute('src') || '';
+      const abs = _toAbsSameOrigin(src);
+      if (!abs) continue;
+      const dataUrl = await _fetchAsDataUrl(abs);
+      imgsDst[i].setAttribute('src', dataUrl);
+    }
   } catch {
     // ignore
   }
