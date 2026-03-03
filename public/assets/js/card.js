@@ -445,6 +445,21 @@ function _blobDownload(blob, filename){
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
+function _roundedRectPath(ctx, x, y, w, h, r){
+  // Canvas rounded-rect path helper (no ctx.roundRect dependency).
+  const rr = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y, x + rr, y);
+  ctx.closePath();
+}
+
 async function _fetchAsDataUrl(url){
   const res = await fetch(url, { cache: 'force-cache' });
   if (!res.ok) throw new Error('Fetch failed: ' + url + ' (' + res.status + ')');
@@ -699,14 +714,49 @@ const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgM
     });
 
     const canvas = document.createElement('canvas');
-canvas.width = Math.max(1, Math.round(w0 * scale));
-canvas.height = Math.max(1, Math.round(h0 * scale));
+
+// Add breathing room + dark background for share-friendly exports.
+// Padding is proportional to card size, clamped to sensible bounds.
+const pad = (() => {
+  const base = Math.min(w0, h0);
+  return Math.max(24, Math.min(96, Math.round(base * 0.06)));
+})();
+
+const outW = w0 + pad * 2;
+const outH = h0 + pad * 2;
+
+canvas.width = Math.max(1, Math.round(outW * scale));
+canvas.height = Math.max(1, Math.round(outH * scale));
+
 const ctx = canvas.getContext('2d');
 if (!ctx) throw new Error('No canvas context');
 
-// Scale drawing so the image fills the canvas (no empty area).
+// Work in CSS pixels; apply pixel scaling once.
 ctx.setTransform(scale, 0, 0, scale, 0, 0);
-ctx.drawImage(img, 0, 0);
+
+// Background (solid dark).
+ctx.fillStyle = '#0e151a';
+ctx.fillRect(0, 0, outW, outH);
+
+// Force rounded-corner clipping in the export (foreignObject can be flaky with border-radius).
+const r = (() => {
+  try{
+    const br = getComputedStyle(stage).borderTopLeftRadius || '0px';
+    const n = parseFloat(br);
+    return Number.isFinite(n) ? n : 0;
+  }catch{
+    return 0;
+  }
+})();
+
+if (r > 0){
+  const rr = Math.min(r, Math.min(w0, h0) / 2);
+  ctx.beginPath();
+  _roundedRectPath(ctx, pad, pad, w0, h0, rr);
+  ctx.clip();
+}
+
+ctx.drawImage(img, pad, pad);
 
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
     if (!blob) throw new Error('PNG encode failed');
