@@ -1,85 +1,8 @@
 import { qs, qsa, copyText, formatIso, getTokenFromUrl } from './utils.js';
-import { getRevealOptions, RANDOM_KEY, tierIconSrc, setTileSet } from './config.js';
+import { REVEAL_OPTIONS, RANDOM_KEY, tierIconSrc, setTileSet } from './config.js';
 import { getCardTheme } from './card-themes.js';
 import { getCard, getCardAsync, ensureCard, setConfigured, setConfiguredAndWait, setRevealed } from './store.js';
 import { attachScratchTile } from './scratch.js';
-
-function isLikelyInAppBrowser(){
-  const ua = navigator.userAgent || '';
-  // Heuristic: FB/IG/Messenger in-app browsers usually expose these tokens.
-  return /(FBAN|FBAV|FB_IAB|FB4A|FBMD|Instagram|Messenger)/i.test(ua);
-}
-
-function isMobileOrTablet(){
-  const ua = navigator.userAgent || '';
-  // Coarse filter: only gate on handheld devices.
-  return /Android|iPhone|iPad|iPod/i.test(ua);
-}
-
-function renderInAppBlocked(container, token){
-  const origin = window.location.origin;
-  const cardUrl = `${origin}/card/?token=${encodeURIComponent(token)}`;
-
-  container.innerHTML = `
-    <main class="page-main">
-      <div class="container">
-        <section class="flow-screen">
-          <div class="flow-layout">
-            <div class="flow-intro">
-              <h1 class="flow-title">Open in your browser</h1>
-              <p class="flow-lead muted panel-meta">
-                This chat app is opening the card inside an in-app browser. That can reset the card while scratching.
-                Copy the link and open it in your phone’s browser.
-              </p>
-            </div>
-
-            <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Open in browser">
-              <div class="panel-meta">
-                <div>Step 1</div>
-                <div class="flow-panel__hint">Copy the link</div>
-              </div>
-
-              <div class="control-grid">
-                <div class="field">
-                  <label class="label" for="cardLink">Card link</label>
-                  <input class="input" id="cardLink" readonly type="text" value="${cardUrl}" />
-                </div>
-
-                <div class="actions">
-                  <button class="btn primary" id="copyLinkBtn" type="button">Copy link</button>
-                </div>
-
-                <div class="muted small" style="margin-top: 2px;">
-                  Use the <strong>…</strong> menu in your chat app and choose <strong>Open in browser</strong> (or similar).
-                  If you can’t find that option, paste the copied link into your browser.
-                </div>
-              </div>
-            </section>
-          </div>
-        </section>
-      </div>
-    </main>
-  `;
-
-  const copyBtn = container.querySelector('#copyLinkBtn');
-  const input = container.querySelector('#cardLink');
-  if (copyBtn && input){
-    copyBtn.addEventListener('click', async () => {
-      try{
-        await navigator.clipboard.writeText(cardUrl);
-        copyBtn.textContent = 'Copied';
-        setTimeout(() => (copyBtn.textContent = 'Copy link'), 1200);
-      }catch{
-        input.focus();
-        input.select();
-        document.execCommand('copy');
-        copyBtn.textContent = 'Copied';
-        setTimeout(() => (copyBtn.textContent = 'Copy link'), 1200);
-      }
-    });
-  }
-}
-
 
 // --- Patch: ensure "configured" persists so share links work ---
 // Some flows update choice/reveal_amount but forget to flip card.configured.
@@ -446,38 +369,19 @@ function _blobDownload(blob, filename){
 }
 
 async function _fetchAsDataUrl(url){
-  // Use Blob + FileReader to avoid stack/argument limits with large files.
   const res = await fetch(url, { cache: 'force-cache' });
   if (!res.ok) throw new Error('Fetch failed: ' + url + ' (' + res.status + ')');
-  const blob = await res.blob();
-
-  // Derive mime when server returns generic type.
-  let mime = blob.type || '';
-  if (!mime || mime === 'application/octet-stream'){
-    const ext = String(url).split('?')[0].split('#')[0].split('.').pop().toLowerCase();
-    mime =
-      ext === 'woff2' ? 'font/woff2' :
-      ext === 'woff' ? 'font/woff' :
-      ext === 'svg' ? 'image/svg+xml' :
-      ext === 'png' ? 'image/png' :
-      ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' :
-      'application/octet-stream';
-  }
-
-  const dataUrl = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = () => reject(new Error('FileReader failed for: ' + url));
-    // Force correct mime by wrapping blob when needed.
-    try{
-      const b = (mime && blob.type !== mime) ? new Blob([blob], { type: mime }) : blob;
-      reader.readAsDataURL(b);
-    }catch(err){
-      reject(err);
-    }
-  });
-
-  return dataUrl;
+  const buf = await res.arrayBuffer();
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const ext = url.split('.').pop().toLowerCase();
+  const mime =
+    ext === 'woff2' ? 'font/woff2' :
+    ext === 'woff' ? 'font/woff' :
+    ext === 'svg' ? 'image/svg+xml' :
+    ext === 'png' ? 'image/png' :
+    ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' :
+    'application/octet-stream';
+  return `data:${mime};base64,${b64}`;
 }
 
 async function _embedInterFontCss(){
@@ -666,25 +570,16 @@ const embeddedFontCss = await _embedInterFontCss();
 
 // SVG is authored at on-screen size; canvas handles pixel scaling.
 const svgMarkup = _makeSvgSnapshotMarkup(clone, w0, h0, embeddedFontCss);
-
-// Use a Blob URL (not a data: URL) to avoid URL length limits and truncation.
-const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
-const svgUrl = URL.createObjectURL(svgBlob);
+const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
 
     const img = new Image();
     img.decoding = 'async';
 
     await new Promise((resolve, reject) => {
       img.onload = resolve;
-      img.onerror = () => {
-        try{ URL.revokeObjectURL(svgUrl); }catch{}
-        reject(new Error('Snapshot image failed to load'));
-      };
-      img.src = svgUrl;
+      img.onerror = () => reject(new Error('Snapshot image failed to load'));
+      img.src = svgDataUrl;
     });
-
-    // Cleanup blob URL once decoded.
-    try{ URL.revokeObjectURL(svgUrl); }catch{}
 
     const canvas = document.createElement('canvas');
 canvas.width = Math.max(1, Math.round(w0 * scale));
@@ -713,20 +608,20 @@ ctx.drawImage(img, 0, 0);
 }
 
 function pickRandomOption(){
-  const idx = Math.floor(Math.random() * getRevealOptions().length);
-  return getRevealOptions()[idx];
+  const idx = Math.floor(Math.random() * REVEAL_OPTIONS.length);
+  return REVEAL_OPTIONS[idx];
 }
 
 function resolveOptionFromCard(card){
   if (card?.choice){
-    const o1 = getRevealOptions().find(o => o.key === card.choice);
+    const o1 = REVEAL_OPTIONS.find(o => o.key === card.choice);
     if (o1) return o1;
   }
   if (card?.reveal_amount){
-    const o2 = getRevealOptions().find(o => o.amount === card.reveal_amount);
+    const o2 = REVEAL_OPTIONS.find(o => o.amount === card.reveal_amount);
     if (o2) return o2;
   }
-  return getRevealOptions()[0];
+  return REVEAL_OPTIONS[0];
 }
 
 // --- Deterministic board (no persistence needed) ---
@@ -852,11 +747,7 @@ const previewCta = PREVIEW_MODE ? `
 }
 
 function renderSetup(root, card, container){
-  // Ensure the correct per-card prize labels/icons are active before rendering the choice buttons.
-  const cardKey = String(card?.card_key || '').trim() || 'men-novice1';
-  setTileSet(cardKey);
-
-  const tierOptions = getRevealOptions().map(o => `
+  const tierOptions = REVEAL_OPTIONS.map(o => `
       <button class="btn" data-choice="${o.key}" type="button">${o.label}</button>
     `).join('');
 
@@ -1110,12 +1001,12 @@ const shareUrlEl = qs('#shareUrl', root);
 
       let chosen = null;
       if (choice === RANDOM_KEY) chosen = pickRandomOption();
-      else chosen = getRevealOptions().find(o => o.key === choice) || getRevealOptions()[0];
+      else chosen = REVEAL_OPTIONS.find(o => o.key === choice) || REVEAL_OPTIONS[0];
 
       // IMPORTANT: persist the actual chosen tier key, not RANDOM_KEY.
       // Some backends treat unknown choice keys as a default and may ignore reveal_amount.
       // By storing the real tier key, the random pick becomes real and stable for the recipient.
-      const effectiveChoice = (choice === RANDOM_KEY) ? (chosen?.key || getRevealOptions()[0].key) : choice;
+      const effectiveChoice = (choice === RANDOM_KEY) ? (chosen?.key || REVEAL_OPTIONS[0].key) : choice;
 
       // Confirm before we start the lock countdown (prevents accidental taps).
       const confirmMsg = (choice === RANDOM_KEY)
@@ -1334,7 +1225,7 @@ function renderApiUnavailable(container, token){
 
 
 function renderLegendPanel(opt){
-  const rows = getRevealOptions().map((o, idx) => {
+  const rows = REVEAL_OPTIONS.map((o, idx) => {
     const prizeNo = idx + 1;
     const src = tierIconSrc ? tierIconSrc(o.tier) : `/assets/img/${o.tier}.svg`;
     return `
@@ -1437,7 +1328,7 @@ function renderScratch(root, card){
 
   const opt = resolveOptionFromCard(card);
   const winTier = opt.tier || 't1';
-  const tiers = uniq(getRevealOptions().map(o => o.tier)).filter(Boolean);
+  const tiers = uniq(REVEAL_OPTIONS.map(o => o.tier)).filter(Boolean);
   const total = Math.max(1, Math.min(9, card.fields || 9));
 
   const generatedBoard = buildMatch3Board(total, winTier, tiers, `${card.token}|${winTier}`);
@@ -1503,7 +1394,7 @@ function renderScratch(root, card){
     boardEl.appendChild(el);
 
     const canvas = el.querySelector('canvas');
-    attachScratchTile(canvas, { onScratched: () => { void onTileScratched(i, el); } });
+    attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
   }
 
   void hydrateInlineSvgs(root);
@@ -1568,7 +1459,7 @@ function clearLegendState(){
 
   }
 
-  async function onTileScratched(i, el){
+  function onTileScratched(i, el){
 
     if (scratched[i]) return;
 
@@ -1583,8 +1474,7 @@ function clearLegendState(){
       const scratched_indices = scratched
         .map((v, idx) => v ? idx : -1)
         .filter(idx => idx !== -1);
-      try{ await setRevealed(card.token, { board, scratched_indices }); }
-      catch(err){ console.warn('Failed to persist reveal:', err); }
+      setRevealed(card.token, { board, scratched_indices });
       // Show Save PNG immediately on reveal (no refresh required)
       renderRevealedActions(getCard(card.token) || card);
       fireWinTurboFlash();
@@ -1606,7 +1496,7 @@ function renderRevealed(root, card){
 
   const opt = resolveOptionFromCard(card);
   const winTier = opt.tier || 't1';
-  const tiers = uniq(getRevealOptions().map(o => o.tier)).filter(Boolean);
+  const tiers = uniq(REVEAL_OPTIONS.map(o => o.tier)).filter(Boolean);
   const total = Math.max(1, Math.min(9, card.fields || 9));
 
   const generatedBoard = buildMatch3Board(total, winTier, tiers, `${card.token}|${winTier}`);
@@ -1734,15 +1624,7 @@ export async function bootCard(){
     return;
   }
 
-  
-  const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
-  // Block the scratch page inside mobile/tablet in-app browsers (recipient view only).
-  if (!PREVIEW_MODE && !setupParam && isMobileOrTablet() && isLikelyInAppBrowser()){
-    renderInAppBlocked(container, token);
-    return;
-  }
-
-const storeParam = (params.get('store') || '').toLowerCase();
+  const storeParam = (params.get('store') || '').toLowerCase();
 
   // Fast path: local mirror (works for same-device refreshes)
   let card = getCard(token);
