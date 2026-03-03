@@ -1,7 +1,7 @@
 import { qs, qsa, copyText, formatIso, getTokenFromUrl } from './utils.js';
 import { getRevealOptions, RANDOM_KEY, tierIconSrc, setTileSet } from './config.js';
 import { getCardTheme } from './card-themes.js';
-import { getCard, getCardAsync, ensureCard, setConfigured, setConfiguredAndWait, setRevealed } from './store.js';
+import { getCard, getCardAsync, ensureCard, setConfigured, setConfiguredAndWait, setRevealed, setRevealedAndWait } from './store.js';
 import { attachScratchTile } from './scratch.js';
 
 function isLikelyInAppBrowser(){
@@ -555,74 +555,101 @@ async function exportRevealedPng(card, opts = {}){
   clone.style.boxShadow = 'none';
   clone.style.filter = 'none';
 
-  // Best-effort: inline any same-origin URLs (CSS backgrounds and <img>) to data URLs
-  // so the SVG <foreignObject> snapshot renders reliably.
+  // Best-effort: inline same-origin URLs so the SVG <foreignObject> snapshot includes
+  // the card background on export (especially <picture>/<source srcset> based backgrounds).
   const _toAbsSameOrigin = (maybeUrl) => {
     if (!maybeUrl) return null;
     const u = String(maybeUrl).trim();
     if (!u) return null;
-    // Ignore already-inlined or non-http(s) urls.
     if (u.startsWith('data:') || u.startsWith('blob:')) return null;
     try{
       const abs = new URL(u, window.location.href);
       if (abs.origin !== window.location.origin) return null;
       return abs.href;
-    } catch {
+    }catch{
       return null;
     }
   };
 
-  // Inline stage background image (most cards use this).
-  try{
-    const csStage = getComputedStyle(stage);
-    const bgImg = csStage.getPropertyValue('background-image') || '';
-    const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
-    if (m && m[1]){
-      const abs = _toAbsSameOrigin(m[1]);
-      if (abs){
-        const dataUrl = await _fetchAsDataUrl(abs);
-        clone.style.backgroundImage = `url("${dataUrl}")`;
-      }
-    }
-  } catch {
-    // ignore
-  }
+  const _extractFirstUrl = (cssBg) => {
+    const s = String(cssBg || '');
+    const m = s.match(/url\(["']?([^"')]+)["']?\)/i);
+    return (m && m[1]) ? m[1] : '';
+  };
 
-  // Inline pattern/inner layer background image if used.
+  // 1) Inline background-image URLs (stage + inner) when used.
   try{
     const innerSrc = stage.querySelector('.scratch-stage__inner');
     const innerDst = clone.querySelector('.scratch-stage__inner');
     if (innerSrc && innerDst){
       const cs = getComputedStyle(innerSrc);
-      const bgImg = cs.getPropertyValue('background-image') || '';
-      const m = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
-      if (m && m[1]){
-        const abs = _toAbsSameOrigin(m[1]);
-        if (abs){
-          const dataUrl = await _fetchAsDataUrl(abs);
-          innerDst.style.backgroundImage = `url("${dataUrl}")`;
-        }
+      const url = _extractFirstUrl(cs.getPropertyValue('background-image'));
+      const abs = _toAbsSameOrigin(url);
+      if (abs){
+        const dataUrl = await _fetchAsDataUrl(abs);
+        innerDst.style.backgroundImage = `url("${dataUrl}")`;
       }
     }
-  } catch {
-    // ignore
-  }
+  }catch{}
 
-  // Inline any <img> sources inside the export root so foreignObject renders reliably.
+  try{
+    const csStage = getComputedStyle(stage);
+    const url = _extractFirstUrl(csStage.getPropertyValue('background-image'));
+    const abs = _toAbsSameOrigin(url);
+    if (abs){
+      const dataUrl = await _fetchAsDataUrl(abs);
+      clone.style.backgroundImage = `url("${dataUrl}")`;
+    }
+  }catch{}
+
+  // 2) Inline <picture> backgrounds (your card-bg pattern).
+  // We use the *resolved* currentSrc from the live DOM, so we don't have to guess
+  // whether <source> or <img src> is active.
+  try{
+    const picsSrc = stage.querySelectorAll('picture');
+    const picsDst = clone.querySelectorAll('picture');
+    const n = Math.min(picsSrc.length, picsDst.length);
+
+    for (let i = 0; i < n; i++){
+      const imgSrc = picsSrc[i].querySelector('img');
+      const imgDst = picsDst[i].querySelector('img');
+      if (!imgSrc || !imgDst) continue;
+
+      const resolved = (imgSrc.currentSrc || imgSrc.getAttribute('src') || '').trim();
+      const abs = _toAbsSameOrigin(resolved);
+      if (!abs) continue;
+
+      const dataUrl = await _fetchAsDataUrl(abs);
+
+      // Force the clone to use the embedded URL regardless of media queries.
+      imgDst.setAttribute('src', dataUrl);
+      imgDst.removeAttribute('srcset');
+      imgDst.removeAttribute('sizes');
+
+      picsDst[i].querySelectorAll('source').forEach((s) => {
+        s.setAttribute('srcset', dataUrl);
+        s.removeAttribute('sizes');
+      });
+    }
+  }catch{}
+
+  // 3) Inline any remaining <img> sources inside the export root.
   try{
     const imgsSrc = stage.querySelectorAll('img');
     const imgsDst = clone.querySelectorAll('img');
     const n = Math.min(imgsSrc.length, imgsDst.length);
+
     for (let i = 0; i < n; i++){
-      const src = imgsSrc[i].getAttribute('src') || '';
-      const abs = _toAbsSameOrigin(src);
+      const resolved = (imgsSrc[i].currentSrc || imgsSrc[i].getAttribute('src') || '').trim();
+      const abs = _toAbsSameOrigin(resolved);
       if (!abs) continue;
+
       const dataUrl = await _fetchAsDataUrl(abs);
       imgsDst[i].setAttribute('src', dataUrl);
+      imgsDst[i].removeAttribute('srcset');
+      imgsDst[i].removeAttribute('sizes');
     }
-  } catch {
-    // ignore
-  }
+  }catch{}
 
   // Mount offscreen to compute styles consistently.
   const wrap = document.createElement('div');
@@ -1568,7 +1595,7 @@ function clearLegendState(){
       const scratched_indices = scratched
         .map((v, idx) => v ? idx : -1)
         .filter(idx => idx !== -1);
-      setRevealed(card.token, { board, scratched_indices });
+      void setRevealedAndWait(card.token, { board, scratched_indices });
       // Show Save PNG immediately on reveal (no refresh required)
       renderRevealedActions(getCard(card.token) || card);
       fireWinTurboFlash();

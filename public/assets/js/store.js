@@ -458,3 +458,45 @@ export function setRevealed(token, { board = null, scratched_indices = null } = 
 
   return saveCard(card);
 }
+
+
+// Like setConfiguredAndWait: mirror locally immediately, but await API persistence when in api/auto(api) mode.
+// This prevents refresh-after-reveal races where the backend has not stored revealed state yet.
+export async function setRevealedAndWait(token, { board = null, scratched_indices = null, scratched_fields = null } = {}){
+  const card = ensureCard(token);
+  card.revealed = true;
+  card.revealed_at = new Date().toISOString();
+
+  if (Array.isArray(board) && board.length){
+    card.board = board;
+  }
+  if (Array.isArray(scratched_indices)){
+    card.scratched_indices = scratched_indices;
+  }
+  if (Array.isArray(scratched_fields)){
+    card.scratched_fields = scratched_fields;
+  }
+
+  const mode = _getRequestedStoreMode();
+  const wantsApi = (mode === 'api') || (mode === 'auto' && card && card._store === 'api');
+
+  // Local/memory: storage is authoritative.
+  if (!wantsApi){
+    if (card && typeof card === 'object') card._store = mode === 'memory' ? 'memory' : 'local';
+    try{ _storageAdapter().setItem(PREFIX + card.token, JSON.stringify(card)); }catch{}
+    return card;
+  }
+
+  // API mode: mirror locally right away, then wait for backend persistence.
+  if (card && typeof card === 'object') card._store = 'api';
+  try{ _storageAdapter().setItem(PREFIX + card.token, JSON.stringify(card)); }catch{}
+
+  const saved = await _apiPutCard(card);
+  if (saved && typeof saved === 'object'){
+    saved._store = 'api';
+    try{ _storageAdapter().setItem(PREFIX + saved.token, JSON.stringify(saved)); }catch{}
+    return saved;
+  }
+
+  return null;
+}
