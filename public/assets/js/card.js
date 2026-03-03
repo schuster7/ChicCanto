@@ -1028,6 +1028,52 @@ const shareUrlEl = qs('#shareUrl', root);
   // Pending lock timer (lets first-time buyers realize it's irreversible without adding extra clicks)
   let pending = null; // { interval, choice, chosen }
 
+// Cancel overlay (mobile first). Keeps the 5 second undo visible without scrolling.
+let _cancelModal = null;
+function _ensureCancelModal(){
+  if (_cancelModal) return _cancelModal;
+  const el = document.createElement('div');
+  el.className = 'cc-modal cc-modal--hidden';
+  el.innerHTML = `
+    <div class="cc-modal__backdrop" data-cc-close="1"></div>
+    <div class="cc-modal__panel" role="dialog" aria-modal="true" aria-labelledby="ccCancelTitle">
+      <div class="cc-modal__title" id="ccCancelTitle">Prize selected</div>
+      <div class="cc-modal__subtitle" id="ccCancelSubtitle"></div>
+      <div class="cc-modal__actions">
+        <button type="button" class="btn" id="ccCancelBtn">Cancel (5)</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(el);
+
+  const btn = el.querySelector('#ccCancelBtn');
+  const subtitle = el.querySelector('#ccCancelSubtitle');
+
+  function open(){
+    el.classList.remove('cc-modal--hidden');
+  }
+  function close(){
+    el.classList.add('cc-modal--hidden');
+  }
+
+  el.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t && t.getAttribute && t.getAttribute('data-cc-close') === '1'){
+      cancelPending();
+    }
+  });
+  btn.addEventListener('click', () => cancelPending());
+
+  document.addEventListener('keydown', (e) => {
+    if (el.classList.contains('cc-modal--hidden')) return;
+    if (e.key === 'Escape') cancelPending();
+  });
+
+  _cancelModal = { el, btn, subtitle, open, close };
+  return _cancelModal;
+}
+
+
   function setChoiceButtonsEnabled(enabled){
     qsa('button[data-choice]', root).forEach(b => {
       b.disabled = !enabled;
@@ -1080,34 +1126,48 @@ const shareUrlEl = qs('#shareUrl', root);
   }
 
   function showPending(choice, chosen, secondsLeft){
-    const label = chosen?.label || 'Your choice';
-    shareUrlEl.textContent = `Selected ${label}. Locking in ${secondsLeft}…`;
+  const label = chosen?.label || 'Your choice';
 
-    copyBtn.disabled = true;
-    copyBtn.style.opacity = '.5';
-    copyBtn.style.pointerEvents = 'none';
+  // Keep legacy inline hint text updated (harmless on desktop).
+  shareUrlEl.textContent = `Selected ${label}. Locking in ${secondsLeft}…`;
 
-    if (shareBtn){
-      shareBtn.disabled = true;
-      shareBtn.style.opacity = '.5';
-      shareBtn.style.pointerEvents = 'none';
-    }
+  // Disable share actions while the cancel window is active.
+  copyBtn.disabled = true;
+  copyBtn.style.opacity = '.5';
+  copyBtn.style.pointerEvents = 'none';
 
-    openBtn.disabled = true;
-    openBtn.style.opacity = '.5';
-    openBtn.style.pointerEvents = 'none';
-
-    changeRow.style.display = 'flex';
-    lockHintEl.textContent = 'You can cancel until it locks.';
+  if (shareBtn){
+    shareBtn.disabled = true;
+    shareBtn.style.opacity = '.5';
+    shareBtn.style.pointerEvents = 'none';
   }
+
+  openBtn.disabled = true;
+  openBtn.style.opacity = '.5';
+  openBtn.style.pointerEvents = 'none';
+
+  // Hide the old bottom-row cancel UI during the pending state.
+  changeRow.style.display = 'none';
+  lockHintEl.textContent = '';
+
+  // Show modal overlay so mobile users always see Cancel.
+  const modal = _ensureCancelModal();
+  modal.subtitle.textContent = `Selected ${label}. Locking in ${secondsLeft} seconds.`;
+  modal.btn.textContent = `Cancel (${secondsLeft})`;
+  modal.open();
+}
 
   function cancelPending(){
-    if (!pending) return;
-    try{ clearInterval(pending.interval); }catch{}
-    pending = null;
-    setChoiceButtonsEnabled(true);
-    resetShareUI();
-  }
+  if (!pending) return;
+  try{ clearInterval(pending.interval); }catch{}
+  pending = null;
+  setChoiceButtonsEnabled(true);
+  resetShareUI();
+
+  try{
+    if (_cancelModal) _cancelModal.close();
+  }catch{}
+}
 
   async function lockChoice(choice, chosen){
     const nextCard = {
@@ -1203,6 +1263,7 @@ const shareUrlEl = qs('#shareUrl', root);
           const finalChoice = pending.choice;
           const finalChosen = pending.chosen;
           pending = null;
+          try{ if (_cancelModal) _cancelModal.close(); }catch{}
           await lockChoice(finalChoice, finalChosen);
           return;
         }
