@@ -1,7 +1,9 @@
+// /public/assets/js/preview.js
 import { qs } from './utils.js';
 import { ensureCard, setConfigured } from './store.js';
-import { REVEAL_OPTIONS } from './config.js';
 
+// NOTE: Preview only needs a stable, configured sample so the scratch experience opens.
+// It does not need the card-specific prize labels here.
 const SAMPLE_TOKEN = '1a2b3c4d-5e6f';
 
 export function bootPreview(){
@@ -13,7 +15,8 @@ export function bootPreview(){
     const card = ensureCard(SAMPLE_TOKEN);
 
     if (!card.configured){
-      const choice = (REVEAL_OPTIONS && REVEAL_OPTIONS[1] && REVEAL_OPTIONS[1].key) ? REVEAL_OPTIONS[1].key : 'B';
+      // Any valid choice key works for preview. Keep it deterministic.
+      const choice = 'B';
       setConfigured(SAMPLE_TOKEN, { choice, reveal_amount: null, fields: Number(card.fields || 9) });
     }
 

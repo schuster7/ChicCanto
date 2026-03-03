@@ -1,8 +1,85 @@
 import { qs, qsa, copyText, formatIso, getTokenFromUrl } from './utils.js';
-import { REVEAL_OPTIONS, RANDOM_KEY, tierIconSrc, setTileSet } from './config.js';
+import { getRevealOptions, RANDOM_KEY, tierIconSrc, setTileSet } from './config.js';
 import { getCardTheme } from './card-themes.js';
 import { getCard, getCardAsync, ensureCard, setConfigured, setConfiguredAndWait, setRevealed } from './store.js';
 import { attachScratchTile } from './scratch.js';
+
+function isLikelyInAppBrowser(){
+  const ua = navigator.userAgent || '';
+  // Heuristic: FB/IG/Messenger in-app browsers usually expose these tokens.
+  return /(FBAN|FBAV|FB_IAB|FB4A|FBMD|Instagram|Messenger)/i.test(ua);
+}
+
+function isMobileOrTablet(){
+  const ua = navigator.userAgent || '';
+  // Coarse filter: only gate on handheld devices.
+  return /Android|iPhone|iPad|iPod/i.test(ua);
+}
+
+function renderInAppBlocked(container, token){
+  const origin = window.location.origin;
+  const cardUrl = `${origin}/card/?token=${encodeURIComponent(token)}`;
+
+  container.innerHTML = `
+    <main class="page-main">
+      <div class="container">
+        <section class="flow-screen">
+          <div class="flow-layout">
+            <div class="flow-intro">
+              <h1 class="flow-title">Open in your browser</h1>
+              <p class="flow-lead muted panel-meta">
+                This chat app is opening the card inside an in-app browser. That can reset the card while scratching.
+                Copy the link and open it in your phone’s browser.
+              </p>
+            </div>
+
+            <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Open in browser">
+              <div class="panel-meta">
+                <div>Step 1</div>
+                <div class="flow-panel__hint">Copy the link</div>
+              </div>
+
+              <div class="control-grid">
+                <div class="field">
+                  <label class="label" for="cardLink">Card link</label>
+                  <input class="input" id="cardLink" readonly type="text" value="${cardUrl}" />
+                </div>
+
+                <div class="actions">
+                  <button class="btn primary" id="copyLinkBtn" type="button">Copy link</button>
+                </div>
+
+                <div class="muted small" style="margin-top: 2px;">
+                  Use the <strong>…</strong> menu in your chat app and choose <strong>Open in browser</strong> (or similar).
+                  If you can’t find that option, paste the copied link into your browser.
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </div>
+    </main>
+  `;
+
+  const copyBtn = container.querySelector('#copyLinkBtn');
+  const input = container.querySelector('#cardLink');
+  if (copyBtn && input){
+    copyBtn.addEventListener('click', async () => {
+      try{
+        await navigator.clipboard.writeText(cardUrl);
+        copyBtn.textContent = 'Copied';
+        setTimeout(() => (copyBtn.textContent = 'Copy link'), 1200);
+      }catch{
+        input.focus();
+        input.select();
+        document.execCommand('copy');
+        copyBtn.textContent = 'Copied';
+        setTimeout(() => (copyBtn.textContent = 'Copy link'), 1200);
+      }
+    });
+  }
+}
+
 
 // --- Patch: ensure "configured" persists so share links work ---
 // Some flows update choice/reveal_amount but forget to flip card.configured.
@@ -608,20 +685,20 @@ ctx.drawImage(img, 0, 0);
 }
 
 function pickRandomOption(){
-  const idx = Math.floor(Math.random() * REVEAL_OPTIONS.length);
-  return REVEAL_OPTIONS[idx];
+  const idx = Math.floor(Math.random() * getRevealOptions().length);
+  return getRevealOptions()[idx];
 }
 
 function resolveOptionFromCard(card){
   if (card?.choice){
-    const o1 = REVEAL_OPTIONS.find(o => o.key === card.choice);
+    const o1 = getRevealOptions().find(o => o.key === card.choice);
     if (o1) return o1;
   }
   if (card?.reveal_amount){
-    const o2 = REVEAL_OPTIONS.find(o => o.amount === card.reveal_amount);
+    const o2 = getRevealOptions().find(o => o.amount === card.reveal_amount);
     if (o2) return o2;
   }
-  return REVEAL_OPTIONS[0];
+  return getRevealOptions()[0];
 }
 
 // --- Deterministic board (no persistence needed) ---
@@ -747,7 +824,11 @@ const previewCta = PREVIEW_MODE ? `
 }
 
 function renderSetup(root, card, container){
-  const tierOptions = REVEAL_OPTIONS.map(o => `
+  // Ensure the correct per-card prize labels/icons are active before rendering the choice buttons.
+  const cardKey = String(card?.card_key || '').trim() || 'men-novice1';
+  setTileSet(cardKey);
+
+  const tierOptions = getRevealOptions().map(o => `
       <button class="btn" data-choice="${o.key}" type="button">${o.label}</button>
     `).join('');
 
@@ -1001,12 +1082,12 @@ const shareUrlEl = qs('#shareUrl', root);
 
       let chosen = null;
       if (choice === RANDOM_KEY) chosen = pickRandomOption();
-      else chosen = REVEAL_OPTIONS.find(o => o.key === choice) || REVEAL_OPTIONS[0];
+      else chosen = getRevealOptions().find(o => o.key === choice) || getRevealOptions()[0];
 
       // IMPORTANT: persist the actual chosen tier key, not RANDOM_KEY.
       // Some backends treat unknown choice keys as a default and may ignore reveal_amount.
       // By storing the real tier key, the random pick becomes real and stable for the recipient.
-      const effectiveChoice = (choice === RANDOM_KEY) ? (chosen?.key || REVEAL_OPTIONS[0].key) : choice;
+      const effectiveChoice = (choice === RANDOM_KEY) ? (chosen?.key || getRevealOptions()[0].key) : choice;
 
       // Confirm before we start the lock countdown (prevents accidental taps).
       const confirmMsg = (choice === RANDOM_KEY)
@@ -1225,7 +1306,7 @@ function renderApiUnavailable(container, token){
 
 
 function renderLegendPanel(opt){
-  const rows = REVEAL_OPTIONS.map((o, idx) => {
+  const rows = getRevealOptions().map((o, idx) => {
     const prizeNo = idx + 1;
     const src = tierIconSrc ? tierIconSrc(o.tier) : `/assets/img/${o.tier}.svg`;
     return `
@@ -1328,7 +1409,7 @@ function renderScratch(root, card){
 
   const opt = resolveOptionFromCard(card);
   const winTier = opt.tier || 't1';
-  const tiers = uniq(REVEAL_OPTIONS.map(o => o.tier)).filter(Boolean);
+  const tiers = uniq(getRevealOptions().map(o => o.tier)).filter(Boolean);
   const total = Math.max(1, Math.min(9, card.fields || 9));
 
   const generatedBoard = buildMatch3Board(total, winTier, tiers, `${card.token}|${winTier}`);
@@ -1496,7 +1577,7 @@ function renderRevealed(root, card){
 
   const opt = resolveOptionFromCard(card);
   const winTier = opt.tier || 't1';
-  const tiers = uniq(REVEAL_OPTIONS.map(o => o.tier)).filter(Boolean);
+  const tiers = uniq(getRevealOptions().map(o => o.tier)).filter(Boolean);
   const total = Math.max(1, Math.min(9, card.fields || 9));
 
   const generatedBoard = buildMatch3Board(total, winTier, tiers, `${card.token}|${winTier}`);
@@ -1624,7 +1705,15 @@ export async function bootCard(){
     return;
   }
 
-  const storeParam = (params.get('store') || '').toLowerCase();
+  
+  const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
+  // Block the scratch page inside mobile/tablet in-app browsers (recipient view only).
+  if (!PREVIEW_MODE && !setupParam && isMobileOrTablet() && isLikelyInAppBrowser()){
+    renderInAppBlocked(container, token);
+    return;
+  }
+
+const storeParam = (params.get('store') || '').toLowerCase();
 
   // Fast path: local mirror (works for same-device refreshes)
   let card = getCard(token);
