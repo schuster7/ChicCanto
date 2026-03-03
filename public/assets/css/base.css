@@ -2652,14 +2652,22 @@ button.btn::-moz-focus-inner {
 }
 
 .cc-modal__title{
-  font-weight: 700;
-  font-size: 18px;
-  margin: 2px 0 6px;
+  font-weight: 600;
+  font-size: 13px;
+  opacity: 0.85;
+  margin: 2px 0 8px;
+}
+
+.cc-modal__prize{
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 0.2px;
+  margin: 0 0 8px;
 }
 
 .cc-modal__subtitle{
-  font-size: 14px;
-  opacity: 0.9;
+  font-size: 13px;
+  opacity: 0.85;
   margin: 0 0 14px;
 }
 

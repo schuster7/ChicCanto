@@ -1038,15 +1038,17 @@ function _ensureCancelModal(){
     <div class="cc-modal__backdrop" data-cc-close="1"></div>
     <div class="cc-modal__panel" role="dialog" aria-modal="true" aria-labelledby="ccCancelTitle">
       <div class="cc-modal__title" id="ccCancelTitle">Prize selected</div>
+      <div class="cc-modal__prize" id="ccCancelPrize"></div>
       <div class="cc-modal__subtitle" id="ccCancelSubtitle"></div>
       <div class="cc-modal__actions">
-        <button type="button" class="btn" id="ccCancelBtn">Cancel (5)</button>
+        <button type="button" class="btn" id="ccCancelBtn">Cancel</button>
       </div>
     </div>
   `;
   document.body.appendChild(el);
 
   const btn = el.querySelector('#ccCancelBtn');
+  const prizeEl = el.querySelector('#ccCancelPrize');
   const subtitle = el.querySelector('#ccCancelSubtitle');
 
   function open(){
@@ -1069,7 +1071,7 @@ function _ensureCancelModal(){
     if (e.key === 'Escape') cancelPending();
   });
 
-  _cancelModal = { el, btn, subtitle, open, close };
+  _cancelModal = { el, btn, prizeEl, subtitle, open, close };
   return _cancelModal;
 }
 
@@ -1152,8 +1154,8 @@ function _ensureCancelModal(){
 
   // Show modal overlay so mobile users always see Cancel.
   const modal = _ensureCancelModal();
-  modal.subtitle.textContent = `Selected ${label}. Locking in ${secondsLeft} seconds.`;
-  modal.btn.textContent = `Cancel (${secondsLeft})`;
+  modal.prizeEl.textContent = label;
+  modal.subtitle.textContent = `Locking in ${secondsLeft} seconds`;
   modal.open();
 }
 
