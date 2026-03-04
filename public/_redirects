@@ -1,5 +1,12 @@
-/card/*  /card/index.html  200
-/activate/* /activate/index.html 200
-/preview/* /preview/index.html 200
-/tools/* /tools/index.html 200
-/demo/* /preview/index.html 301
+# Cloudflare Pages _redirects
+# Use folder targets (not index.html) to avoid rewrite loops.
+
+/card/*     /card/     200
+/activate/* /activate/ 200
+/open/*     /open/     200
+/preview/*  /preview/  200
+/tools/*    /tools/    200
+/fulfill/*  /fulfill/  200
+
+# Legacy
+/demo/*     /preview/  301
