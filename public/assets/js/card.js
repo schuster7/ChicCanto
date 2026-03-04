@@ -1037,7 +1037,7 @@ function _ensureCancelModal(){
   el.innerHTML = `
     <div class="cc-modal__backdrop" data-cc-close="1"></div>
     <div class="cc-modal__panel" role="dialog" aria-modal="true" aria-labelledby="ccCancelTitle">
-      <div class="cc-modal__title" id="ccCancelTitle">Prize selected</div>
+      <div class="cc-modal__title mini-panel__kicker" id="ccCancelTitle">Prize selected</div>
       <div class="cc-modal__prize" id="ccCancelPrize"></div>
       <div class="cc-modal__subtitle" id="ccCancelSubtitle"></div>
       <div class="cc-modal__actions">
