@@ -1130,7 +1130,8 @@ function _ensureCancelModal(){
   }
 
   function showPending(choice, chosen, secondsLeft){
-  const label = chosen?.label || 'Your choice';
+  const isRandom = (choice === RANDOM_KEY);
+  const label = isRandom ? 'Surprise me' : (chosen?.label || 'Your choice');
 
   // Keep legacy inline hint text updated (harmless on desktop).
   shareUrlEl.textContent = `Selected ${label}. Locking in ${secondsLeft}…`;
@@ -1159,7 +1160,7 @@ function _ensureCancelModal(){
   modal.prizeEl.textContent = label;
   try{
     const tier = chosen?.tier;
-    const src = tier ? tierIconSrc(tier) : '';
+    const src = (!isRandom && tier) ? tierIconSrc(tier) : '';
     if (modal.iconEl){
       if (src){
         modal.iconEl.src = src;
