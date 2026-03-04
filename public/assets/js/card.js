@@ -1130,7 +1130,8 @@ function _ensureCancelModal(){
   }
 
   function showPending(choice, chosen, secondsLeft){
-  const label = chosen?.label || 'Your choice';
+  const isRandom = (choice === RANDOM_KEY);
+  const label = isRandom ? 'Surprise me' : (chosen?.label || 'Your choice');
 
   // Keep legacy inline hint text updated (harmless on desktop).
   shareUrlEl.textContent = `Selected ${label}. Locking in ${secondsLeft}…`;
@@ -1159,7 +1160,7 @@ function _ensureCancelModal(){
   modal.prizeEl.textContent = label;
   try{
     const tier = chosen?.tier;
-    const src = tier ? tierIconSrc(tier) : '';
+    const src = (!isRandom && tier) ? tierIconSrc(tier) : '';
     if (modal.iconEl){
       if (src){
         modal.iconEl.src = src;
@@ -1621,7 +1622,6 @@ function renderScratch(root, card){
   }
 
   const scratched = new Array(total).fill(false);
-  const tileCtrls = new Array(total).fill(null);
   const counts = {};
   let alreadyWon = false;
 
@@ -1646,31 +1646,7 @@ function renderScratch(root, card){
     boardEl.appendChild(el);
 
     const canvas = el.querySelector('canvas');
-    tileCtrls[i] = attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
-  }
-
-
-  // Restore scratch progress after refresh (API/local storage)
-  if (Array.isArray(card.scratched_indices) && card.scratched_indices.length){
-    for (const idx of card.scratched_indices){
-      const i = Number(idx);
-      if (!Number.isFinite(i) || i < 0 || i >= total) continue;
-      scratched[i] = true;
-      const el = boardEl.children[i];
-      if (el) el.classList.add('done');
-      if (tileCtrls[i] && typeof tileCtrls[i].forceReveal === 'function'){
-        try{ tileCtrls[i].forceReveal(); }catch{}
-      }
-      const t = tierForIndex(i);
-      counts[t] = (counts[t] || 0) + 1;
-    }
-  }
-
-  // If already revealed, ensure UI reflects it immediately on load.
-  if (card.revealed){
-    alreadyWon = true;
-    renderRevealedActions(card);
-    showWinUI();
+    attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
   }
 
   void hydrateInlineSvgs(root);
