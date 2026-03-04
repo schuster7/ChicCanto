@@ -1,85 +1,71 @@
 <!DOCTYPE html>
+
 <!-- /public/open/index.html -->
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta content="width=device-width,initial-scale=1" name="viewport"/>
-  <title>ChicCanto | Open</title>
-  <meta name="description" content="Open your ChicCanto scratch card in your browser for a stable reveal."/>
-<meta property="og:title" content="ChicCanto Scratch Card"/>
-<meta property="og:description" content="Some chat apps use in-app browsers. Copy the link and open it in your browser for a stable reveal."/>
-<meta property="og:type" content="website"/>
-<meta property="og:image" content="https://chiccanto.pages.dev/assets/img/card1.png"/>
-<meta property="og:url" content="https://chiccanto.pages.dev/open/"/>
-<meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content="ChicCanto Scratch Card"/>
-<meta name="twitter:description" content="Copy the link and open it in your browser for a stable reveal."/>
-<meta name="twitter:image" content="https://chiccanto.pages.dev/assets/img/card1.png"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>ChicCanto | Open</title>
+<meta content="Open your ChicCanto scratch card in your browser for a stable reveal." name="description"/>
+<meta content="ChicCanto Scratch Card" property="og:title"/>
+<meta content="Some chat apps use in-app browsers. Copy the link and open it in your browser for a stable reveal." property="og:description"/>
+<meta content="website" property="og:type"/>
+<meta content="https://chiccanto.pages.dev/assets/img/card1.png" property="og:image"/>
+<meta content="https://chiccanto.pages.dev/open/" property="og:url"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="ChicCanto Scratch Card" name="twitter:title"/>
+<meta content="Copy the link and open it in your browser for a stable reveal." name="twitter:description"/>
+<meta content="https://chiccanto.pages.dev/assets/img/card1.png" name="twitter:image"/>
 <link href="/favicon.ico" rel="icon"/>
-  <link href="/assets/css/base.css" rel="stylesheet"/>
+<link href="/assets/css/base.css" rel="stylesheet"/>
 </head>
-
 <body class="theme-default" data-page="redeem">
-  <header class="site-header">
-    <div class="site-header__inner">
-      <a class="brand" href="/activate/" aria-label="ChicCanto activate">
-        <img alt="ChicCanto" class="brand__logo" src="/assets/img/logo1.svg"/>
-      </a>
-      <div class="site-header__actions">
-        <a class="btn outline" href="/faq/">FAQ</a>
-      </div>
-    </div>
-  </header>
-
-  <main class="page-main">
-    <div class="container">
-      <section class="flow-screen">
-        <div class="flow-layout">
-          <div class="flow-intro">
-            <h1 class="flow-title">Open in your browser</h1>
-            <p class="flow-lead muted panel-meta">
-              Some chat apps open links inside a built-in browser. That can reset the card while scratching.
-              For a stable reveal, open this link in your phone’s browser.
-            </p>
-          </div>
-
-          <section aria-label="Open card" class="flow-panel--combined panel panel--glass panel--padded">
-            <div class="panel-meta">
-              <div>Step 1</div>
-              <div class="flow-panel__hint" id="hintRight">Copy the link and open it in your browser</div>
-            </div>
-
-            <div class="control-grid">
-              <div class="field">
-                <label class="label" for="cardLink">Card link</label>
-                <input class="input" id="cardLink" readonly type="text" value=""/>
-              </div>
-
-              <div class="actions">
-                <button class="btn primary" id="copyBtn" type="button">Copy link</button>
-                <button class="btn outline" id="openBtn" type="button">Open</button>
-              </div>
-
-              <div class="muted small" id="helpText" style="margin-top: 2px;">
-                If your app shows the card inside a built-in browser, use the <strong>…</strong> menu and choose <strong>Open in browser</strong> (or similar).
-                If you can’t find that option, paste the copied link into your browser.
-              </div>
-
-              <a class="muted small" href="#" id="continueLink">Continue here anyway</a>
-            </div>
-          </section>
-        </div>
-      </section>
-
-      <footer class="site-footer">
-        <a class="footer-link" href="/privacy/">Privacy</a>
-        <span class="dot">•</span>
-        <a class="footer-link" href="mailto:chiccanto@wearrs.com">chiccanto@wearrs.com</a>
-      </footer>
-    </div>
-  </main>
-
-  <script>
+<header class="site-header">
+<div class="site-header__inner">
+<a aria-label="ChicCanto activate" class="brand" href="/activate/">
+<img alt="ChicCanto" class="brand__logo" src="/assets/img/logo1.svg"/>
+</a>
+<div class="site-header__actions">
+<a class="btn outline" href="/faq/">FAQ</a>
+</div>
+</div>
+</header>
+<main class="page-main">
+<div class="container">
+<section class="flow-screen">
+<div class="flow-layout">
+<div class="flow-intro">
+<h1 class="flow-title">Open in your browser</h1>
+<p class="flow-lead muted panel-meta">Scratching does not work inside Messenger. Open this link in your phone’s browser.</p>
+</div>
+<section aria-label="Open card" class="flow-panel--combined panel panel--glass panel--padded">
+<div class="panel-meta">
+<div>Step 1</div>
+<div class="flow-panel__hint" id="hintRight">Open in external browser</div>
+</div>
+<div class="control-grid"><div class="flow-steps muted small" id="stepsBlock">iOS: Tap ⋯ → Open in external browser<br/>Android: Tap ⋮ → Open in browser</div>
+<div class="field">
+<label class="label" for="cardLink">Card link</label>
+<input class="input" id="cardLink" readonly="" type="text" value=""/>
+</div>
+<div class="actions">
+<button class="btn outline" id="copyBtn" type="button">Copy link</button>
+<button class="btn primary" id="openBtn" type="button">Open</button>
+</div>
+<div class="muted small" id="helpText" style="margin-top: 2px;">Paste the copied link into your browser.</div>
+<a class="muted small" href="#" id="continueLink">Continue in Messenger anyway</a>
+</div>
+</section>
+</div>
+</section>
+<footer class="site-footer">
+<a class="footer-link" href="/privacy/">Privacy</a>
+<span class="dot">•</span>
+<a class="footer-link" href="mailto:chiccanto@wearrs.com">chiccanto@wearrs.com</a>
+</footer>
+</div>
+</main>
+<script>
     (function () {
       const params = new URLSearchParams(window.location.search);
       const token = params.get("token");
@@ -89,6 +75,8 @@
 
       const ua = navigator.userAgent || "";
       const isMobile = /(iPhone|iPad|iPod|Android|Mobi)/i.test(ua);
+      const isIOS = /(iPhone|iPad|iPod)/i.test(ua);
+      const isAndroid = /Android/i.test(ua);
       const isInApp = /(FBAN|FBAV|FB_IAB|FB4A|FBMD|Instagram|Messenger)/i.test(ua);
 
       const input = document.getElementById("cardLink");
@@ -97,6 +85,7 @@
       const continueLink = document.getElementById("continueLink");
       const hintRight = document.getElementById("hintRight");
       const helpText = document.getElementById("helpText");
+      const stepsBlock = document.getElementById("stepsBlock");
 
       input.value = cardUrl;
       continueLink.href = cardUrl;
@@ -118,31 +107,45 @@
         }
       });
 
+      // Useful on desktop. On mobile in-app, this just opens inside the same in-app browser.
       openBtn.addEventListener("click", () => {
         window.location.href = cardUrl;
       });
 
-      // Desktop: Open is useful. Mobile in-app: Open is misleading (still in-app).
+      const setSteps = () => {
+        const iosLine = "iOS: Tap ⋯ → Open in external browser";
+        const androidLine = "Android: Tap ⋮ → Open in browser";
+        if (!stepsBlock) return;
+
+        // Put the likely platform first and emphasize it.
+        const first = isAndroid ? androidLine : iosLine;
+        const second = isAndroid ? iosLine : androidLine;
+        stepsBlock.innerHTML = `<strong>${first}</strong><br>${second}`;
+      };
+
+      setSteps();
+
       if (isInApp && isMobile) {
+        // Encourage the menu path first. Keep copy as a fallback.
         openBtn.style.display = "none";
-        hintRight.textContent = "Copy the link, then open it in your browser";
-        helpText.innerHTML =
-          "This link opened inside a built-in browser. Tap <strong>Copy link</strong>, then paste into your phone’s browser. " +
-          "If your app offers an <strong>Open in browser</strong> option in the <strong>…</strong> menu, you can use that instead.";
+        if (hintRight) hintRight.textContent = "Use Open in browser";
+        if (helpText) helpText.textContent = "Paste the copied link into your browser.";
+        if (continueLink) continueLink.style.display = "none";
       } else if (!isInApp) {
-        hintRight.textContent = "Open the card";
-        helpText.textContent = "If the card behaves strangely in a chat app, copy the link and open it in your browser.";
+        if (hintRight) hintRight.textContent = "Open the card";
+        if (helpText) helpText.textContent = "If the card behaves strangely in a chat app, copy the link and open it in your browser.";
       }
 
       if (!token) {
         openBtn.disabled = true;
         copyBtn.disabled = true;
-        continueLink.style.display = "none";
+        if (continueLink) continueLink.style.display = "none";
         input.value = "Missing token in link.";
-        hintRight.textContent = "Missing token";
-        helpText.textContent = "This link is missing a token.";
+        if (hintRight) hintRight.textContent = "Missing token";
+        if (helpText) helpText.textContent = "This link is missing a token.";
+        if (stepsBlock) stepsBlock.style.display = "none";
       }
     })();
-  </script>
+</script>
 </body>
 </html>
