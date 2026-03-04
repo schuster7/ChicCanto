@@ -1130,8 +1130,7 @@ function _ensureCancelModal(){
   }
 
   function showPending(choice, chosen, secondsLeft){
-  const isRandom = (choice === RANDOM_KEY);
-  const label = isRandom ? 'Surprise me' : (chosen?.label || 'Your choice');
+  const label = chosen?.label || 'Your choice';
 
   // Keep legacy inline hint text updated (harmless on desktop).
   shareUrlEl.textContent = `Selected ${label}. Locking in ${secondsLeft}…`;
@@ -1160,7 +1159,7 @@ function _ensureCancelModal(){
   modal.prizeEl.textContent = label;
   try{
     const tier = chosen?.tier;
-    const src = (!isRandom && tier) ? tierIconSrc(tier) : '';
+    const src = tier ? tierIconSrc(tier) : '';
     if (modal.iconEl){
       if (src){
         modal.iconEl.src = src;
@@ -1647,41 +1646,32 @@ function renderScratch(root, card){
     boardEl.appendChild(el);
 
     const canvas = el.querySelector('canvas');
-    const ctl = attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
-    tileCtrls[i] = ctl;
+    tileCtrls[i] = attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
   }
 
 
-  // Restore scratched tiles after refresh (prevents scratch overlay from reappearing).
-  // Persisted as scratched_indices when the card is revealed.
+  // Restore scratch progress after refresh (API/local storage)
   if (Array.isArray(card.scratched_indices) && card.scratched_indices.length){
     for (const idx of card.scratched_indices){
-      if (typeof idx !== 'number' || idx < 0 || idx >= total) continue;
-      if (scratched[idx]) continue;
-
-      scratched[idx] = true;
-
-      const tileEl = boardEl.children[idx];
-      if (tileEl) tileEl.classList.add('done');
-
-      // Keep tier counts consistent so winner state is accurate.
-      const tier = tierForIndex(idx);
-      counts[tier] = (counts[tier] || 0) + 1;
-
-      const ctl = tileCtrls[idx];
-      if (ctl && typeof ctl.forceReveal === 'function'){
-        try{ ctl.forceReveal(); }catch (e){}
-      }else{
-        // Fallback: clear the cover if controller is missing
-        const c = tileEl ? tileEl.querySelector('canvas') : null;
-        if (c){
-          const ctx = c.getContext('2d');
-          if (ctx) ctx.clearRect(0,0,c.width,c.height);
-        }
+      const i = Number(idx);
+      if (!Number.isFinite(i) || i < 0 || i >= total) continue;
+      scratched[i] = true;
+      const el = boardEl.children[i];
+      if (el) el.classList.add('done');
+      if (tileCtrls[i] && typeof tileCtrls[i].forceReveal === 'function'){
+        try{ tileCtrls[i].forceReveal(); }catch{}
       }
+      const t = tierForIndex(i);
+      counts[t] = (counts[t] || 0) + 1;
     }
   }
 
+  // If already revealed, ensure UI reflects it immediately on load.
+  if (card.revealed){
+    alreadyWon = true;
+    renderRevealedActions(card);
+    showWinUI();
+  }
 
   void hydrateInlineSvgs(root);
 
