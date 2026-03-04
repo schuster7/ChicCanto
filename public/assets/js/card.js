@@ -1622,6 +1622,7 @@ function renderScratch(root, card){
   }
 
   const scratched = new Array(total).fill(false);
+  const tileCtrls = new Array(total).fill(null);
   const counts = {};
   let alreadyWon = false;
 
@@ -1646,8 +1647,41 @@ function renderScratch(root, card){
     boardEl.appendChild(el);
 
     const canvas = el.querySelector('canvas');
-    attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
+    const ctl = attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
+    tileCtrls[i] = ctl;
   }
+
+
+  // Restore scratched tiles after refresh (prevents scratch overlay from reappearing).
+  // Persisted as scratched_indices when the card is revealed.
+  if (Array.isArray(card.scratched_indices) && card.scratched_indices.length){
+    for (const idx of card.scratched_indices){
+      if (typeof idx !== 'number' || idx < 0 || idx >= total) continue;
+      if (scratched[idx]) continue;
+
+      scratched[idx] = true;
+
+      const tileEl = boardEl.children[idx];
+      if (tileEl) tileEl.classList.add('done');
+
+      // Keep tier counts consistent so winner state is accurate.
+      const tier = tierForIndex(idx);
+      counts[tier] = (counts[tier] || 0) + 1;
+
+      const ctl = tileCtrls[idx];
+      if (ctl && typeof ctl.forceReveal === 'function'){
+        try{ ctl.forceReveal(); }catch (e){}
+      }else{
+        // Fallback: clear the cover if controller is missing
+        const c = tileEl ? tileEl.querySelector('canvas') : null;
+        if (c){
+          const ctx = c.getContext('2d');
+          if (ctx) ctx.clearRect(0,0,c.width,c.height);
+        }
+      }
+    }
+  }
+
 
   void hydrateInlineSvgs(root);
 
