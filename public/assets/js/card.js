@@ -1038,6 +1038,7 @@ function _ensureCancelModal(){
     <div class="cc-modal__backdrop" data-cc-close="1"></div>
     <div class="cc-modal__panel" role="dialog" aria-modal="true" aria-labelledby="ccCancelTitle">
       <div class="cc-modal__title mini-panel__kicker" id="ccCancelTitle">Prize selected</div>
+      <img class="cc-modal__icon" id="ccCancelIcon" alt="" style="width:86px;height:86px;display:block;margin:10px auto 12px;object-fit:contain;">
       <div class="cc-modal__prize" id="ccCancelPrize"></div>
       <div class="cc-modal__subtitle" id="ccCancelSubtitle"></div>
       <div class="cc-modal__actions">
@@ -1048,6 +1049,7 @@ function _ensureCancelModal(){
   document.body.appendChild(el);
 
   const btn = el.querySelector('#ccCancelBtn');
+  const iconEl = el.querySelector('#ccCancelIcon');
   const prizeEl = el.querySelector('#ccCancelPrize');
   const subtitle = el.querySelector('#ccCancelSubtitle');
 
@@ -1071,7 +1073,7 @@ function _ensureCancelModal(){
     if (e.key === 'Escape') cancelPending();
   });
 
-  _cancelModal = { el, btn, prizeEl, subtitle, open, close };
+  _cancelModal = { el, btn, iconEl, prizeEl, subtitle, open, close };
   return _cancelModal;
 }
 
@@ -1155,6 +1157,21 @@ function _ensureCancelModal(){
   // Show modal overlay so mobile users always see Cancel.
   const modal = _ensureCancelModal();
   modal.prizeEl.textContent = label;
+  try{
+    const tier = chosen?.tier;
+    const src = tier ? tierIconSrc(tier) : '';
+    if (modal.iconEl){
+      if (src){
+        modal.iconEl.src = src;
+        modal.iconEl.alt = label;
+        modal.iconEl.style.display = 'block';
+      } else {
+        modal.iconEl.removeAttribute('src');
+        modal.iconEl.alt = '';
+        modal.iconEl.style.display = 'none';
+      }
+    }
+  }catch{}
   modal.subtitle.textContent = `Locking in ${secondsLeft} seconds`;
   modal.open();
 }
