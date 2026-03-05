@@ -254,7 +254,6 @@ function goToCardWithSetup(token, init, setupKeyFromServer = null){
 
   window.location.href = '/card/?' + params.toString();
 }
-}
 
 function ensureResultsContainer(){
   let el = document.getElementById('redeemResults');
