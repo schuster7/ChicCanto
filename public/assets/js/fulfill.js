@@ -125,6 +125,10 @@ async function copyMessage(){
 }
 
 export function bootFulfill(){
+  // IMPORTANT: do not run the fulfill gate/redirect logic on the login page.
+  // The login page has its own JS bundle and should never redirect to itself.
+  if (window.location.pathname.startsWith('/fulfill/login')) return;
+
   const btn = byId('assignBtn');
   const copyBtn = byId('copyBtn');
   const logoutBtn = byId('logoutBtn');
