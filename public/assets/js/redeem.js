@@ -1,5 +1,5 @@
 import { qs, makeTokenFromString } from './utils.js';
-import { ensureCard } from './store.js';
+import { ensureCard, saveCard } from './store.js';
 import { getProductBySlug } from './products.js';
 
 // Allow markup to evolve without breaking JS.
@@ -223,20 +223,37 @@ async function apiRedeem(code, init){
 }
 
 
-function goToCardWithSetup(token, init){
+function goToCardWithSetup(token, init, setupKeyFromServer = null){
   // Create (or reuse) a sender-only setup key for this token.
   const card = ensureCard(token, init);
+
+  // If the backend already issued a setup key for this token, prefer it.
+  // This prevents a mismatch where the UI uses a locally-generated key that
+  // the backend will not accept for sender-only updates.
+  if (setupKeyFromServer && typeof setupKeyFromServer === 'string'){
+    const k = setupKeyFromServer.trim();
+    if (k && card && card.setup_key !== k){
+      card.setup_key = k;
+      try{ saveCard(card); }catch(_e){}
+      try{ localStorage.setItem(`sc:setup:${token}`, String(k)); }catch(_e){}
+    }
+  }
+
+  const setupKey = (setupKeyFromServer && typeof setupKeyFromServer === 'string' && setupKeyFromServer.trim())
+    ? setupKeyFromServer.trim()
+    : (card && card.setup_key ? String(card.setup_key) : '');
 
   // Query param works on any static server (no rewrite rules needed).
   const params = new URLSearchParams();
   params.set('token', token);
-  params.set('setup', card.setup_key);
+  if (setupKey) params.set('setup', setupKey);
 
   // For local-only mode we keep whatever store param the user forced.
   const storeMode = new URLSearchParams(window.location.search).get('store');
   if (storeMode && storeMode !== 'api') params.set('store', storeMode);
 
   window.location.href = '/card/?' + params.toString();
+}
 }
 
 function ensureResultsContainer(){
