@@ -1890,14 +1890,23 @@ export async function bootCard(){
 
   if (!token){
     container.innerHTML = `
-      <div class="card">
-        <h2>Link missing</h2>
-        <p>Open a ChicCanto card link, or preview an example.</p>
-        <div class="row">
-          <a class="btn primary" href="/preview/">Preview</a>
-          <a class="btn" href="/activate/">Go to activation</a>
+      <section class="flow-screen">
+        <div class="flow-layout">
+          <div class="flow-intro">
+            <h1 class="flow-title">Link missing</h1>
+            <p class="flow-lead muted panel-meta">
+              Open a ChicCanto card link, or preview an example.
+            </p>
+          </div>
+
+          <section class="panel panel--glass panel--padded" aria-label="Link missing actions">
+            <div class="control-grid">
+              <a class="btn primary" href="/preview/">Preview</a>
+              <a class="btn outline" href="/activate/">Go to activation</a>
+            </div>
+          </section>
         </div>
-      </div>
+      </section>
     `;
     return;
   }
