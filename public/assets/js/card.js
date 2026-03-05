@@ -295,6 +295,8 @@ function makeAbsoluteCardLink(token){
 
   const params = new URLSearchParams();
   params.set('token', token);
+  // Cache buster: helps Messenger/Meta fetch fresh HTML instead of a stale cached copy.
+  params.set('v', Date.now().toString(36));
   url.search = '?' + params.toString();
   url.hash = '';
   return url.toString();
