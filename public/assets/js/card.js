@@ -1,7 +1,7 @@
 import { qs, qsa, copyText, formatIso, getTokenFromUrl } from './utils.js';
 import { getRevealOptions, RANDOM_KEY, tierIconSrc, setTileSet } from './config.js';
 import { getCardTheme } from './card-themes.js';
-import { getCard, getCardAsync, ensureCard, setConfigured, setConfiguredAndWait, setRevealed, setRevealedAndWait } from './store.js';
+import { getCard, getCardAsync, ensureCard, saveCard, setConfigured, setConfiguredAndWait, setRevealed, setRevealedAndWait } from './store.js';
 import { attachScratchTile } from './scratch.js';
 
 function isLikelyInAppBrowser(){
