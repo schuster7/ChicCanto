@@ -1622,34 +1622,8 @@ function renderScratch(root, card){
   }
 
   const scratched = new Array(total).fill(false);
-  const tileCtrls = new Array(total).fill(null);
   const counts = {};
   let alreadyWon = false;
-
-  // Restore scratch state on refresh (tiles that reached the scratch threshold must stay revealed).
-  const restored = Array.isArray(card.scratched_indices) ? card.scratched_indices.filter(n => Number.isInteger(n)) : [];
-  for (const idx of restored){
-    if (idx >= 0 && idx < total){
-      scratched[idx] = true;
-      const tier = tierForIndex(idx);
-      counts[tier] = (counts[tier] || 0) + 1;
-    }
-  }
-
-  // Debounced persistence of scratch progress so refresh doesn't re-cover already scratched tiles.
-  let scratchSaveTimer = null;
-  function persistScratchProgress(){
-    const indices = [];
-    for (let k = 0; k < total; k++){
-      if (scratched[k]) indices.push(k);
-    }
-    card.scratched_indices = indices;
-    saveCard(card);
-  }
-  function schedulePersistScratch(){
-    if (scratchSaveTimer) clearTimeout(scratchSaveTimer);
-    scratchSaveTimer = setTimeout(persistScratchProgress, 300);
-  }
 
   function tierForIndex(i){ return board[i] || winTier; }
 
@@ -1672,11 +1646,7 @@ function renderScratch(root, card){
     boardEl.appendChild(el);
 
     const canvas = el.querySelector('canvas');
-    tileCtrls[i] = attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
-    if (scratched[i]){
-      el.classList.add('done');
-      try{ tileCtrls[i].forceReveal(); }catch{}
-    }
+    attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
   }
 
   void hydrateInlineSvgs(root);
@@ -1747,8 +1717,6 @@ function clearLegendState(){
 
     scratched[i] = true;
     el.classList.add('done');
-
-    schedulePersistScratch();
 
     const tier = tierForIndex(i);
     counts[tier] = (counts[tier] || 0) + 1;
