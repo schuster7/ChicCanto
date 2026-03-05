@@ -1,12 +1,14 @@
 # Cloudflare Pages _redirects
-# Use folder targets (not index.html) to avoid rewrite loops.
+# Order matters: put more specific paths first.
 
-/card/*     /card/     200
-/activate/* /activate/ 200
-/open/*     /open/     200
-/preview/*  /preview/  200
-/tools/*    /tools/    200
-/fulfill/*  /fulfill/  200
+/fulfill/login/*  /fulfill/login/  200
+/fulfill/*        /fulfill/        200
+
+/card/*           /card/           200
+/activate/*       /activate/       200
+/open/*           /open/           200
+/preview/*        /preview/        200
+/tools/*          /tools/          200
 
 # Legacy
-/demo/*     /preview/  301
+/demo/*           /preview/        301
