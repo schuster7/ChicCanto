@@ -112,7 +112,15 @@
       const isMobile = /(iPhone|iPad|iPod|Android|Mobi)/i.test(ua);
       const isInApp = /(FBAN|FBAV|FB_IAB|FB4A|FBMD|Instagram|Messenger)/i.test(ua);
 
-      const input = document.getElementById("cardLink");
+      
+
+      // If we are already in a normal browser (not an in-app webview), go straight to the card.
+      // /open/ is only meant as a handoff screen for Messenger/Instagram in-app browsers.
+      if (token && !isInApp) {
+        window.location.replace(cardUrl);
+        return;
+      }
+const input = document.getElementById("cardLink");
       const openBtn = document.getElementById("openBtn");
       const copyBtn = document.getElementById("copyBtn");
       const continueLink = document.getElementById("continueLink");
