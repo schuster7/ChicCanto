@@ -18,7 +18,7 @@ function isMobileOrTablet(){
 
 function renderInAppBlocked(container, token){
   const origin = window.location.origin;
-  const cardUrl = `${origin}/card/?token=${encodeURIComponent(token)}`;
+  const cardUrl = makeAbsoluteCardLink(token);
 
   container.innerHTML = `
     <main class="page-main">
@@ -288,7 +288,7 @@ function statusBadge(card){
 
 function makeAbsoluteCardLink(token){
   const url = new URL(window.location.href);
-  url.pathname = '/card/';
+  url.pathname = '/open/';
 
   // If token is malformed, don't build a share link.
   if (!TOKEN_RE.test(token)) return null;
