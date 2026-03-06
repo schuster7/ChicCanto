@@ -955,8 +955,8 @@ function renderSetup(root, card, container){
 
         <section class="flow-panel--combined panel panel--glass panel--padded setup-unified" aria-label="Sender controls">
           <div class="panel-meta">
-            <div>Step 2 - Choose prize</div>
-            <div class="flow-panel__hint">Choose one</div>
+            <div>Step 2 - Create card</div>
+            <div class="flow-panel__hint">Choose prize</div>
           </div>
 
           <div class="setup-grid">
