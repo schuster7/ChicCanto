@@ -908,7 +908,19 @@ const previewCta = PREVIEW_MODE ? `
   }
 
   if (!card.configured){
-    renderNotReady(content, card);
+    // On first open from another device (Messenger, etc.), Cloudflare KV can briefly return a stale record.
+    // Wait a short moment for the configured state before showing "Not ready yet".
+    renderPreparing(content);
+
+    (async () => {
+      const fresh = await _waitForConfigured(token, { attempts: 10, baseDelayMs: 450 });
+      if (fresh && fresh.configured){
+        render(container, token, fresh);
+        return;
+      }
+      renderNotReady(content, card);
+    })();
+
     return;
   }
 
@@ -1322,6 +1334,58 @@ if (openBtn){
   };
 }
 }
+
+
+function renderPreparing(root){
+  root.innerHTML = `
+    <section class="flow-screen">
+      <div class="flow-layout">
+        <div class="flow-intro">
+          <h1 class="flow-title">Preparing your card…</h1>
+          <p class="flow-lead muted panel-meta">Just a moment. We are syncing the card setup.</p>
+        </div>
+        <section class="flow-panel--combined panel">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div aria-hidden="true" style="width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:rgba(255,255,255,.9);animation:ccspin 0.9s linear infinite;"></div>
+            <div class="muted panel-meta">Loading…</div>
+          </div>
+        </section>
+      </div>
+    </section>
+    <style>
+      @keyframes ccspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+  `;
+}
+
+function _sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+async function _apiGetCardFresh(token){
+  try{
+    const url = `/token/${encodeURIComponent(token)}?v=${Date.now()}`;
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'cache-control': 'no-cache' }
+    });
+    if (!res || !res.ok) return null;
+    const data = await res.json();
+    if (!data || typeof data !== 'object') return null;
+    return data;
+  }catch(_e){
+    return null;
+  }
+}
+
+async function _waitForConfigured(token, { attempts = 10, baseDelayMs = 450 } = {}){
+  for (let i = 0; i < attempts; i++){
+    const fresh = await _apiGetCardFresh(token);
+    if (fresh && fresh.configured) return fresh;
+    // Gentle backoff to give KV time to replicate across edges.
+    await _sleep(baseDelayMs + (i * 180));
+  }
+  return null;
+}
+
 
 function renderNotReady(root, card){
   const url = window.location.href;
