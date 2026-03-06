@@ -2522,7 +2522,7 @@ button.btn::-moz-focus-inner {
 }
 
 [data-page="card"] .mini-panel__kicker {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: .32em;
   text-transform: uppercase;
   color: rgba(255,255,255,.55);
