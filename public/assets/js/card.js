@@ -950,8 +950,7 @@ function renderSetup(root, card, container){
       <div class="flow-layout">
         <div class="flow-intro">
           <h1 class="flow-title">Select the prize</h1>
-          <p class="flow-lead muted">Choose what they can win, then send the recipient link.</p>
-          <div class="flow-sub muted small">After you confirm, you have 5 seconds to change your mind.</div>
+          <p class="flow-lead muted">Choose what they can win, then send the recipient link. After you confirm, you have 5 seconds to change your mind.</p>
         </div>
 
         <section class="flow-panel--combined panel panel--glass panel--padded setup-unified" aria-label="Sender controls">
