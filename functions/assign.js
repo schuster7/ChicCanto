@@ -85,7 +85,6 @@ Open this link and your code will be filled in automatically:
 ${activationLinkWithCode}
 
 Manual option:
-
 1. Open: ${base}
 2. Paste your activation code and follow the steps on screen
 
