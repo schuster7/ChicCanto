@@ -346,29 +346,36 @@ async function verifySessionCookie(request, sessionSecret){
   const token = String(getCookie(request, SESSION_COOKIE_NAME) || '').trim();
   if (!token) return false;
 
-  const parts = token.split('.');
-  if (parts.length !== 2) return false;
+  const dot = token.lastIndexOf('.');
+  if (dot === -1) return false;
 
-  const payloadB64 = parts[0];
-  const sigB64 = parts[1];
+  const payloadB64 = token.slice(0, dot);
+  const sigB64 = token.slice(dot + 1);
 
   let payloadJson = '';
   try{
-    payloadJson = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
+    payloadJson = new TextDecoder().decode(base64UrlToUint8Array(payloadB64));
   } catch {
     return false;
   }
 
-  let payload = null;
-  try{ payload = JSON.parse(payloadJson); } catch { return false; }
-  if (!payload || typeof payload !== 'object') return false;
+  let payload;
+  try{
+    payload = JSON.parse(payloadJson);
+  } catch {
+    return false;
+  }
 
-  const exp = Number(payload.exp || 0);
-  if (!exp || Date.now() > exp) return false;
+  const exp = Number(payload?.exp);
+  if (!Number.isFinite(exp) || exp <= Date.now()) return false;
 
   const expectedSig = await hmacSha256(sessionSecret, payloadB64);
-  let gotSig = null;
-  try{ gotSig = base64UrlToUint8Array(sigB64); } catch { return false; }
+  let providedSig;
+  try{
+    providedSig = base64UrlToUint8Array(sigB64);
+  } catch {
+    return false;
+  }
 
-  return timingSafeEqual(expectedSig, gotSig);
+  return timingSafeEqual(expectedSig, providedSig);
 }
