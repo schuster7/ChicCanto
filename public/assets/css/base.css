@@ -2597,22 +2597,27 @@ button.btn::-moz-focus-inner {
 }
 
 /* ---------------------------------------------------------------
-   Card setup thumb final tuning (no inner frame + larger)
+   Card setup thumb final tuning (responsive + correct aspect)
 ---------------------------------------------------------------- */
 
-[data-page="card"] .setup-thumb__media {
-  width: 200px;
-  height: 200px;
+[data-page="card"] .setup-thumb__media{
+  /* Responsive, but never tiny or absurdly large */
+  width: clamp(140px, 22vw, 240px);
+
+  /* Match our thumb artwork aspect (A6 landscape ~ 148×105) */
+  aspect-ratio: 148 / 105;
+  height: auto;
+
   border: 0 !important;
   background: transparent !important;
   padding: 0 !important;
   box-shadow: none !important;
+  overflow: hidden;
 }
 
-@media (max-width: 560px) {
-  [data-page="card"] .setup-thumb__media {
-    width: 128px;
-    height: 128px;
+@media (max-width: 560px){
+  [data-page="card"] .setup-thumb__media{
+    width: clamp(140px, 58vw, 320px);
   }
 }
 
