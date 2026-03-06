@@ -82,6 +82,7 @@ Your activation code: ${assignedCode}
 
 Quick start (recommended):
 Open this link and your code will be filled in automatically:
+
 ${activationLinkWithCode}
 
 Manual option:
@@ -91,13 +92,14 @@ Manual option:
 This is quick, private, and works on both phone and desktop.
 
 Sharing tip (important):
-When you share the card with the recipient, use the link you get after setup. It will start on an Open page that helps avoid Messenger/Instagram in-app browser issues.
-P.S. If you ever need to access it again, just use the same code.
+Use the recipient link you get after setup. It opens an “Open” page first, because scratching does not work inside Messenger or Instagram’s in-app browser. The page will guide them to open it in their browser.
+
+Need the link again later? Just redeem the same code.
 
 Need help?
 FAQ: ${faq}
 
-Best,
+Have fun,
 ChicCanto`
     );
   }
@@ -119,7 +121,6 @@ Open a link below and the matching code will be filled in automatically:
 ${linkLines.join('\n')}
 
 Manual option:
-
 1. Open: ${base}
 2. Paste your activation code and follow the steps on screen
 
