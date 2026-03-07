@@ -24,6 +24,7 @@ export const CARD_THEMES = {
     bgDesktopSrc: '/assets/cards/women-novice1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-novice1/bg-mobile.jpg',
     legendPanelBg: 'rgba(34, 30, 26, .50)',
+    legendPanelBlur: '7px',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
       { tier: 't2', label: 'Oral', icon: 'oral' },
@@ -40,6 +41,7 @@ export const CARD_THEMES = {
     bgDesktopSrc: '/assets/cards/women-novice-birthday1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-novice-birthday1/bg-mobile.jpg',
     legendPanelBg: 'rgba(34, 30, 26, .50)',
+    legendPanelBlur: '7px',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
       { tier: 't2', label: 'Oral', icon: 'oral' },
