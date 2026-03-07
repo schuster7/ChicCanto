@@ -2489,7 +2489,7 @@ button.btn::-moz-focus-inner {
   gap: 14px;
   align-items: center;
   padding: 18px;
-  border-radius: 18px;
+  border-radius: 4px;
   border: 1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.05);
 }
@@ -2497,7 +2497,7 @@ button.btn::-moz-focus-inner {
 [data-page="card"] .setup-thumb__media {
   width: 104px;
   height: 104px;
-  border-radius: 18px;
+ 
   overflow: hidden;
   border: 1px solid rgba(255,255,255,.10);
   background: rgba(0,0,0,.22);
@@ -2515,7 +2515,7 @@ button.btn::-moz-focus-inner {
 }
 
 [data-page="card"] .mini-panel {
-  border-radius: 18px;
+  border-radius: 4px;
   border: 1px solid rgba(255,255,255,.10);
   background: rgba(0,0,0,.18);
   padding: 16px 16px;
