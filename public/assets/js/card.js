@@ -2517,3 +2517,4 @@ function fireFoilBurst(token){
 
 // Warm up canvas after DOM is ready (reduces first-run jank on iOS).
 // (Burst warmup removed)
+
