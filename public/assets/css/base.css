@@ -1164,9 +1164,11 @@ button.btn::-moz-focus-inner {
 .card-screen__body .card-legend {
   display: flex;
   flex-direction: column;
-  border: 2px solid rgba(202, 163, 106, .35);
+  border: 1px solid var(--legend-panel-border, rgba(255, 255, 255, .14));
   border-radius: 16px;
-  background: rgba(28, 30, 30, 0.75);
+  background: var(--legend-panel-bg, rgba(28, 30, 30, 0.75));
+  backdrop-filter: blur(var(--legend-panel-blur, 6px));
+  -webkit-backdrop-filter: blur(var(--legend-panel-blur, 6px));
   padding: 12px;
 }
 
