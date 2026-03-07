@@ -30,6 +30,22 @@ export const CARD_THEMES = {
     ],
   },
 
+
+  'women-novice-birthday1': {
+    key: 'women-novice-birthday1',
+    titleSrc: '/assets/cards/women-novice-birthday1/title.svg',
+    thumbSrc: '/assets/img/thumb_women-novice-birthday1.jpg',
+    bgDesktopSrc: '/assets/cards/women-novice-birthday1/bg-desktop.jpg',
+    bgMobileSrc: '/assets/cards/women-novice-birthday1/bg-mobile.jpg',
+    prizeOptions: [
+      { tier: 't1', label: 'Massage', icon: 'massage' },
+      { tier: 't2', label: 'Oral', icon: 'oral' },
+      { tier: 't3', label: 'Sex Toys', icon: 'sex-toys' },
+      { tier: 't4', label: 'Her Fantasy', icon: 'fantasy' },
+    ],
+  },
+
+
   'men-novice-birthday1': {
     key: 'men-novice-birthday1',
     foil: 'gold',
