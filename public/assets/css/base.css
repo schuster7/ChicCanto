@@ -458,9 +458,11 @@ a.btn {
    This overrides the glass blur effect on the legend only. */
 .card-legend{
   background: var(--legend-panel-bg, rgba(18, 22, 32, .42));
-  border: 1px solid var(--legend-panel-border, rgba(255, 255, 255, .14));
-  backdrop-filter: blur(var(--legend-panel-blur, 6px));
+  border: 2px solid var(--legend-panel-border, rgba(202, 163, 106, .35));
+  border-radius: 16px;
+  padding: 12px;
   -webkit-backdrop-filter: blur(var(--legend-panel-blur, 6px));
+  backdrop-filter: blur(var(--legend-panel-blur, 6px));
 }
 
 
@@ -1159,16 +1161,9 @@ button.btn::-moz-focus-inner {
 
 
 /* ---------------------------------------------------------------
-   Scratch-view legend panel (left side of /card scratch view)
----------------------------------------------------------------- */
 .card-screen__body .card-legend {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--legend-panel-border, rgba(255, 255, 255, .14));
-  border-radius: 16px;
-  background: var(--legend-panel-bg, rgba(28, 30, 30, 0.75));
-  backdrop-filter: blur(var(--legend-panel-blur, 6px));
-  -webkit-backdrop-filter: blur(var(--legend-panel-blur, 6px));
   padding: 12px;
 }
 
