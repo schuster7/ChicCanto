@@ -1558,7 +1558,7 @@ function renderLegendPanel(opt){
   }).join('');
 
   return `
-    <div class="card-legend panel">
+    <div class="card-legend panel panel--glass">
       <h2>Match 3 to win</h2>
       <p class="rule-text">Scratch tiles until you reveal three matching icons</p>
       <div class="prize-list">
@@ -1574,8 +1574,6 @@ function applyCardStageTheme(stageEl, theme){
 
   const bg = theme.background;
 
-  const legendVarsRoot = stageEl.closest('.card-screen') || stageEl.closest('.card-screen__body') || stageEl.parentElement || stageEl;
-
   // Reset
   stageEl.style.backgroundImage = '';
   stageEl.style.backgroundRepeat = '';
@@ -1588,14 +1586,14 @@ function applyCardStageTheme(stageEl, theme){
   stageEl.style.removeProperty('--scratch-card-pattern-opacity');
 
 
-  legendVarsRoot.style.removeProperty('--legend-panel-bg');
-  legendVarsRoot.style.removeProperty('--legend-panel-border');
-  legendVarsRoot.style.removeProperty('--legend-panel-blur');
+stageEl.style.removeProperty('--legend-panel-bg');
+stageEl.style.removeProperty('--legend-panel-border');
+stageEl.style.removeProperty('--legend-panel-blur');
 
-  // Default legend panel styling (can be overridden per card theme).
-  legendVarsRoot.style.setProperty('--legend-panel-bg', theme.legendPanelBg || 'rgba(18, 22, 32, .42)');
-  legendVarsRoot.style.setProperty('--legend-panel-border', theme.legendPanelBorder || 'rgba(255, 255, 255, .14)');
-  legendVarsRoot.style.setProperty('--legend-panel-blur', theme.legendPanelBlur || '6px');
+// Default legend panel styling (can be overridden per card theme).
+stageEl.style.setProperty('--legend-panel-bg', theme.legendPanelBg || 'rgba(18, 22, 32, .42)');
+stageEl.style.setProperty('--legend-panel-border', theme.legendPanelBorder || 'rgba(255, 255, 255, .14)');
+stageEl.style.setProperty('--legend-panel-blur', theme.legendPanelBlur || '6px');
 
   const inner = stageEl.querySelector('.scratch-stage__inner');
 
@@ -1606,7 +1604,6 @@ function applyCardStageTheme(stageEl, theme){
 
   // Apply per-card visuals (title is set via template, background/pattern here).
   const stageEl = root.querySelector('.scratch-stage');
-  const legendVarsRoot = (stageEl && (stageEl.closest('.card-screen') || stageEl.closest('.card-screen__body'))) || root || document.documentElement;
   if (stageEl) applyCardStageTheme(stageEl, theme);
     stageEl.style.backgroundRepeat = 'no-repeat';
     stageEl.style.backgroundSize = 'cover';
@@ -2517,4 +2514,3 @@ function fireFoilBurst(token){
 
 // Warm up canvas after DOM is ready (reduces first-run jank on iOS).
 // (Burst warmup removed)
-
