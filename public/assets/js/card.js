@@ -1558,7 +1558,7 @@ function renderLegendPanel(opt){
   }).join('');
 
   return `
-    <div class="card-legend panel panel--glass">
+    <div class="card-legend panel">
       <h2>Match 3 to win</h2>
       <p class="rule-text">Scratch tiles until you reveal three matching icons</p>
       <div class="prize-list">
