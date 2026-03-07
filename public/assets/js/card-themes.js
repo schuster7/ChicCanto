@@ -40,7 +40,7 @@ export const CARD_THEMES = {
     thumbSrc: '/assets/img/thumb_women-novice-birthday1.jpg',
     bgDesktopSrc: '/assets/cards/women-novice-birthday1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-novice-birthday1/bg-mobile.jpg',
-    legendPanelBg: 'rgba(34, 30, 26, .50)',
+    legendPanelBg: 'rgba(244, 237, 221, 0.8)',
     legendPanelBlur: '7px',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
