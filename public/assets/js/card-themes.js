@@ -8,6 +8,7 @@ export const CARD_THEMES = {
     thumbSrc: '/assets/img/thumb_men-novice1.jpg',
     bgDesktopSrc: '/assets/cards/men-novice1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/men-novice1/bg-mobile.jpg',
+    legendPanelBg: 'rgba(18, 22, 32, .42)',
     prizeOptions: [
       { tier: 't1', label: 'Blowjob', icon: 'blowjob' },
       { tier: 't2', label: 'Handjob', icon: 'handjob' },
@@ -22,6 +23,7 @@ export const CARD_THEMES = {
     thumbSrc: '/assets/img/thumb_women-novice1.jpg',
     bgDesktopSrc: '/assets/cards/women-novice1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-novice1/bg-mobile.jpg',
+    legendPanelBg: 'rgba(34, 30, 26, .50)',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
       { tier: 't2', label: 'Oral', icon: 'oral' },
@@ -37,6 +39,7 @@ export const CARD_THEMES = {
     thumbSrc: '/assets/img/thumb_women-novice-birthday1.jpg',
     bgDesktopSrc: '/assets/cards/women-novice-birthday1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-novice-birthday1/bg-mobile.jpg',
+    legendPanelBg: 'rgba(34, 30, 26, .50)',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
       { tier: 't2', label: 'Oral', icon: 'oral' },
@@ -53,6 +56,7 @@ export const CARD_THEMES = {
     thumbSrc: '/assets/img/thumb_men-novice-birthday1.jpg',
     bgDesktopSrc: '/assets/cards/men-novice-birthday1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/men-novice-birthday1/bg-mobile.jpg',
+    legendPanelBg: 'rgba(18, 22, 32, .42)',
     prizeOptions: [
       { tier: 't1', label: 'Blowjob', icon: 'blowjob' },
       { tier: 't2', label: 'Handjob', icon: 'handjob' },
@@ -67,6 +71,7 @@ export const CARD_THEMES = {
     thumbSrc: '/assets/img/thumb_men-advanced1.jpg',
     bgDesktopSrc: '/assets/cards/men-advanced1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/men-advanced1/bg-mobile.jpg',
+    legendPanelBg: 'rgba(18, 22, 32, .42)',
     prizeOptions: [
       { tier: 't1', label: 'Watch Porn', icon: 'watch-porn' },
       { tier: 't2', label: 'Lingerie', icon: 'lingerie' },

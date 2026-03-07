@@ -452,6 +452,18 @@ a.btn {
 }
 
 
+
+/* Card legend tint
+   The legend panel sits on top of the card artwork. We want predictable colors per card.
+   This overrides the glass blur effect on the legend only. */
+.card-legend{
+  background: var(--legend-panel-bg, rgba(18, 22, 32, .42));
+  border: 1px solid var(--legend-panel-border, rgba(255, 255, 255, .14));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+
 /* Slightly stronger glass */
 .panel--glass-strong {
   background: linear-gradient(180deg, rgba(18, 20, 28, .68), rgba(10, 12, 18, .30));

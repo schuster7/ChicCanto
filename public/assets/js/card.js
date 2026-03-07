@@ -1585,6 +1585,14 @@ function applyCardStageTheme(stageEl, theme){
   stageEl.style.removeProperty('--scratch-card-pattern-size');
   stageEl.style.removeProperty('--scratch-card-pattern-opacity');
 
+
+stageEl.style.removeProperty('--legend-panel-bg');
+stageEl.style.removeProperty('--legend-panel-border');
+
+// Default legend panel styling (can be overridden per card theme).
+stageEl.style.setProperty('--legend-panel-bg', theme.legendPanelBg || 'rgba(18, 22, 32, .42)');
+stageEl.style.setProperty('--legend-panel-border', theme.legendPanelBorder || 'rgba(255, 255, 255, .14)');
+
   const inner = stageEl.querySelector('.scratch-stage__inner');
 
   if (bg.type === 'image' && bg.imageSrc){
