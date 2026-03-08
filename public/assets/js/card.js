@@ -1707,6 +1707,10 @@ function renderScratch(root, card){
     </div>
   `;
 
+  // Apply per-card visuals (legend panel + any stage vars) after DOM is in place.
+  const stageEl = root.querySelector('.scratch-stage');
+  if (stageEl) applyCardStageTheme(stageEl, theme || {});
+
   const boardEl = qs('#board', root);
   const copyLinkTop = root.querySelector('#copyLinkTop');
   if (copyLinkTop) {
@@ -1907,6 +1911,10 @@ function renderRevealed(root, card){
       </div>
     </div>
   `;
+
+  // Apply per-card visuals (legend panel + any stage vars) after DOM is in place.
+  const stageEl = root.querySelector('.scratch-stage');
+  if (stageEl) applyCardStageTheme(stageEl, theme || {});
 
   const boardEl = qs('#boardStatic', root);
   for (let i = 0; i < board.length; i++){
