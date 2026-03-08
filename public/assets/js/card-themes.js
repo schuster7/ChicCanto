@@ -24,15 +24,15 @@ export const CARD_THEMES = {
 
   'women-novice1': {
     key: 'women-novice1',
-    legendPanelBorder: 'rgba(255, 255, 255, .14)',
-    legendPanelTextColor: 'rgba(255, 255, 255, 0.92)',
-    legendPanelMutedColor: 'rgba(255, 255, 255, 0.70)',
+    legendPanelBorder: '#e676ac',
+    legendPanelTextColor: '#db5894',
+    legendPanelMutedColor: 'rgb(255, 255, 255)',
     titleSrc: '/assets/cards/women-novice1/title.svg',
     thumbSrc: '/assets/img/thumb_women-novice1.jpg',
     bgDesktopSrc: '/assets/cards/women-novice1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-novice1/bg-mobile.jpg',
-    legendPanelBg: 'rgba(34, 30, 26, .50)',
-    legendPanelBlur: '7px',
+    legendPanelBg: 'rgba(86, 29, 63, 0.8)',
+    legendPanelBlur: '1px',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
       { tier: 't2', label: 'Oral', icon: 'oral' },
