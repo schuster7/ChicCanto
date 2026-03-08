@@ -42,7 +42,7 @@
   --holo-pop: 1.03;
   --word-soft: rgba(255, 255, 255, .95);
 
-  --fs-xs: clamp(0.75rem, 0.73rem + 0.12vw, 0.82rem);
+  --fs-xs: clamp(0.70rem, 0.73rem + 0.12vw, 0.82rem);
   --fs-sm: clamp(0.85rem, 0.82rem + 0.18vw, 0.95rem);
   --fs-md: clamp(0.95rem, 0.91rem + 0.24vw, 1.05rem);
   --fs-lg: clamp(1.08rem, 1.00rem + 0.45vw, 1.28rem);
@@ -1178,7 +1178,7 @@ button.btn::-moz-focus-inner {
 .rule-text {
   color: var(--text);
   font-size: var(--fs-xs);
-  font-weight: 600;
+  font-weight: 700;
   margin: 0 0 6px;
   text-transform: uppercase;
 }
