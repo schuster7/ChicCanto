@@ -44,7 +44,7 @@ export const CARD_THEMES = {
   'women-novice-birthday1': {
     key: 'women-novice-birthday1',
     legendPanelBorder: '#333333',
-    legendPanelTextColor: '#333333',
+    legendPanelTextColor:  'linear-gradient(135deg, #8a6a1f 0%, #d4af37 35%, #fff1a8 50%, #c9971a 70%, #7a5a14 100%)',
     legendPanelMutedColor: '#333333',
     titleSrc: '/assets/cards/women-novice-birthday1/title.svg',
     thumbSrc: '/assets/img/thumb_women-novice-birthday1.jpg',
