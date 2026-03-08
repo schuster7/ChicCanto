@@ -1623,9 +1623,6 @@ function applyCardStageTheme(stageEl, theme){
     stageEl.style.backgroundColor = bg.color || '#000';
     stageEl.style.backgroundImage = `url("${bg.imageSrc}")`;
 
-  // Apply per-card visuals (title is set via template, background/pattern here).
-  const stageEl = root.querySelector('.scratch-stage');
-  if (stageEl) applyCardStageTheme(stageEl, theme);
     stageEl.style.backgroundRepeat = 'no-repeat';
     stageEl.style.backgroundSize = 'cover';
     stageEl.style.backgroundPosition = 'center';
@@ -1637,6 +1634,7 @@ function applyCardStageTheme(stageEl, theme){
     }
     return;
   }
+
 
   // Default: flat color + optional repeating pattern on inner layer.
   stageEl.style.setProperty('--scratch-card-bg', bg.color || '#1c1e1e');
