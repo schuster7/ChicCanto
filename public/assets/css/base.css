@@ -457,25 +457,15 @@ a.btn {
    The legend panel sits on top of the card artwork. We want predictable colors per card.
    This overrides the glass blur effect on the legend only. */
 .card-legend{
-  background: var(--legend-panel-bg, rgba(18, 22, 32, .42));
-  border: 2px solid var(--legend-panel-border, rgba(202, 163, 106, .35));
+  background: var(--legend-panel-bg, rgba(18, 22, 32, .42)) !important;
+  border: 2px solid var(--legend-panel-border, rgba(202, 163, 106, .35)) !important;
   border-radius: 16px;
   padding: 12px;
-  -webkit-backdrop-filter: blur(var(--legend-panel-blur, 6px));
+  -webkit-backdrop-filter: blur(var(--legend-panel-blur, 6px)) !important !important;
   backdrop-filter: blur(var(--legend-panel-blur, 6px));
 }
 
 
-
-/* Legend panel must override generic glass panel styles (panel--glass) */
-.card-legend.panel--glass,
-.card-legend.panel--glass.panel,
-.card-screen__body .card-legend.panel--glass{
-  background: var(--legend-panel-bg, rgba(18, 22, 32, .42)) !important;
-  border: 2px solid var(--legend-panel-border, rgba(202, 163, 106, .35)) !important;
-  -webkit-backdrop-filter: blur(var(--legend-panel-blur, 6px)) !important;
-  backdrop-filter: blur(var(--legend-panel-blur, 6px)) !important;
-}
 
 /* Slightly stronger glass */
 .panel--glass-strong {
