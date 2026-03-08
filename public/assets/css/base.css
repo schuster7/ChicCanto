@@ -1138,7 +1138,7 @@ button.btn::-moz-focus-inner {
 /* Main 2-column layout (legend + scratch grid) */
 .card-screen__body {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(520px, 1.15fr);
+  grid-template-columns: minmax(260px, 1fr) minmax(550px, 1.15fr);
   gap: clamp(50px, 8vw, 150px);
 }
 
