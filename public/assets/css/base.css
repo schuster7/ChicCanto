@@ -1170,9 +1170,10 @@ button.btn::-moz-focus-inner {
 
 .card-screen__body .card-legend h2 {
   margin: 0;
-  font-size: clamp(15px, 3vw, 28px);
+  font-size: clamp(15px, 3vw, 36px);
   letter-spacing: 0;
   text-transform: uppercase;
+  font-weight: 700;
 }
 
 .rule-text {
