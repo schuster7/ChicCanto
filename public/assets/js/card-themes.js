@@ -51,7 +51,7 @@ export const CARD_THEMES = {
     bgDesktopSrc: '/assets/cards/women-novice-birthday1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-novice-birthday1/bg-mobile.jpg',
     legendPanelBg: 'rgba(244, 237, 221, 0.8)',
-    legendPanelBlur: '7px',
+    legendPanelBlur: '3px',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
       { tier: 't2', label: 'Oral', icon: 'oral' },
