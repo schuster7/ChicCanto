@@ -461,7 +461,7 @@ a.btn {
   border: 2px solid var(--legend-panel-border, rgba(202, 163, 106, .35)) !important;
   border-radius: 16px;
   padding: 12px;
-  -webkit-backdrop-filter: blur(var(--legend-panel-blur, 6px)) !important !important;
+  -webkit-backdrop-filter: blur(var(--legend-panel-blur, 6px)) !important;
   backdrop-filter: blur(var(--legend-panel-blur, 6px));
 }
 
