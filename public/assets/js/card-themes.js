@@ -85,7 +85,7 @@ export const CARD_THEMES = {
     legendPanelBg: 'rgba(2, 3, 3, 0.8)',
     legendPanelBorder: '#a53185',
     legendPanelBlur: '1px',
-    legendPanelTextColor: '#ffffff',
+    legendPanelMutedColor: 'rgb(255, 255, 255)',
     legendPanelMutedColor: '#a53185',
     titleSrc: '/assets/cards/men-advanced1/title.svg',
     thumbSrc: '/assets/img/thumb_men-advanced1.jpg',
@@ -101,10 +101,10 @@ export const CARD_THEMES = {
 
   'women-advanced1': {
     key: 'women-advanced1',
-    legendPanelBg: 'rgba(86, 29, 63, 0.8)',
-    legendPanelBorder: '#e676ac',
+    legendPanelBg: 'rgba(59, 30, 75, 0.8)',
+    legendPanelBorder: '#6c4394',
     legendPanelBlur: '1px',
-    legendPanelTextColor: '#db5894',
+    legendPanelTextColor: '#e7cae2',
     legendPanelMutedColor: 'rgb(255, 255, 255)',
     titleSrc: '/assets/cards/women-advanced1/title.svg',
     thumbSrc: '/assets/img/thumb_women-advanced1.jpg',
