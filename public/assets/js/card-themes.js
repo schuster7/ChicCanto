@@ -81,7 +81,7 @@ export const CARD_THEMES = {
 
   'men-advanced1': {
     key: 'men-advanced1',
-    legendPanelBg: 'rgba(3, 14, 28, 0.8)',
+    legendPanelBg: 'rgba(9, 4, 0, 0.8)',
     legendPanelBorder: '#a53185',
     legendPanelBlur: '1px',
     legendPanelTextColor: '#ffffff',
