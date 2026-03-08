@@ -1570,9 +1570,9 @@ function renderLegendPanel(opt){
 
 
 function applyCardStageTheme(stageEl, theme){
-  if (!stageEl || !theme || !theme.background) return;
+  if (!stageEl || !theme) return;
 
-  const bg = theme.background;
+  const bg = theme.background || { type: 'none' };
 
   // Reset
   stageEl.style.backgroundImage = '';
