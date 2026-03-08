@@ -1586,14 +1586,16 @@ function applyCardStageTheme(stageEl, theme){
   stageEl.style.removeProperty('--scratch-card-pattern-opacity');
 
 
-stageEl.style.removeProperty('--legend-panel-bg');
-stageEl.style.removeProperty('--legend-panel-border');
-stageEl.style.removeProperty('--legend-panel-blur');
+  const legendVarsRoot = stageEl.closest('.card-screen') || stageEl.closest('.card-screen__body') || stageEl.parentElement || stageEl;
+
+legendVarsRoot.style.removeProperty('--legend-panel-bg');
+legendVarsRoot.style.removeProperty('--legend-panel-border');
+legendVarsRoot.style.removeProperty('--legend-panel-blur');
 
 // Default legend panel styling (can be overridden per card theme).
-stageEl.style.setProperty('--legend-panel-bg', theme.legendPanelBg || 'rgba(18, 22, 32, .42)');
-stageEl.style.setProperty('--legend-panel-border', theme.legendPanelBorder || 'rgba(255, 255, 255, .14)');
-stageEl.style.setProperty('--legend-panel-blur', theme.legendPanelBlur || '6px');
+legendVarsRoot.style.setProperty('--legend-panel-bg', theme.legendPanelBg || 'rgba(18, 22, 32, .42)');
+legendVarsRoot.style.setProperty('--legend-panel-border', theme.legendPanelBorder || 'rgba(255, 255, 255, .14)');
+legendVarsRoot.style.setProperty('--legend-panel-blur', theme.legendPanelBlur || '6px');
 
   const inner = stageEl.querySelector('.scratch-stage__inner');
 
@@ -1601,10 +1603,6 @@ stageEl.style.setProperty('--legend-panel-blur', theme.legendPanelBlur || '6px')
     // Use the stage background for full-cover images.
     stageEl.style.backgroundColor = bg.color || '#000';
     stageEl.style.backgroundImage = `url("${bg.imageSrc}")`;
-
-  // Apply per-card visuals (title is set via template, background/pattern here).
-  const stageEl = root.querySelector('.scratch-stage');
-  if (stageEl) applyCardStageTheme(stageEl, theme);
     stageEl.style.backgroundRepeat = 'no-repeat';
     stageEl.style.backgroundSize = 'cover';
     stageEl.style.backgroundPosition = 'center';
