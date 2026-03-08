@@ -1595,24 +1595,44 @@ function applyCardStageTheme(stageEl, theme){
     legendEl.style.removeProperty('--legend-panel-bg');
     legendEl.style.removeProperty('--legend-panel-border');
     legendEl.style.removeProperty('--legend-panel-blur');
+    legendEl.style.removeProperty('--legend-panel-text');
+    legendEl.style.removeProperty('--legend-panel-muted');
     legendEl.style.background = '';
     legendEl.style.borderColor = '';
     legendEl.style.webkitBackdropFilter = '';
     legendEl.style.backdropFilter = '';
+    legendEl.style.color = '';
+    const _h2 = legendEl.querySelector('h2');
+    if (_h2) _h2.style.color = '';
+    const _rule = legendEl.querySelector('.rule-text');
+    if (_rule) _rule.style.color = '';
+    legendEl.querySelectorAll('.prize-row__label').forEach(el => { el.style.color = ''; });
 
     const legendBg = theme.legendPanelBg || 'rgba(18, 22, 32, .42)';
     const legendBorder = theme.legendPanelBorder || 'rgba(255, 255, 255, .14)';
     const legendBlur = theme.legendPanelBlur || '6px';
+    const legendText = theme.legendPanelTextColor || 'rgba(255, 255, 255, 0.92)';
+    const legendMuted = theme.legendPanelMutedColor || 'rgba(255, 255, 255, 0.70)';
 
     // Expose vars for CSS-based styling AND force inline values to beat any glass defaults.
     legendEl.style.setProperty('--legend-panel-bg', legendBg);
     legendEl.style.setProperty('--legend-panel-border', legendBorder);
     legendEl.style.setProperty('--legend-panel-blur', legendBlur);
+    legendEl.style.setProperty('--legend-panel-text', legendText);
+    legendEl.style.setProperty('--legend-panel-muted', legendMuted);
 
     legendEl.style.background = legendBg;
     legendEl.style.borderColor = legendBorder;
     legendEl.style.webkitBackdropFilter = `blur(${legendBlur})`;
     legendEl.style.backdropFilter = `blur(${legendBlur})`;
+
+    // Text colors (force) so per-card theme controls the legend typography.
+    legendEl.style.color = legendText;
+    const h2 = legendEl.querySelector('h2');
+    if (h2) h2.style.color = legendText;
+    const rule = legendEl.querySelector('.rule-text');
+    if (rule) rule.style.color = legendMuted;
+    legendEl.querySelectorAll('.prize-row__label').forEach(el => { el.style.color = legendText; });
   }
 
 
