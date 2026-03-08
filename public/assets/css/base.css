@@ -1179,6 +1179,7 @@ button.btn::-moz-focus-inner {
   color: var(--text);
   font-size: var(--fs-xs);
   margin: 0 0 6px;
+  text-transform: uppercase;
 }
 
 /* Prize list */
