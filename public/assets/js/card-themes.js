@@ -4,61 +4,61 @@
 export const CARD_THEMES = {
   'men-novice1': {
     key: 'men-novice1',
+    legendPanelBg: 'rgba(18, 22, 32, .42)',
     legendPanelBorder: 'rgba(255, 255, 255, .14)',
     legendPanelBlur: '6px',
+    // Optional text colors for legend panel
+    // legendPanelTextColor: 'rgba(255,255,255,0.92)',
+    // legendPanelMutedColor: 'rgba(255,255,255,0.70)',
     titleSrc: '/assets/cards/men-novice1/title.svg',
     thumbSrc: '/assets/img/thumb_men-novice1.jpg',
     bgDesktopSrc: '/assets/cards/men-novice1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/men-novice1/bg-mobile.jpg',
-    // Optional text colors for legend panel
-    // legendPanelTextColor: 'rgba(255,255,255,0.92)',
-    // legendPanelMutedColor: 'rgba(255,255,255,0.70)',
-
-    legendPanelBg: 'rgba(18, 22, 32, .42)',
     prizeOptions: [
       { tier: 't1', label: 'Blowjob', icon: 'blowjob' },
       { tier: 't2', label: 'Handjob', icon: 'handjob' },
       { tier: 't3', label: 'Anal', icon: 'anal' },
       { tier: 't4', label: 'His Fantasy', icon: 'fantasy' },
-    ],  },
+    ],
+  },
 
   'women-novice1': {
     key: 'women-novice1',
+    legendPanelBg: 'rgba(86, 29, 63, 0.8)',
     legendPanelBorder: '#e676ac',
+    legendPanelBlur: '1px',
     legendPanelTextColor: '#db5894',
     legendPanelMutedColor: 'rgb(255, 255, 255)',
     titleSrc: '/assets/cards/women-novice1/title.svg',
     thumbSrc: '/assets/img/thumb_women-novice1.jpg',
     bgDesktopSrc: '/assets/cards/women-novice1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-novice1/bg-mobile.jpg',
-    legendPanelBg: 'rgba(86, 29, 63, 0.8)',
-    legendPanelBlur: '1px',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
       { tier: 't2', label: 'Oral', icon: 'oral' },
       { tier: 't3', label: 'Sex Toys', icon: 'sex-toys' },
       { tier: 't4', label: 'Her Fantasy', icon: 'fantasy' },
-    ],  },
-
+    ],
+  },
 
   'women-novice-birthday1': {
     key: 'women-novice-birthday1',
+    legendPanelBg: 'rgba(244, 237, 221, 0.8)',
     legendPanelBorder: '#987732',
-    legendPanelTextColor:  '#987732',
+    legendPanelBlur: '1px',
+    legendPanelTextColor: '#987732',
     legendPanelMutedColor: '#987732',
     titleSrc: '/assets/cards/women-novice-birthday1/title.svg',
     thumbSrc: '/assets/img/thumb_women-novice-birthday1.jpg',
     bgDesktopSrc: '/assets/cards/women-novice-birthday1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-novice-birthday1/bg-mobile.jpg',
-    legendPanelBg: 'rgba(244, 237, 221, 0.8)',
-    legendPanelBlur: '1px',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
       { tier: 't2', label: 'Oral', icon: 'oral' },
       { tier: 't3', label: 'Sex Toys', icon: 'sex-toys' },
       { tier: 't4', label: 'Her Fantasy', icon: 'fantasy' },
-    ],  },
-
+    ],
+  },
 
   'men-novice-birthday1': {
     key: 'men-novice-birthday1',
@@ -77,7 +77,8 @@ export const CARD_THEMES = {
       { tier: 't2', label: 'Handjob', icon: 'handjob' },
       { tier: 't3', label: 'Anal', icon: 'anal' },
       { tier: 't4', label: 'His Fantasy', icon: 'fantasy' },
-    ],  },
+    ],
+  },
 
   'men-advanced1': {
     key: 'men-advanced1',
@@ -95,8 +96,27 @@ export const CARD_THEMES = {
       { tier: 't2', label: 'Lingerie', icon: 'lingerie' },
       { tier: 't3', label: 'Cum Everywhere', icon: 'cum-everywhere' },
       { tier: 't4', label: 'His Fantasy', icon: 'fantasy' },
-    ],  },
+    ],
+  },
 
+  'women-advanced1': {
+    key: 'women-advanced1',
+    legendPanelBg: 'rgba(86, 29, 63, 0.8)',
+    legendPanelBorder: '#e676ac',
+    legendPanelBlur: '1px',
+    legendPanelTextColor: '#db5894',
+    legendPanelMutedColor: 'rgb(255, 255, 255)',
+    titleSrc: '/assets/cards/women-advanced1/title.svg',
+    thumbSrc: '/assets/img/thumb_women-advanced1.jpg',
+    bgDesktopSrc: '/assets/cards/women-advanced1/bg-desktop.jpg',
+    bgMobileSrc: '/assets/cards/women-advanced1/bg-mobile.jpg',
+    prizeOptions: [
+      { tier: 't1', label: '69', icon: '69' },
+      { tier: 't2', label: 'Blindfold', icon: 'blindfold' },
+      { tier: 't3', label: 'Spanking', icon: 'spanking' },
+      { tier: 't4', label: 'Tie Her Up', icon: 'tie-her-up' },
+    ],
+  },
 };
 
 export function getCardTheme(card_key){
