@@ -63,10 +63,10 @@ export const CARD_THEMES = {
   'men-novice-birthday1': {
     key: 'men-novice-birthday1',
     legendPanelBg: 'rgba(10, 10, 11, 0.8)',
-    legendPanelBorder: '#987732',
+    legendPanelBorder: '#d6a845',
     legendPanelBlur: '1px',
-    legendPanelTextColor: '#987732',
-    legendPanelMutedColor: '#987732',
+    legendPanelTextColor: '#d6a845',
+    legendPanelMutedColor: '#d6a845',
     foil: 'gold',
     titleSrc: '/assets/cards/men-novice-birthday1/title.svg',
     thumbSrc: '/assets/img/thumb_men-novice-birthday1.jpg',
