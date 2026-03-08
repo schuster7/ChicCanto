@@ -43,9 +43,9 @@ export const CARD_THEMES = {
 
   'women-novice-birthday1': {
     key: 'women-novice-birthday1',
-    legendPanelBorder: 'rgba(255, 255, 255, .14)',
-    legendPanelTextColor: 'rgba(255, 255, 255, 0.92)',
-    legendPanelMutedColor: 'rgba(255, 255, 255, 0.70)',
+    legendPanelBorder: '#0400ff',
+    legendPanelTextColor: '#00b938',
+    legendPanelMutedColor: 'rgba(255, 153, 0, 0.7)',
     titleSrc: '/assets/cards/women-novice-birthday1/title.svg',
     thumbSrc: '/assets/img/thumb_women-novice-birthday1.jpg',
     bgDesktopSrc: '/assets/cards/women-novice-birthday1/bg-desktop.jpg',
