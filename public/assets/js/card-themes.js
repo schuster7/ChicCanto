@@ -62,11 +62,11 @@ export const CARD_THEMES = {
 
   'men-novice-birthday1': {
     key: 'men-novice-birthday1',
-    legendPanelBg: 'rgba(18, 22, 32, .42)',
-    legendPanelBorder: 'rgba(255, 255, 255, .14)',
-    legendPanelBlur: '6px',
-    legendPanelTextColor: 'rgba(255, 255, 255, 0.92)',
-    legendPanelMutedColor: 'rgba(255, 255, 255, 0.70)',
+    legendPanelBg: 'rgba(10, 10, 11, 0.8)',
+    legendPanelBorder: '#987732',
+    legendPanelBlur: '1px',
+    legendPanelTextColor: '#987732',
+    legendPanelMutedColor: '#987732',
     foil: 'gold',
     titleSrc: '/assets/cards/men-novice-birthday1/title.svg',
     thumbSrc: '/assets/img/thumb_men-novice-birthday1.jpg',
