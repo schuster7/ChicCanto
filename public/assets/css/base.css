@@ -1139,7 +1139,7 @@ button.btn::-moz-focus-inner {
 .card-screen__body {
   display: grid;
   grid-template-columns: 1fr 1.15fr;
-  gap: 50px;
+  gap: 150px;
 }
 
 /* Title SVG helper */
