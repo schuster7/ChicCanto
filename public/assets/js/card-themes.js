@@ -4,21 +4,29 @@
 export const CARD_THEMES = {
   'men-novice1': {
     key: 'men-novice1',
+    legendPanelBorder: 'rgba(255, 255, 255, .14)',
+    legendPanelBlur: '6px',
     titleSrc: '/assets/cards/men-novice1/title.svg',
     thumbSrc: '/assets/img/thumb_men-novice1.jpg',
     bgDesktopSrc: '/assets/cards/men-novice1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/men-novice1/bg-mobile.jpg',
+    // Optional text colors for legend panel
+    // legendPanelTextColor: 'rgba(255,255,255,0.92)',
+    // legendPanelMutedColor: 'rgba(255,255,255,0.70)',
+
     legendPanelBg: 'rgba(18, 22, 32, .42)',
     prizeOptions: [
       { tier: 't1', label: 'Blowjob', icon: 'blowjob' },
       { tier: 't2', label: 'Handjob', icon: 'handjob' },
       { tier: 't3', label: 'Anal', icon: 'anal' },
       { tier: 't4', label: 'His Fantasy', icon: 'fantasy' },
-    ],
-  },
+    ],  },
 
   'women-novice1': {
     key: 'women-novice1',
+    legendPanelBorder: 'rgba(255, 255, 255, .14)',
+    legendPanelTextColor: 'rgba(255, 255, 255, 0.92)',
+    legendPanelMutedColor: 'rgba(255, 255, 255, 0.70)',
     titleSrc: '/assets/cards/women-novice1/title.svg',
     thumbSrc: '/assets/img/thumb_women-novice1.jpg',
     bgDesktopSrc: '/assets/cards/women-novice1/bg-desktop.jpg',
@@ -30,29 +38,34 @@ export const CARD_THEMES = {
       { tier: 't2', label: 'Oral', icon: 'oral' },
       { tier: 't3', label: 'Sex Toys', icon: 'sex-toys' },
       { tier: 't4', label: 'Her Fantasy', icon: 'fantasy' },
-    ],
-  },
+    ],  },
 
 
   'women-novice-birthday1': {
     key: 'women-novice-birthday1',
+    legendPanelBorder: 'rgba(255, 255, 255, .14)',
+    legendPanelTextColor: 'rgba(255, 255, 255, 0.92)',
+    legendPanelMutedColor: 'rgba(255, 255, 255, 0.70)',
     titleSrc: '/assets/cards/women-novice-birthday1/title.svg',
     thumbSrc: '/assets/img/thumb_women-novice-birthday1.jpg',
     bgDesktopSrc: '/assets/cards/women-novice-birthday1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-novice-birthday1/bg-mobile.jpg',
-    legendPanelBg: 'rgba(244, 237, 221, 0.9)',
+    legendPanelBg: 'rgba(255, 0, 0, 0.8)',
     legendPanelBlur: '7px',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
       { tier: 't2', label: 'Oral', icon: 'oral' },
       { tier: 't3', label: 'Sex Toys', icon: 'sex-toys' },
       { tier: 't4', label: 'Her Fantasy', icon: 'fantasy' },
-    ],
-  },
+    ],  },
 
 
   'men-novice-birthday1': {
     key: 'men-novice-birthday1',
+    legendPanelBorder: 'rgba(255, 255, 255, .14)',
+    legendPanelBlur: '6px',
+    legendPanelTextColor: 'rgba(255, 255, 255, 0.92)',
+    legendPanelMutedColor: 'rgba(255, 255, 255, 0.70)',
     foil: 'gold',
     titleSrc: '/assets/cards/men-novice-birthday1/title.svg',
     thumbSrc: '/assets/img/thumb_men-novice-birthday1.jpg',
@@ -64,11 +77,14 @@ export const CARD_THEMES = {
       { tier: 't2', label: 'Handjob', icon: 'handjob' },
       { tier: 't3', label: 'Anal', icon: 'anal' },
       { tier: 't4', label: 'His Fantasy', icon: 'fantasy' },
-    ],
-  },
+    ],  },
 
   'men-advanced1': {
     key: 'men-advanced1',
+    legendPanelBorder: 'rgba(255, 255, 255, .14)',
+    legendPanelBlur: '6px',
+    legendPanelTextColor: 'rgba(255, 255, 255, 0.92)',
+    legendPanelMutedColor: 'rgba(255, 255, 255, 0.70)',
     titleSrc: '/assets/cards/men-advanced1/title.svg',
     thumbSrc: '/assets/img/thumb_men-advanced1.jpg',
     bgDesktopSrc: '/assets/cards/men-advanced1/bg-desktop.jpg',
@@ -79,8 +95,7 @@ export const CARD_THEMES = {
       { tier: 't2', label: 'Lingerie', icon: 'lingerie' },
       { tier: 't3', label: 'Cum Everywhere', icon: 'cum-everywhere' },
       { tier: 't4', label: 'His Fantasy', icon: 'fantasy' },
-    ],
-  },
+    ],  },
 
 };
 
