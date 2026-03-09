@@ -89,6 +89,27 @@ function showVoidPanel(summary){
   box.hidden = false;
 }
 
+function hideReplacePanel(){
+  const box = byId('replaceAssignmentPanel');
+  if (!box) return;
+  box.hidden = true;
+}
+
+function showReplacePanel(summary){
+  const box = byId('replaceAssignmentPanel');
+  if (!box) return;
+
+  const orderEl = byId('replaceOrderId');
+  const cardEl = byId('replaceAssignedCard');
+  const qtyEl = byId('replaceAssignedQuantity');
+
+  if (orderEl) orderEl.textContent = summary.order_id || '';
+  if (cardEl) cardEl.textContent = summary.card_label || summary.card_key || '';
+  if (qtyEl) qtyEl.textContent = summary.quantity_label || String(summary.quantity || '');
+
+  box.hidden = false;
+}
+
 function hideAssignConfirmation(){
   const box = byId('assignConfirm');
   if (!box) return;
@@ -183,6 +204,7 @@ function beginAssign(){
   const payload = collectAssignmentInput();
   if (!payload) return;
   hideVoidPanel();
+  hideReplacePanel();
   showAssignConfirmation(payload);
   setStatus('Confirm assignment.');
 }
@@ -241,6 +263,7 @@ async function confirmAssign(){
 
       if (data.can_void_unactivated){
         setStatus(`Order already has unactivated code(s) assigned for ${existingCardLabel}. Void them first, then assign again.`, true);
+        hideReplacePanel();
         showVoidPanel({
           order_id: data.order_id,
           card_key: data.card_key,
@@ -248,18 +271,31 @@ async function confirmAssign(){
           card_label: existingCardLabel,
           quantity_label: existingQtyLabel,
         });
-      } else {
-        setStatus(`Order already has code(s) assigned for ${existingCardLabel} and they cannot be voided here.`, true);
+      } else if (String(data.assignment_state || '') === 'activated'){
+        setStatus(`Order already has activated card link(s) for ${existingCardLabel}. Replace them before assigning the correct card.`, true);
         hideVoidPanel();
+        showReplacePanel({
+          order_id: data.order_id,
+          card_key: data.card_key,
+          quantity: data.quantity,
+          card_label: existingCardLabel,
+          quantity_label: existingQtyLabel,
+        });
+      } else {
+        setStatus(`Order already has code(s) assigned for ${existingCardLabel} and they cannot be changed here.`, true);
+        hideVoidPanel();
+        hideReplacePanel();
       }
     } else if (data.existing){
       setStatus('Order already assigned. Returned existing code(s).');
       hideVoidPanel();
+      hideReplacePanel();
       hideAssignConfirmation();
       resetFulfillSelections();
     } else {
       setStatus('Assigned.');
       hideVoidPanel();
+      hideReplacePanel();
       hideAssignConfirmation();
       resetFulfillSelections();
     }
@@ -325,6 +361,58 @@ async function voidExistingAssignment(){
   }
 }
 
+async function replaceActivatedAssignment(){
+  const btn = byId('replaceAssignmentBtn');
+  const startBtn = byId('assignBtn');
+  if (btn) btn.disabled = true;
+  if (startBtn) startBtn.disabled = true;
+
+  try{
+    const authed = await isAuthenticated();
+    if (!authed){
+      goLogin();
+      return;
+    }
+
+    const order_id = String(byId('orderId')?.value || '').trim();
+    if (!order_id){
+      throw new Error('Enter the Etsy order number first.');
+    }
+
+    setStatus('Replacing activated assignment...');
+
+    const res = await fetch('/replace-assignment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ order_id }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (res.status === 401){
+      goLogin();
+      return;
+    }
+
+    if (!res.ok || !data.ok){
+      throw new Error(data.error || 'Replace request failed.');
+    }
+
+    setAssigned('');
+    setMessage('');
+    hideVoidPanel();
+    hideReplacePanel();
+    hideAssignConfirmation();
+    setStatus('Activated assignment replaced. Select the correct card and assign again.');
+  }catch(err){
+    setStatus(String(err?.message || err || 'Error'), true);
+  }finally{
+    if (btn) btn.disabled = false;
+    if (startBtn) startBtn.disabled = false;
+  }
+}
+
 async function copyMessage(){
   const txt = byId('message')?.value || '';
   if (!txt) return;
@@ -345,6 +433,7 @@ export function bootFulfill(){
   const confirmBtn = byId('confirmAssignBtn');
   const cancelBtn = byId('cancelAssignBtn');
   const voidBtn = byId('voidReassignBtn');
+  const replaceBtn = byId('replaceAssignmentBtn');
   const copyBtn = byId('copyBtn');
   const logoutBtn = byId('logoutBtn');
   if (!btn) return;
@@ -364,17 +453,19 @@ export function bootFulfill(){
     setStatus('Confirmation canceled.');
   });
   if (voidBtn) voidBtn.addEventListener('click', (e) => { e.preventDefault(); voidExistingAssignment(); });
+  if (replaceBtn) replaceBtn.addEventListener('click', (e) => { e.preventDefault(); replaceActivatedAssignment(); });
   if (copyBtn) copyBtn.addEventListener('click', (e) => { e.preventDefault(); copyMessage(); });
   if (logoutBtn) logoutBtn.addEventListener('click', (e) => { e.preventDefault(); logout(); });
 
   ['orderId', 'cardKey', 'quantity', 'buyerName'].forEach((id) => {
     const el = byId(id);
     if (!el) return;
-    el.addEventListener('input', () => { hideAssignConfirmation(); hideVoidPanel(); });
-    el.addEventListener('change', () => { hideAssignConfirmation(); hideVoidPanel(); });
+    el.addEventListener('input', () => { hideAssignConfirmation(); hideVoidPanel(); hideReplacePanel(); });
+    el.addEventListener('change', () => { hideAssignConfirmation(); hideVoidPanel(); hideReplacePanel(); });
   });
 
   hideAssignConfirmation();
   hideVoidPanel();
+  hideReplacePanel();
   setStatus('Ready.');
 }

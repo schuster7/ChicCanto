@@ -147,8 +147,10 @@ async function getJsonKV(env, key){
   try{ return JSON.parse(raw); } catch { return null; }
 }
 
-function isVoidedOrderRecord(rec){
-  return !!(rec && typeof rec === 'object' && String(rec.status || '').toLowerCase() === 'voided');
+function isInactiveOrderRecord(rec){
+  if (!rec || typeof rec !== 'object') return false;
+  const status = String(rec.status || '').toLowerCase();
+  return status === 'voided' || status === 'replaced';
 }
 
 async function inspectAssignmentState(env, codes){
@@ -177,6 +179,11 @@ async function inspectAssignmentState(env, codes){
   const anyVoided = records.some((rec) => String(rec.status || '').toLowerCase() === 'voided');
   if (anyVoided){
     return { can_void_unactivated: false, assignment_state: 'voided' };
+  }
+
+  const anyReplaced = records.some((rec) => String(rec.status || '').toLowerCase() === 'replaced');
+  if (anyReplaced){
+    return { can_void_unactivated: false, assignment_state: 'replaced' };
   }
 
   const anyActivated = records.some((rec) => {
@@ -260,11 +267,11 @@ export async function onRequestPost(context){
   let existingOrder = await getJsonKV(env, orderIndexKey);
 
   // Backwards compatibility: if older data only exists under the composite key, reuse that too.
-  if (isVoidedOrderRecord(existingOrder)) existingOrder = null;
+  if (isInactiveOrderRecord(existingOrder)) existingOrder = null;
 
   if (!existingOrder){
     existingOrder = await getJsonKV(env, orderKey);
-    if (isVoidedOrderRecord(existingOrder)) existingOrder = null;
+    if (isInactiveOrderRecord(existingOrder)) existingOrder = null;
   }
 
   if (existingOrder && typeof existingOrder === 'object' && Array.isArray(existingOrder.codes) && existingOrder.codes.length){

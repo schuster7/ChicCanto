@@ -78,6 +78,16 @@
 <div class="row end"><button class="btn ghost" id="voidReassignBtn" type="button">Void existing unactivated assignment</button></div>
 </div>
 </div>
+<div class="flow-panel" hidden="" id="replaceAssignmentPanel">
+<div class="panel-meta"><span>Existing activated assignment</span><span>Admin-only replacement</span></div>
+<div class="stack">
+<p class="muted no-m">This order already has activated card link(s). Replace them before assigning the correct card. The old activated card link will be cancelled.</p>
+<div class="field"><strong>Order ID:</strong> <span id="replaceOrderId"></span></div>
+<div class="field"><strong>Assigned card:</strong> <span id="replaceAssignedCard"></span></div>
+<div class="field"><strong>Assigned quantity:</strong> <span id="replaceAssignedQuantity"></span></div>
+<div class="row end"><button class="btn ghost" id="replaceAssignmentBtn" type="button">Replace activated assignment</button></div>
+</div>
+</div>
 <div class="fulfill-feedback">
 <p aria-live="polite" class="muted" id="status"></p>
 <div class="fulfill-code-preview">
