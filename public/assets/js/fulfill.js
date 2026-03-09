@@ -56,11 +56,16 @@ function syncCustomSelectUI(selectId){
   }
 }
 
-function resetCardSelection(){
-  const sel = byId('cardKey');
+function resetSelect(selectId){
+  const sel = byId(selectId);
   if (!sel) return;
   sel.value = '';
-  syncCustomSelectUI('cardKey');
+  syncCustomSelectUI(selectId);
+}
+
+function resetFulfillSelections(){
+  resetSelect('cardKey');
+  resetSelect('quantity');
 }
 
 async function isAuthenticated(){
@@ -98,7 +103,7 @@ async function assign(){
 
     const order_id = String(byId('orderId')?.value || '').trim();
     const card_key = String(byId('cardKey')?.value || '').trim();
-    const quantity = String(byId('quantity')?.value || '1').trim();
+    const quantity = String(byId('quantity')?.value || '').trim();
     const buyer_name = String(byId('buyerName')?.value || '').trim() || null;
 
     if (!order_id){
@@ -107,6 +112,10 @@ async function assign(){
     }
     if (!card_key){
       setStatus('Select a card type.', true);
+      return;
+    }
+    if (!quantity){
+      setStatus('Select a quantity.', true);
       return;
     }
 
@@ -144,7 +153,7 @@ async function assign(){
       setStatus('Assigned.');
     }
 
-    resetCardSelection();
+    resetFulfillSelections();
   }catch(err){
     setStatus(String(err?.message || err || 'Error'), true);
   }finally{
