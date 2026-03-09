@@ -547,6 +547,17 @@ function _makeSvgSnapshotMarkup(node, width, height, embeddedCss){
 </svg>`.trim();
 }
 
+function _drawImageCover(ctx, img, dx, dy, dw, dh){
+  const iw = Math.max(1, Number(img?.naturalWidth || img?.width || 0));
+  const ih = Math.max(1, Number(img?.naturalHeight || img?.height || 0));
+  const scale = Math.max(dw / iw, dh / ih);
+  const sw = iw * scale;
+  const sh = ih * scale;
+  const ox = dx + (dw - sw) / 2;
+  const oy = dy + (dh - sh) / 2;
+  ctx.drawImage(img, ox, oy, sw, sh);
+}
+
 async function exportRevealedPng(card, opts = {}){
   // Only run on revealed state.
   if (!card || !card.revealed) throw new Error('Card not revealed');
@@ -567,6 +578,21 @@ async function exportRevealedPng(card, opts = {}){
   // Clone only the card stage (no page UI).
   const clone = stage.cloneNode(true);
   clone.classList.add('is-exporting');
+
+  // Keep the card background image outside the foreignObject snapshot.
+  // Mobile Safari/WebKit is flaky painting that layer inside the SVG snapshot.
+  let exportBgDataUrl = null;
+  try{
+    const liveBgImg = stage.querySelector('.card-bg__img');
+    const resolved = String((liveBgImg && (liveBgImg.currentSrc || liveBgImg.getAttribute('src'))) || '').trim();
+    const abs = resolved ? new URL(resolved, window.location.href) : null;
+    if (abs && abs.origin === window.location.origin){
+      exportBgDataUrl = await _fetchAsDataUrl(abs.href);
+    }
+  }catch{}
+
+  // Keep the responsive <picture> nodes in the clone for style/index parity.
+  // We suppress them later, after computed styles have been copied.
 
   // Ensure no shadow/filters on the clone root, regardless of computed styles.
   clone.style.boxShadow = 'none';
@@ -619,38 +645,7 @@ async function exportRevealedPng(card, opts = {}){
     }
   }catch{}
 
-  // 2) Inline <picture> backgrounds (your card-bg pattern).
-  // We use the *resolved* currentSrc from the live DOM, so we don't have to guess
-  // whether <source> or <img src> is active.
-  try{
-    const picsSrc = stage.querySelectorAll('picture');
-    const picsDst = clone.querySelectorAll('picture');
-    const n = Math.min(picsSrc.length, picsDst.length);
-
-    for (let i = 0; i < n; i++){
-      const imgSrc = picsSrc[i].querySelector('img');
-      const imgDst = picsDst[i].querySelector('img');
-      if (!imgSrc || !imgDst) continue;
-
-      const resolved = (imgSrc.currentSrc || imgSrc.getAttribute('src') || '').trim();
-      const abs = _toAbsSameOrigin(resolved);
-      if (!abs) continue;
-
-      const dataUrl = await _fetchAsDataUrl(abs);
-
-      // Force the clone to use the embedded URL regardless of media queries.
-      imgDst.setAttribute('src', dataUrl);
-      imgDst.removeAttribute('srcset');
-      imgDst.removeAttribute('sizes');
-
-      picsDst[i].querySelectorAll('source').forEach((s) => {
-        s.setAttribute('srcset', dataUrl);
-        s.removeAttribute('sizes');
-      });
-    }
-  }catch{}
-
-  // 3) Inline any remaining <img> sources inside the export root.
+  // 2) Inline any remaining <img> sources inside the export root.
   try{
     const imgsSrc = stage.querySelectorAll('img');
     const imgsDst = clone.querySelectorAll('img');
@@ -684,31 +679,12 @@ async function exportRevealedPng(card, opts = {}){
     // Inline all computed CSS into the clone.
     _inlineStylesDeep(stage, clone);
 
-    // Mobile WebKit is unreliable at painting <picture>/<source> inside
-    // foreignObject snapshots. Flatten card background pictures into a simple
-    // positioned div with a data-URL background-image before serializing.
+    // Keep the DOM structure intact for style copying, but suppress the live card-bg layer
+    // in the SVG snapshot. We paint the resolved background directly onto canvas instead.
     try{
-      clone.querySelectorAll('picture.card-bg').forEach((pic) => {
-        const img = pic.querySelector('img');
-        const src = (img && (img.getAttribute('src') || '').trim()) || '';
-        if (!src) return;
-
-        const flat = document.createElement('div');
-        flat.className = 'card-bg';
-        flat.setAttribute(
-          'style',
-          [
-            'position:absolute',
-            'inset:0',
-            'z-index:0',
-            'pointer-events:none',
-            `background-image:url("${src.replace(/"/g, '&quot;')}")`,
-            'background-size:cover',
-            'background-position:center',
-            'background-repeat:no-repeat',
-          ].join(';') + ';'
-        );
-        pic.replaceWith(flat);
+      clone.querySelectorAll('.card-bg').forEach((el) => {
+        el.style.display = 'none';
+        el.style.opacity = '0';
       });
     }catch{}
 
@@ -784,6 +760,17 @@ if (r > 0){
   ctx.beginPath();
   _roundedRectPath(ctx, pad, pad, w0, h0, rr);
   ctx.clip();
+}
+
+if (exportBgDataUrl){
+  const bgImg = new Image();
+  bgImg.decoding = 'async';
+  await new Promise((resolve, reject) => {
+    bgImg.onload = resolve;
+    bgImg.onerror = () => reject(new Error('Background image failed to load'));
+    bgImg.src = exportBgDataUrl;
+  });
+  _drawImageCover(ctx, bgImg, pad, pad, w0, h0);
 }
 
 ctx.drawImage(img, pad, pad);
