@@ -68,6 +68,68 @@ function resetFulfillSelections(){
   resetSelect('quantity');
 }
 
+function hideAssignConfirmation(){
+  const box = byId('assignConfirm');
+  if (!box) return;
+  box.hidden = true;
+}
+
+function showAssignConfirmation(summary){
+  const box = byId('assignConfirm');
+  if (!box) return;
+
+  const orderEl = byId('confirmOrderId');
+  const cardEl = byId('confirmCard');
+  const qtyEl = byId('confirmQuantity');
+  const buyerEl = byId('confirmBuyerName');
+
+  if (orderEl) orderEl.textContent = summary.order_id;
+  if (cardEl) cardEl.textContent = summary.card_label;
+  if (qtyEl) qtyEl.textContent = summary.quantity_label;
+  if (buyerEl) buyerEl.textContent = summary.buyer_name || 'Optional - not set';
+
+  box.hidden = false;
+}
+
+function getSelectedOptionText(selectId){
+  const sel = byId(selectId);
+  if (!sel) return '';
+  const selected = sel.options[sel.selectedIndex];
+  return selected ? String(selected.textContent || '').trim() : '';
+}
+
+function collectAssignmentInput(){
+  const order_id = String(byId('orderId')?.value || '').trim();
+  const card_key = String(byId('cardKey')?.value || '').trim();
+  const quantity = String(byId('quantity')?.value || '').trim();
+  const buyer_name = String(byId('buyerName')?.value || '').trim() || null;
+
+  if (!order_id){
+    setStatus('Enter an Etsy order number.', true);
+    hideAssignConfirmation();
+    return null;
+  }
+  if (!card_key){
+    setStatus('Select a card type.', true);
+    hideAssignConfirmation();
+    return null;
+  }
+  if (!quantity){
+    setStatus('Select a quantity.', true);
+    hideAssignConfirmation();
+    return null;
+  }
+
+  return {
+    order_id,
+    card_key,
+    quantity,
+    buyer_name,
+    card_label: getSelectedOptionText('cardKey') || card_key,
+    quantity_label: getSelectedOptionText('quantity') || quantity,
+  };
+}
+
 async function isAuthenticated(){
   const r = await fetch('/auth', { method: 'GET', credentials: 'include' });
   const j = await r.json().catch(() => ({}));
@@ -89,9 +151,18 @@ async function logout(){
   window.location.href = '/fulfill/login/';
 }
 
-async function assign(){
-  const btn = byId('assignBtn');
+function beginAssign(){
+  const payload = collectAssignmentInput();
+  if (!payload) return;
+  showAssignConfirmation(payload);
+  setStatus('Confirm assignment.');
+}
+
+async function confirmAssign(){
+  const btn = byId('confirmAssignBtn');
+  const startBtn = byId('assignBtn');
   if (btn) btn.disabled = true;
+  if (startBtn) startBtn.disabled = true;
 
   try{
     // Must have a valid session cookie
@@ -101,23 +172,8 @@ async function assign(){
       return;
     }
 
-    const order_id = String(byId('orderId')?.value || '').trim();
-    const card_key = String(byId('cardKey')?.value || '').trim();
-    const quantity = String(byId('quantity')?.value || '').trim();
-    const buyer_name = String(byId('buyerName')?.value || '').trim() || null;
-
-    if (!order_id){
-      setStatus('Enter an Etsy order number.', true);
-      return;
-    }
-    if (!card_key){
-      setStatus('Select a card type.', true);
-      return;
-    }
-    if (!quantity){
-      setStatus('Select a quantity.', true);
-      return;
-    }
+    const payload = collectAssignmentInput();
+    if (!payload) return;
 
     setStatus('Assigning...');
     setAssigned('');
@@ -127,7 +183,12 @@ async function assign(){
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ order_id, card_key, quantity, buyer_name }),
+      body: JSON.stringify({
+        order_id: payload.order_id,
+        card_key: payload.card_key,
+        quantity: payload.quantity,
+        buyer_name: payload.buyer_name,
+      }),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -153,11 +214,13 @@ async function assign(){
       setStatus('Assigned.');
     }
 
+    hideAssignConfirmation();
     resetFulfillSelections();
   }catch(err){
     setStatus(String(err?.message || err || 'Error'), true);
   }finally{
     if (btn) btn.disabled = false;
+    if (startBtn) startBtn.disabled = false;
   }
 }
 
@@ -178,6 +241,8 @@ export function bootFulfill(){
   if (window.location.pathname.startsWith('/fulfill/login')) return;
 
   const btn = byId('assignBtn');
+  const confirmBtn = byId('confirmAssignBtn');
+  const cancelBtn = byId('cancelAssignBtn');
   const copyBtn = byId('copyBtn');
   const logoutBtn = byId('logoutBtn');
   if (!btn) return;
@@ -189,9 +254,23 @@ export function bootFulfill(){
     })
     .catch(() => goLogin());
 
-  btn.addEventListener('click', (e) => { e.preventDefault(); assign(); });
+  btn.addEventListener('click', (e) => { e.preventDefault(); beginAssign(); });
+  if (confirmBtn) confirmBtn.addEventListener('click', (e) => { e.preventDefault(); confirmAssign(); });
+  if (cancelBtn) cancelBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    hideAssignConfirmation();
+    setStatus('Confirmation canceled.');
+  });
   if (copyBtn) copyBtn.addEventListener('click', (e) => { e.preventDefault(); copyMessage(); });
   if (logoutBtn) logoutBtn.addEventListener('click', (e) => { e.preventDefault(); logout(); });
 
+  ['orderId', 'cardKey', 'quantity', 'buyerName'].forEach((id) => {
+    const el = byId(id);
+    if (!el) return;
+    el.addEventListener('input', hideAssignConfirmation);
+    el.addEventListener('change', hideAssignConfirmation);
+  });
+
+  hideAssignConfirmation();
   setStatus('Ready.');
 }

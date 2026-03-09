@@ -57,6 +57,17 @@
 <input class="input" id="buyerName" inputmode="text" placeholder="Buyer name (optional)" type="text"/>
 </div>
 <button class="btn outline full" id="assignBtn" type="button">Assign code</button>
+<div class="flow-panel" hidden="" id="assignConfirm">
+<div class="panel-meta"><span>Confirm assignment</span><span>Final check</span></div>
+<div class="stack">
+<p class="muted no-m">Review the assignment before generating code.</p>
+<div class="field"><strong>Order ID:</strong> <span id="confirmOrderId"></span></div>
+<div class="field"><strong>Card:</strong> <span id="confirmCard"></span></div>
+<div class="field"><strong>Quantity:</strong> <span id="confirmQuantity"></span></div>
+<div class="field"><strong>Buyer name:</strong> <span id="confirmBuyerName"></span></div>
+<div class="row between"><button class="btn ghost" id="cancelAssignBtn" type="button">Cancel</button><button class="btn outline" id="confirmAssignBtn" type="button">Confirm and assign</button></div>
+</div>
+</div>
 <div class="fulfill-feedback">
 <p aria-live="polite" class="muted" id="status"></p>
 <div class="fulfill-code-preview">
