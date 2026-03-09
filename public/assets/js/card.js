@@ -1859,7 +1859,7 @@ function clearLegendState(){
 
   }
 
-  function onTileScratched(i, el){
+  async function onTileScratched(i, el){
 
     if (scratched[i]) return;
 
@@ -1876,8 +1876,8 @@ function clearLegendState(){
       const scratched_indices = scratched
         .map((v, idx) => v ? idx : -1)
         .filter(idx => idx !== -1);
-      void setRevealedAndWait(card.token, { board, scratched_indices });
-      // Show Save PNG immediately on reveal (no refresh required)
+      await setRevealedAndWait(card.token, { board, scratched_indices });
+      // Only expose revealed-state actions after the revealed flag is fully persisted.
       renderRevealedActions(getCard(card.token) || card);
       fireWinTurboFlash();
       showWinUI();
