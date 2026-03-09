@@ -465,8 +465,8 @@ function _roundedRectPath(ctx, x, y, w, h, r){
 async function _fetchAsDataUrl(url){
   const res = await fetch(url, { cache: 'force-cache' });
   if (!res.ok) throw new Error('Fetch failed: ' + url + ' (' + res.status + ')');
-  const buf = await res.arrayBuffer();
-  const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+
+  const blob = await res.blob();
   const ext = url.split('.').pop().toLowerCase();
   const mime =
     ext === 'woff2' ? 'font/woff2' :
@@ -474,8 +474,21 @@ async function _fetchAsDataUrl(url){
     ext === 'svg' ? 'image/svg+xml' :
     ext === 'png' ? 'image/png' :
     ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' :
-    'application/octet-stream';
-  return `data:${mime};base64,${b64}`;
+    blob.type || 'application/octet-stream';
+
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const out = String(reader.result || '');
+      if (!out) return reject(new Error('Data URL encode failed: ' + url));
+      if (out.startsWith('data:')){
+        return resolve(out.replace(/^data:[^;]+;/, `data:${mime};`));
+      }
+      reject(new Error('Unexpected FileReader result for: ' + url));
+    };
+    reader.onerror = () => reject(reader.error || new Error('Data URL encode failed: ' + url));
+    reader.readAsDataURL(blob);
+  });
 }
 
 async function _embedInterFontCss(){
