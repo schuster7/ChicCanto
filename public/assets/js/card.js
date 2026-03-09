@@ -1757,6 +1757,7 @@ function renderScratch(root, card){
   // Debounced persistence of scratch progress so refresh doesn't re-cover already scratched tiles.
   let scratchSaveTimer = null;
   function persistScratchProgress(){
+    if (alreadyWon || card.revealed) return;
     const indices = [];
     for (let k = 0; k < total; k++){
       if (scratched[k]) indices.push(k);
@@ -1765,8 +1766,15 @@ function renderScratch(root, card){
     saveCard(card);
   }
   function schedulePersistScratch(){
+    if (alreadyWon || card.revealed) return;
     if (scratchSaveTimer) clearTimeout(scratchSaveTimer);
     scratchSaveTimer = setTimeout(persistScratchProgress, 300);
+  }
+  function cancelPersistScratch(){
+    if (scratchSaveTimer){
+      clearTimeout(scratchSaveTimer);
+      scratchSaveTimer = null;
+    }
   }
 
   function tierForIndex(i){ return board[i] || winTier; }
@@ -1873,11 +1881,15 @@ function clearLegendState(){
 
     if (!alreadyWon && counts[winTier] >= 3){
       alreadyWon = true;
+      cancelPersistScratch();
       const scratched_indices = scratched
         .map((v, idx) => v ? idx : -1)
         .filter(idx => idx !== -1);
+      card.revealed = true;
+      card.board = board;
+      card.scratched_indices = scratched_indices;
       await setRevealedAndWait(card.token, { board, scratched_indices });
-      // Only expose revealed-state actions after the revealed flag is fully persisted.
+      // Show Save PNG immediately on reveal (no refresh required)
       renderRevealedActions(getCard(card.token) || card);
       fireWinTurboFlash();
       showWinUI();
