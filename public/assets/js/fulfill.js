@@ -68,6 +68,27 @@ function resetFulfillSelections(){
   resetSelect('quantity');
 }
 
+function hideVoidPanel(){
+  const box = byId('voidReassignPanel');
+  if (!box) return;
+  box.hidden = true;
+}
+
+function showVoidPanel(summary){
+  const box = byId('voidReassignPanel');
+  if (!box) return;
+
+  const orderEl = byId('voidOrderId');
+  const cardEl = byId('voidAssignedCard');
+  const qtyEl = byId('voidAssignedQuantity');
+
+  if (orderEl) orderEl.textContent = summary.order_id || '';
+  if (cardEl) cardEl.textContent = summary.card_label || summary.card_key || '';
+  if (qtyEl) qtyEl.textContent = summary.quantity_label || String(summary.quantity || '');
+
+  box.hidden = false;
+}
+
 function hideAssignConfirmation(){
   const box = byId('assignConfirm');
   if (!box) return;
@@ -96,6 +117,13 @@ function getSelectedOptionText(selectId){
   if (!sel) return '';
   const selected = sel.options[sel.selectedIndex];
   return selected ? String(selected.textContent || '').trim() : '';
+}
+
+function getOptionTextByValue(selectId, value){
+  const sel = byId(selectId);
+  if (!sel) return '';
+  const match = Array.from(sel.options).find((opt) => String(opt.value || '') === String(value || ''));
+  return match ? String(match.textContent || '').trim() : '';
 }
 
 function collectAssignmentInput(){
@@ -154,6 +182,7 @@ async function logout(){
 function beginAssign(){
   const payload = collectAssignmentInput();
   if (!payload) return;
+  hideVoidPanel();
   showAssignConfirmation(payload);
   setStatus('Confirm assignment.');
 }
@@ -207,15 +236,87 @@ async function confirmAssign(){
     setMessage(data.etsy_message || '');
 
     if (data.existing && data.assignment_conflict){
-      setStatus(`Order already had code(s) assigned for ${data.card_key || 'another card type'}. Returned existing code(s).`, true);
+      const existingCardLabel = getOptionTextByValue('cardKey', data.card_key) || data.card_key || 'another card type';
+      const existingQtyLabel = getOptionTextByValue('quantity', String(data.quantity || '')) || String(data.quantity || '');
+
+      if (data.can_void_unactivated){
+        setStatus(`Order already has unactivated code(s) assigned for ${existingCardLabel}. Void them first, then assign again.`, true);
+        showVoidPanel({
+          order_id: data.order_id,
+          card_key: data.card_key,
+          quantity: data.quantity,
+          card_label: existingCardLabel,
+          quantity_label: existingQtyLabel,
+        });
+      } else {
+        setStatus(`Order already has code(s) assigned for ${existingCardLabel} and they cannot be voided here.`, true);
+        hideVoidPanel();
+      }
     } else if (data.existing){
       setStatus('Order already assigned. Returned existing code(s).');
+      hideVoidPanel();
+      hideAssignConfirmation();
+      resetFulfillSelections();
     } else {
       setStatus('Assigned.');
+      hideVoidPanel();
+      hideAssignConfirmation();
+      resetFulfillSelections();
     }
 
+    if (data.existing && data.assignment_conflict) hideAssignConfirmation();
+  }catch(err){
+    setStatus(String(err?.message || err || 'Error'), true);
+  }finally{
+    if (btn) btn.disabled = false;
+    if (startBtn) startBtn.disabled = false;
+  }
+}
+
+
+async function voidExistingAssignment(){
+  const btn = byId('voidReassignBtn');
+  const startBtn = byId('assignBtn');
+  if (btn) btn.disabled = true;
+  if (startBtn) startBtn.disabled = true;
+
+  try{
+    const authed = await isAuthenticated();
+    if (!authed){
+      goLogin();
+      return;
+    }
+
+    const order_id = String(byId('orderId')?.value || '').trim();
+    if (!order_id){
+      throw new Error('Enter the Etsy order number first.');
+    }
+
+    setStatus('Voiding current unactivated assignment...');
+
+    const res = await fetch('/void-assignment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ order_id }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (res.status === 401){
+      goLogin();
+      return;
+    }
+
+    if (!res.ok || !data.ok){
+      throw new Error(data.error || 'Void request failed.');
+    }
+
+    setAssigned('');
+    setMessage('');
+    hideVoidPanel();
     hideAssignConfirmation();
-    resetFulfillSelections();
+    setStatus('Unactivated assignment voided. Select the correct card and assign again.');
   }catch(err){
     setStatus(String(err?.message || err || 'Error'), true);
   }finally{
@@ -243,6 +344,7 @@ export function bootFulfill(){
   const btn = byId('assignBtn');
   const confirmBtn = byId('confirmAssignBtn');
   const cancelBtn = byId('cancelAssignBtn');
+  const voidBtn = byId('voidReassignBtn');
   const copyBtn = byId('copyBtn');
   const logoutBtn = byId('logoutBtn');
   if (!btn) return;
@@ -261,16 +363,18 @@ export function bootFulfill(){
     hideAssignConfirmation();
     setStatus('Confirmation canceled.');
   });
+  if (voidBtn) voidBtn.addEventListener('click', (e) => { e.preventDefault(); voidExistingAssignment(); });
   if (copyBtn) copyBtn.addEventListener('click', (e) => { e.preventDefault(); copyMessage(); });
   if (logoutBtn) logoutBtn.addEventListener('click', (e) => { e.preventDefault(); logout(); });
 
   ['orderId', 'cardKey', 'quantity', 'buyerName'].forEach((id) => {
     const el = byId(id);
     if (!el) return;
-    el.addEventListener('input', hideAssignConfirmation);
-    el.addEventListener('change', hideAssignConfirmation);
+    el.addEventListener('input', () => { hideAssignConfirmation(); hideVoidPanel(); });
+    el.addEventListener('change', () => { hideAssignConfirmation(); hideVoidPanel(); });
   });
 
   hideAssignConfirmation();
+  hideVoidPanel();
   setStatus('Ready.');
 }

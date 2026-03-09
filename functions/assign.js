@@ -140,10 +140,56 @@ ChicCanto`
 }
 
 
+
 async function getJsonKV(env, key){
   const raw = await env.CARDS_KV.get(key);
   if (!raw) return null;
   try{ return JSON.parse(raw); } catch { return null; }
+}
+
+function isVoidedOrderRecord(rec){
+  return !!(rec && typeof rec === 'object' && String(rec.status || '').toLowerCase() === 'voided');
+}
+
+async function inspectAssignmentState(env, codes){
+  const list = Array.isArray(codes) ? codes.map((v) => String(v || '').trim()).filter(Boolean) : [];
+  if (!list.length) return { can_void_unactivated: false, assignment_state: 'unknown' };
+
+  const records = [];
+  for (const code of list){
+    const rec = await getJsonKV(env, `ac:${code}`);
+    if (!rec || typeof rec !== 'object'){
+      return { can_void_unactivated: false, assignment_state: 'unknown' };
+    }
+    records.push(rec);
+  }
+
+  const allAssignedUnactivated = records.every((rec) => {
+    const status = String(rec.status || '').toLowerCase();
+    const hasTokens = Array.isArray(rec.tokens) && rec.tokens.length > 0;
+    return status === 'assigned' && !hasTokens;
+  });
+
+  if (allAssignedUnactivated){
+    return { can_void_unactivated: true, assignment_state: 'assigned_unactivated' };
+  }
+
+  const anyVoided = records.some((rec) => String(rec.status || '').toLowerCase() === 'voided');
+  if (anyVoided){
+    return { can_void_unactivated: false, assignment_state: 'voided' };
+  }
+
+  const anyActivated = records.some((rec) => {
+    const status = String(rec.status || '').toLowerCase();
+    const hasTokens = Array.isArray(rec.tokens) && rec.tokens.length > 0;
+    return hasTokens || status === 'redeemed';
+  });
+
+  if (anyActivated){
+    return { can_void_unactivated: false, assignment_state: 'activated' };
+  }
+
+  return { can_void_unactivated: false, assignment_state: 'unknown' };
 }
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // avoids 0/O and 1/I
@@ -214,8 +260,11 @@ export async function onRequestPost(context){
   let existingOrder = await getJsonKV(env, orderIndexKey);
 
   // Backwards compatibility: if older data only exists under the composite key, reuse that too.
+  if (isVoidedOrderRecord(existingOrder)) existingOrder = null;
+
   if (!existingOrder){
     existingOrder = await getJsonKV(env, orderKey);
+    if (isVoidedOrderRecord(existingOrder)) existingOrder = null;
   }
 
   if (existingOrder && typeof existingOrder === 'object' && Array.isArray(existingOrder.codes) && existingOrder.codes.length){
@@ -223,11 +272,14 @@ export async function onRequestPost(context){
     const existing_card_key = String(existingOrder.card_key || card_key);
     const existing_quantity = Number(existingOrder.quantity || quantity || codes.length || 1);
     const assignment_conflict = (existing_card_key !== card_key) || (existing_quantity !== quantity);
+    const assignmentState = await inspectAssignmentState(env, codes);
     const message_text = buildMessage({ codes, origin, buyerName: buyer_name || existingOrder.buyer_name || '' });
     return json({
       ok: true,
       existing: true,
       assignment_conflict,
+      can_void_unactivated: !!assignmentState.can_void_unactivated,
+      assignment_state: assignmentState.assignment_state,
       order_id,
       card_key: existing_card_key,
       quantity: existing_quantity,
@@ -274,6 +326,7 @@ export async function onRequestPost(context){
     quantity,
     codes,
     buyer_name: buyer_name || null,
+    status: 'assigned',
     assigned_at: new Date().toISOString(),
   };
   // Store both:
