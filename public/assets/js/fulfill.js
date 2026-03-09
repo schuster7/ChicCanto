@@ -26,6 +26,43 @@ function setMessage(msg){
   if (copyBtn) copyBtn.disabled = !(msg && String(msg).trim().length);
 }
 
+function syncCustomSelectUI(selectId){
+  const sel = byId(selectId);
+  if (!sel) return;
+
+  const root = document.querySelector(`.cselect[data-select="#${selectId}"]`);
+  if (!root) return;
+
+  const valEl = root.querySelector('.cselect__value');
+  const menu = root.querySelector('.cselect__menu');
+  const placeholder = root.dataset.placeholder || 'Select…';
+  const required = root.dataset.require === 'true';
+
+  if (valEl){
+    if (required && !sel.value){
+      valEl.textContent = placeholder;
+      root.classList.add('is-empty');
+    } else {
+      const selected = sel.options[sel.selectedIndex];
+      valEl.textContent = selected ? selected.textContent : placeholder;
+      root.classList.toggle('is-empty', !sel.value);
+    }
+  }
+
+  if (menu){
+    Array.from(menu.querySelectorAll('.cselect__opt')).forEach((n) => {
+      n.setAttribute('aria-selected', n.dataset.value === sel.value ? 'true' : 'false');
+    });
+  }
+}
+
+function resetCardSelection(){
+  const sel = byId('cardKey');
+  if (!sel) return;
+  sel.value = '';
+  syncCustomSelectUI('cardKey');
+}
+
 async function isAuthenticated(){
   const r = await fetch('/auth', { method: 'GET', credentials: 'include' });
   const j = await r.json().catch(() => ({}));
@@ -106,6 +143,8 @@ async function assign(){
     } else {
       setStatus('Assigned.');
     }
+
+    resetCardSelection();
   }catch(err){
     setStatus(String(err?.message || err || 'Error'), true);
   }finally{
