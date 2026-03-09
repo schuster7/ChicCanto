@@ -684,6 +684,34 @@ async function exportRevealedPng(card, opts = {}){
     // Inline all computed CSS into the clone.
     _inlineStylesDeep(stage, clone);
 
+    // Mobile WebKit is unreliable at painting <picture>/<source> inside
+    // foreignObject snapshots. Flatten card background pictures into a simple
+    // positioned div with a data-URL background-image before serializing.
+    try{
+      clone.querySelectorAll('picture.card-bg').forEach((pic) => {
+        const img = pic.querySelector('img');
+        const src = (img && (img.getAttribute('src') || '').trim()) || '';
+        if (!src) return;
+
+        const flat = document.createElement('div');
+        flat.className = 'card-bg';
+        flat.setAttribute(
+          'style',
+          [
+            'position:absolute',
+            'inset:0',
+            'z-index:0',
+            'pointer-events:none',
+            `background-image:url("${src.replace(/"/g, '&quot;')}")`,
+            'background-size:cover',
+            'background-position:center',
+            'background-repeat:no-repeat',
+          ].join(';') + ';'
+        );
+        pic.replaceWith(flat);
+      });
+    }catch{}
+
     const rect = stage.getBoundingClientRect();
 
 // Export scale: 1 = same pixel size as on-screen.
