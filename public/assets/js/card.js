@@ -1828,9 +1828,27 @@ function renderScratch(root, card){
     tileCtrls[i] = attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
     if (scratched[i]){
       el.classList.add('done');
-      try{ tileCtrls[i].forceReveal(); }catch{}
+      // Hide the canvas immediately so the foil never flashes on screen.
+      // forceReveal (below) will properly clear and resize it after layout.
+      canvas.style.opacity = '0';
     }
   }
+
+  // Defer forceReveal until the browser has completed layout.
+  // getBoundingClientRect() returns 0×0 if the element hasn't been laid out yet,
+  // which makes clearRect(0,0,0,0) a no-op — leaving the foil cover visible.
+  // Two nested rAFs guarantee layout + paint have happened.
+  requestAnimationFrame(() => { requestAnimationFrame(() => {
+    for (let i = 0; i < total; i++){
+      if (!scratched[i]) continue;
+      try{
+        tileCtrls[i].forceReveal();
+      }catch(_e){}
+      // Restore visibility now that the canvas is properly cleared.
+      const c = boardEl.querySelectorAll('.scratch-tile')[i]?.querySelector('canvas');
+      if (c) c.style.opacity = '';
+    }
+  }); });
 
   void hydrateInlineSvgs(root);
 
