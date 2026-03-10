@@ -258,1192 +258,2346 @@ async function _replaceImgWithInlineSvg(img) {
     svg.removeAttribute('role');
     svg.removeAttribute('aria-label');
   }
-
-  // Preserve common inline styles/attrs from <img>
-  const style = img.getAttribute('style');
-  if (style) svg.setAttribute('style', style);
-  if (img.id) svg.id = img.id;
-  if (img.getAttribute('data-export-ignore')) svg.setAttribute('data-export-ignore', img.getAttribute('data-export-ignore'));
+  svg.setAttribute('focusable', 'false');
 
   img.replaceWith(svg);
 }
 
-// Replaces all <img src="*.svg"> under root with inline <svg>.
-async function inlineAllSvgs(root = document) {
-  const imgs = Array.from(root.querySelectorAll('img[src$=".svg"], img[src*=".svg?"], img[src*=".svg#"]'));
-  await Promise.all(imgs.map((img) => _replaceImgWithInlineSvg(img)));
+async function hydrateInlineSvgs(root = document) {
+  const imgs = Array.from(root.querySelectorAll('img[data-inline-svg="true"]'));
+  if (!imgs.length) return;
+
+  await Promise.allSettled(
+    imgs.map(async (img) => {
+      if (img.dataset.inlineSvgHydrated === '1') return;
+      img.dataset.inlineSvgHydrated = '1';
+      try {
+        await _replaceImgWithInlineSvg(img);
+      } catch {
+        // Keep the <img> fallback if anything fails.
+      }
+    }),
+  );
 }
 
+function statusBadge(card){
+  if (!card.configured) return '<span class="badge warn">Not configured</span>';
+  if (card.revealed) return '<span class="badge ok">Revealed</span>';
+  return '<span class="badge">Ready</span>';
+}
 
-// ---------- URL helpers ----------
 function makeAbsoluteCardLink(token){
-  return new URL(`/card/?token=${encodeURIComponent(token)}`, window.location.origin).toString();
-}
-function makeAbsoluteOpenLink(token){
-  return new URL(`/open/?token=${encodeURIComponent(token)}`, window.location.origin).toString();
-}
-function makeAbsoluteSetupLink(token, setupKey){
-  const url = new URL(`/card/?token=${encodeURIComponent(token)}`, window.location.origin);
-  if (setupKey) url.searchParams.set('setup', setupKey);
+  const url = new URL(window.location.href);
+  url.pathname = '/open/';
+
+  // If token is malformed, don't build a share link.
+  if (!TOKEN_RE.test(token)) return null;
+
+  const params = new URLSearchParams();
+  params.set('token', token);
+  // Cache buster: helps Messenger/Meta fetch fresh HTML instead of a stale cached copy.
+  params.set('v', Date.now().toString(36));
+  url.search = '?' + params.toString();
+  url.hash = '';
   return url.toString();
 }
 
+function uniq(arr){ return Array.from(new Set(arr)); }
 
-// ---------- Setup key & sender-only guard ----------
-function getSetupKeyFromUrl(){
-  const url = new URL(window.location.href);
-  return (url.searchParams.get('setup') || '').trim();
+function clearActionsBar(){
+  const el = document.getElementById('cardActions');
+  if (el) el.innerHTML = '';
 }
 
-function hasSetupKey(){
-  return !!getSetupKeyFromUrl();
-}
+function renderCardHeaderActions(card, revealed){
+  clearActionsBar();
+  const el = document.getElementById('cardActions');
+  if (!el || !card) return;
 
-function isSenderSetupMode(card){
-  // Sender-only setup if:
-  // - there is a setup key in the URL, OR
-  // - card is not configured yet (first-time owner flow)
-  return hasSetupKey() || !card?.configured;
-}
+  // Preview mode: no copy/share link (token is not meant to be shared).
+  // Only show result actions after reveal.
+  if (PREVIEW_MODE){
 
-function sanitizePublicCard(card){
-  if(!card || typeof card !== 'object') return card;
-  const copy = { ...card };
-  // Never leak setup_key in public/shared flows.
-  delete copy.setup_key;
-  return copy;
-}
+    const mkBtn = (label) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn ghost';
+      b.textContent = label;
+      return b;
+    };
 
+    const saveBtn = mkBtn('Save PNG');
+    saveBtn.id = 'savePngBtn';
+    saveBtn.addEventListener('click', async () => {
+      if (saveBtn.disabled) return;
+      try{
+        saveBtn.disabled = true;
+        const prev = saveBtn.textContent;
+        saveBtn.textContent = 'Saving...';
+        await exportRevealedPng(card);
+        saveBtn.textContent = prev;
+      }catch (err){
+        console.error('PNG export failed:', err);
+        alert('Could not export PNG. Please try again.');
+      }finally{
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save PNG';
+      }
+    }, { passive: true });
+    el.appendChild(saveBtn);
 
-// ---------- Small styling helpers ----------
-function setText(el, value){
-  if (el) el.textContent = value == null ? '' : String(value);
-}
+    const shareBtn = mkBtn('Share result');
+    shareBtn.id = 'shareResultBtn';
+    shareBtn.addEventListener('click', async () => {
+      try{
+        // In preview, sharing the URL is not meaningful, but you may still want the share sheet.
+        // If you prefer, change this to share text only.
+        const url = makeAbsoluteCardLink(card.token);
+        const opt = resolveOptionFromCard(card);
+        const label = opt && opt.label ? `Scratch card result: ${opt.label}` : 'Scratch card result';
+        await safeShareLink(url, label);
+      }catch (e){
+        console.error('Share error:', e);
+      }
+    }, { passive: true });
+    el.appendChild(shareBtn);
 
-function setHtml(el, html){
-  if (el) el.innerHTML = html == null ? '' : String(html);
-}
+    // Preview-only: let testers jump to activation at any time.
+    const activateA = document.createElement('a');
+    activateA.className = 'btn ghost';
+    activateA.href = '/activate/';
+    activateA.textContent = 'Activate';
+    el.appendChild(activateA);
 
-function setDisabled(el, disabled){
-  if (!el) return;
-  el.disabled = !!disabled;
-  el.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-}
-
-function show(el){
-  if (el) el.hidden = false;
-}
-
-function hide(el){
-  if (el) el.hidden = true;
-}
-
-
-// ---------- API helpers ----------
-async function apiGetJson(url){
-  const res = await fetch(url, { credentials: 'same-origin' });
-  const text = await res.text();
-  let json = null;
-  try { json = text ? JSON.parse(text) : null; } catch {}
-  if (!res.ok) {
-    const msg = (json && (json.error || json.message)) || text || `GET ${url} failed (${res.status})`;
-    throw new Error(msg);
-  }
-  return json;
-}
-
-async function apiPostJson(url, body){
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'same-origin',
-    body: JSON.stringify(body || {})
-  });
-  const text = await res.text();
-  let json = null;
-  try { json = text ? JSON.parse(text) : null; } catch {}
-  if (!res.ok) {
-    const msg = (json && (json.error || json.message)) || text || `POST ${url} failed (${res.status})`;
-    throw new Error(msg);
-  }
-  return json;
-}
-
-async function apiPutJson(url, body){
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'same-origin',
-    body: JSON.stringify(body || {})
-  });
-  const text = await res.text();
-  let json = null;
-  try { json = text ? JSON.parse(text) : null; } catch {}
-  if (!res.ok) {
-    const msg = (json && (json.error || json.message)) || text || `PUT ${url} failed (${res.status})`;
-    throw new Error(msg);
-  }
-  return json;
-}
-
-
-// ---------- Choice / reveal-amount persistence ----------
-async function persistChoiceAndMaybeRevealAmount(token, choiceKey, revealAmount){
-  const setupKey = getSetupKeyFromUrl();
-  const payload = { choice: choiceKey };
-  if (typeof revealAmount === 'number' && Number.isFinite(revealAmount)) {
-    payload.reveal_amount = revealAmount;
+    return;
   }
 
-  // Prefer server when setup key exists (authoritative + sharable).
-  if (setupKey){
-    const url = `/token/${encodeURIComponent(token)}?setup=${encodeURIComponent(setupKey)}`;
-    const updated = await apiPutJson(url, payload);
+  // Normal mode: existing behavior
+  const url = makeAbsoluteCardLink(card.token);
 
-    // Also force local persistence for immediate same-device continuity.
-    _forcePersistConfiguredCard(token, {
-      choice: updated?.choice ?? choiceKey,
-      reveal_amount: typeof updated?.reveal_amount === 'number' ? updated.reveal_amount : revealAmount,
-      configured: true
-    });
+  const mkBtn = (label) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn ghost';
+    b.textContent = label;
+    return b;
+  };
 
-    // Store may already merge the payload, but we also explicitly mark configured.
-    try { await setConfiguredAndWait(token, { choice: choiceKey, reveal_amount: revealAmount }); } catch {}
-    return updated;
+  const copyBtn = mkBtn('Copy link');
+  copyBtn.addEventListener('click', async () => {
+    await safeCopyLink(url, 'Scratch card link');
+  }, { passive: true });
+
+  el.appendChild(copyBtn);
+
+  if (!revealed) return;
+
+  const saveBtn = mkBtn('Save PNG');
+  saveBtn.id = 'savePngBtn';
+  saveBtn.addEventListener('click', async () => {
+    if (saveBtn.disabled) return;
+    try{
+      saveBtn.disabled = true;
+      const prev = saveBtn.textContent;
+      saveBtn.textContent = 'Saving...';
+      await exportRevealedPng(card);
+      saveBtn.textContent = prev;
+    }catch (err){
+      console.error('PNG export failed:', err);
+      alert('Could not export PNG. Please try again.');
+    }finally{
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save PNG';
+    }
+  }, { passive: true });
+
+  el.appendChild(saveBtn);
+
+  const shareBtn = mkBtn('Share result');
+  shareBtn.id = 'shareResultBtn';
+  shareBtn.addEventListener('click', async () => {
+    try{
+      const opt = resolveOptionFromCard(card);
+      const label = opt && opt.label ? `Scratch card result: ${opt.label}` : 'Scratch card result';
+      await safeShareLink(url, label);
+    }catch (e){
+      console.error('Share error:', e);
+      await safeCopyLink(url, 'Scratch card result');
+    }
+  }, { passive: true });
+
+  el.appendChild(shareBtn);
+}
+
+
+
+function renderRevealedActions(card){
+  // Always show header actions (Copy link). Extra actions only when revealed.
+  renderCardHeaderActions(card, !!(card && card.revealed));
+}
+
+function _blobDownload(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function _roundedRectPath(ctx, x, y, w, h, r){
+  // Canvas rounded-rect path helper (no ctx.roundRect dependency).
+  const rr = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y, x + rr, y);
+  ctx.closePath();
+}
+
+async function _fetchAsDataUrl(url){
+  const res = await fetch(url, { cache: 'force-cache' });
+  if (!res.ok) throw new Error('Fetch failed: ' + url + ' (' + res.status + ')');
+  const buf = await res.arrayBuffer();
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const ext = url.split('.').pop().toLowerCase();
+  const mime =
+    ext === 'woff2' ? 'font/woff2' :
+    ext === 'woff' ? 'font/woff' :
+    ext === 'svg' ? 'image/svg+xml' :
+    ext === 'png' ? 'image/png' :
+    ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' :
+    'application/octet-stream';
+  return `data:${mime};base64,${b64}`;
+}
+
+async function _embedInterFontCss(){
+  // Best-effort: embed the self-hosted Inter fonts into the SVG snapshot.
+  // If any file is missing, we continue without embedding.
+  const candidates = [
+    { weight: 400, path: '/assets/fonts/inter-v20-latin-regular.woff2' },
+    { weight: 500, path: '/assets/fonts/inter-v20-latin-500.woff2' },
+    { weight: 700, path: '/assets/fonts/inter-v20-latin-700.woff2' },
+  ];
+
+  const rules = [];
+  for (const c of candidates){
+    try{
+      const dataUrl = await _fetchAsDataUrl(c.path);
+      rules.push(`
+@font-face{
+  font-family:"Inter";
+  font-style:normal;
+  font-weight:${c.weight};
+  src:url("${dataUrl}") format("woff2");
+}`);
+    } catch {
+      // ignore
+    }
   }
 
-  // Fallback to local store only (first-time setup on same device).
-  _forcePersistConfiguredCard(token, {
-    choice: choiceKey,
-    reveal_amount: typeof revealAmount === 'number' ? revealAmount : undefined,
-    configured: true
-  });
+  return rules.join('\n');
+}
+
+function _copyComputedStyles(sourceEl, targetEl){
+  const cs = getComputedStyle(sourceEl);
+  let cssText = '';
+  for (let i = 0; i < cs.length; i++){
+    const prop = cs[i];
+    const val = cs.getPropertyValue(prop);
+    // Skip properties that can break XML parsing or are irrelevant.
+    if (!val) continue;
+    cssText += `${prop}:${val};`;
+  }
+  targetEl.setAttribute('style', cssText);
+}
+
+function _inlineStylesDeep(sourceRoot, targetRoot){
+  const sourceEls = [sourceRoot, ...sourceRoot.querySelectorAll('*')];
+  const targetEls = [targetRoot, ...targetRoot.querySelectorAll('*')];
+
+  for (let i = 0; i < sourceEls.length; i++){
+    const s = sourceEls[i];
+    const t = targetEls[i];
+    if (!t) continue;
+    _copyComputedStyles(s, t);
+  }
+}
+
+function _makeSvgSnapshotMarkup(node, width, height, embeddedCss){
+  const serializer = new XMLSerializer();
+  const xhtml = serializer.serializeToString(node);
+
+  const safeCss = (embeddedCss || '').replace(/<\/style>/g, '</sty' + 'le>');
+  return `
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+  <foreignObject width="100%" height="100%">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+      <style>${safeCss}</style>
+      ${xhtml}
+    </div>
+  </foreignObject>
+</svg>`.trim();
+}
+
+async function exportRevealedPng(card, opts = {}){
+  // Only run on revealed state.
+  if (!card || !card.revealed) throw new Error('Card not revealed');
+
+  // Ensure the current view is fully rendered and fonts are ready.
+  if (document.fonts && document.fonts.ready){
+    // Avoid hanging forever.
+    await Promise.race([
+      document.fonts.ready,
+      new Promise((r) => setTimeout(r, 1500)),
+    ]);
+  }
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  const stage = document.querySelector('.scratch-stage');
+  if (!stage) throw new Error('Missing .scratch-stage');
+
+  // Clone only the card stage (no page UI).
+  const clone = stage.cloneNode(true);
+  clone.classList.add('is-exporting');
+
+  // Ensure no shadow/filters on the clone root, regardless of computed styles.
+  clone.style.boxShadow = 'none';
+  clone.style.filter = 'none';
+
+  // Best-effort: inline same-origin URLs so the SVG <foreignObject> snapshot includes
+  // the card background on export (especially <picture>/<source srcset> based backgrounds).
+  const _toAbsSameOrigin = (maybeUrl) => {
+    if (!maybeUrl) return null;
+    const u = String(maybeUrl).trim();
+    if (!u) return null;
+    if (u.startsWith('data:') || u.startsWith('blob:')) return null;
+    try{
+      const abs = new URL(u, window.location.href);
+      if (abs.origin !== window.location.origin) return null;
+      return abs.href;
+    }catch{
+      return null;
+    }
+  };
+
+  const _extractFirstUrl = (cssBg) => {
+    const s = String(cssBg || '');
+    const m = s.match(/url\(["']?([^"')]+)["']?\)/i);
+    return (m && m[1]) ? m[1] : '';
+  };
+
+  // 1) Inline background-image URLs (stage + inner) when used.
+  try{
+    const innerSrc = stage.querySelector('.scratch-stage__inner');
+    const innerDst = clone.querySelector('.scratch-stage__inner');
+    if (innerSrc && innerDst){
+      const cs = getComputedStyle(innerSrc);
+      const url = _extractFirstUrl(cs.getPropertyValue('background-image'));
+      const abs = _toAbsSameOrigin(url);
+      if (abs){
+        const dataUrl = await _fetchAsDataUrl(abs);
+        innerDst.style.backgroundImage = `url("${dataUrl}")`;
+      }
+    }
+  }catch{}
 
   try{
-    await setConfiguredAndWait(token, { choice: choiceKey, reveal_amount: revealAmount });
-  }catch{
-    // best effort
-  }
+    const csStage = getComputedStyle(stage);
+    const url = _extractFirstUrl(csStage.getPropertyValue('background-image'));
+    const abs = _toAbsSameOrigin(url);
+    if (abs){
+      const dataUrl = await _fetchAsDataUrl(abs);
+      clone.style.backgroundImage = `url("${dataUrl}")`;
+    }
+  }catch{}
 
-  return ensureCard(token);
+  // 2) Inline <picture> backgrounds (your card-bg pattern).
+  // We use the *resolved* currentSrc from the live DOM, so we don't have to guess
+  // whether <source> or <img src> is active.
+  try{
+    const picsSrc = stage.querySelectorAll('picture');
+    const picsDst = clone.querySelectorAll('picture');
+    const n = Math.min(picsSrc.length, picsDst.length);
+
+    for (let i = 0; i < n; i++){
+      const imgSrc = picsSrc[i].querySelector('img');
+      const imgDst = picsDst[i].querySelector('img');
+      if (!imgSrc || !imgDst) continue;
+
+      const resolved = (imgSrc.currentSrc || imgSrc.getAttribute('src') || '').trim();
+      const abs = _toAbsSameOrigin(resolved);
+      if (!abs) continue;
+
+      const dataUrl = await _fetchAsDataUrl(abs);
+
+      // Force the clone to use the embedded URL regardless of media queries.
+      imgDst.setAttribute('src', dataUrl);
+      imgDst.removeAttribute('srcset');
+      imgDst.removeAttribute('sizes');
+
+      picsDst[i].querySelectorAll('source').forEach((s) => {
+        s.setAttribute('srcset', dataUrl);
+        s.removeAttribute('sizes');
+      });
+    }
+  }catch{}
+
+  // 3) Inline any remaining <img> sources inside the export root.
+  try{
+    const imgsSrc = stage.querySelectorAll('img');
+    const imgsDst = clone.querySelectorAll('img');
+    const n = Math.min(imgsSrc.length, imgsDst.length);
+
+    for (let i = 0; i < n; i++){
+      const resolved = (imgsSrc[i].currentSrc || imgsSrc[i].getAttribute('src') || '').trim();
+      const abs = _toAbsSameOrigin(resolved);
+      if (!abs) continue;
+
+      const dataUrl = await _fetchAsDataUrl(abs);
+      imgsDst[i].setAttribute('src', dataUrl);
+      imgsDst[i].removeAttribute('srcset');
+      imgsDst[i].removeAttribute('sizes');
+    }
+  }catch{}
+
+  // Mount offscreen to compute styles consistently.
+  const wrap = document.createElement('div');
+  wrap.style.position = 'fixed';
+  wrap.style.left = '-10000px';
+  wrap.style.top = '0';
+  wrap.style.width = stage.getBoundingClientRect().width + 'px';
+  wrap.style.height = stage.getBoundingClientRect().height + 'px';
+  wrap.style.zIndex = '-1';
+  wrap.style.pointerEvents = 'none';
+  wrap.appendChild(clone);
+  document.body.appendChild(wrap);
+
+  try{
+    // Inline all computed CSS into the clone.
+    _inlineStylesDeep(stage, clone);
+
+    // Mobile WebKit is unreliable at painting <picture>/<source> inside
+    // foreignObject snapshots. Flatten card background pictures into a simple
+    // positioned div with a data-URL background-image before serializing.
+    try{
+      clone.querySelectorAll('picture.card-bg').forEach((pic) => {
+        const img = pic.querySelector('img');
+        const src = (img && (img.getAttribute('src') || '').trim()) || '';
+        if (!src) return;
+
+        const flat = document.createElement('div');
+        flat.className = 'card-bg';
+        flat.setAttribute(
+          'style',
+          [
+            'position:absolute',
+            'inset:0',
+            'z-index:0',
+            'pointer-events:none',
+            `background-image:url("${src.replace(/"/g, '&quot;')}")`,
+            'background-size:cover',
+            'background-position:center',
+            'background-repeat:no-repeat',
+          ].join(';') + ';'
+        );
+        pic.replaceWith(flat);
+      });
+    }catch{}
+
+    const rect = stage.getBoundingClientRect();
+
+// Export scale: 1 = same pixel size as on-screen.
+// Increase to 2 if you want higher-resolution PNGs.
+const scale = 2;
+
+const w0 = Math.max(1, Math.round(rect.width));
+const h0 = Math.max(1, Math.round(rect.height));
+
+// Force the cloned root to the exact on-screen size so % widths resolve.
+clone.style.width = w0 + 'px';
+clone.style.height = h0 + 'px';
+clone.style.maxWidth = 'none';
+clone.style.margin = '0';
+clone.style.display = 'block';
+
+const embeddedFontCss = await _embedInterFontCss();
+
+// SVG is authored at on-screen size; canvas handles pixel scaling.
+const svgMarkup = _makeSvgSnapshotMarkup(clone, w0, h0, embeddedFontCss);
+const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
+
+    const img = new Image();
+    img.decoding = 'async';
+
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('Snapshot image failed to load'));
+      img.src = svgDataUrl;
+    });
+
+    const canvas = document.createElement('canvas');
+
+// Add breathing room + dark background for share-friendly exports.
+// Padding is proportional to card size, clamped to sensible bounds.
+const pad = (() => {
+  const base = Math.min(w0, h0);
+  return Math.max(24, Math.min(96, Math.round(base * 0.06)));
+})();
+
+const outW = w0 + pad * 2;
+const outH = h0 + pad * 2;
+
+canvas.width = Math.max(1, Math.round(outW * scale));
+canvas.height = Math.max(1, Math.round(outH * scale));
+
+const ctx = canvas.getContext('2d');
+if (!ctx) throw new Error('No canvas context');
+
+// Work in CSS pixels; apply pixel scaling once.
+ctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+// Background (solid dark).
+ctx.fillStyle = '#0e151a';
+ctx.fillRect(0, 0, outW, outH);
+
+// Force rounded-corner clipping in the export (foreignObject can be flaky with border-radius).
+const r = (() => {
+  try{
+    const br = getComputedStyle(stage).borderTopLeftRadius || '0px';
+    const n = parseFloat(br);
+    return Number.isFinite(n) ? n : 0;
+  }catch{
+    return 0;
+  }
+})();
+
+if (r > 0){
+  const rr = Math.min(r, Math.min(w0, h0) / 2);
+  ctx.beginPath();
+  _roundedRectPath(ctx, pad, pad, w0, h0, rr);
+  ctx.clip();
 }
 
+ctx.drawImage(img, pad, pad);
 
-// ---------- Random / board helpers ----------
-function shuffleInPlace(arr){
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('PNG encode failed');
+
+    const ts = formatIso(new Date()).replace(/[:]/g, '').slice(0, 15);
+    const filename = `chiccanto-${card.productId || 'card'}-${card.token}-${ts}.png`;
+
+    const download = opts.download !== false;
+    const outName = opts.filename || filename;
+
+    if (download) _blobDownload(blob, outName);
+    return blob;
+  } finally {
+    wrap.remove();
+  }
+}
+
+function pickRandomOption(){
+  const idx = Math.floor(Math.random() * getRevealOptions().length);
+  return getRevealOptions()[idx];
+}
+
+function resolveOptionFromCard(card){
+  if (card?.choice){
+    const o1 = getRevealOptions().find(o => o.key === card.choice);
+    if (o1) return o1;
+  }
+  if (card?.reveal_amount){
+    const o2 = getRevealOptions().find(o => o.amount === card.reveal_amount);
+    if (o2) return o2;
+  }
+  return getRevealOptions()[0];
+}
+
+// --- Deterministic board (no persistence needed) ---
+function xfnv1a(str){
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++){
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function mulberry32(a){
+  return function(){
+    a |= 0;
+    a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function seededRng(seedStr){ return mulberry32(xfnv1a(seedStr)); }
+
+function shuffleWithRng(arr, rng){
   for (let i = arr.length - 1; i > 0; i--){
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
 }
 
-function randomChoice(arr){
-  return arr[Math.floor(Math.random() * arr.length)];
-}
+// Only the winning tier appears 3 times. Other tiers appear at most 2 times.
 
-function buildWinningBoard(prizeKey, allKeys, total = 9){
-  const board = new Array(total);
-  const winPositions = shuffleInPlace([...Array(total).keys()]).slice(0, 3);
-  for (const idx of winPositions) board[idx] = prizeKey;
+function buildMatch3Board(totalTiles, winTier, tiers, seedKey){
+  const total = Math.max(1, Math.min(9, Number(totalTiles) || 9));
+  const rng = seededRng(seedKey);
 
-  const nonPrizeKeys = allKeys.filter((k) => k !== prizeKey);
-  const pool = [];
-  while (pool.length < total - 3){
-    pool.push(randomChoice(nonPrizeKeys));
+  const allTiers = tiers && tiers.length ? tiers.slice() : ['t1','t2','t3','t4'];
+  const others = allTiers.filter(t => t !== winTier);
+
+  const board = [winTier, winTier, winTier];
+  const counts = { [winTier]: 3 };
+  let remaining = total - 3;
+
+  for (const t of others){
+    if (remaining <= 0) break;
+    const add = Math.min(2, remaining);
+    for (let i = 0; i < add; i++){
+      board.push(t);
+      counts[t] = (counts[t] || 0) + 1;
+    }
+    remaining -= add;
   }
-  shuffleInPlace(pool);
 
-  let p = 0;
-  for (let i = 0; i < total; i++){
-    if (!board[i]) board[i] = pool[p++];
+  let guard = 0;
+  while (remaining > 0 && guard++ < 200){
+    const t = others[Math.floor(rng() * others.length)];
+    if ((counts[t] || 0) >= 2) continue;
+    board.push(t);
+    counts[t] = (counts[t] || 0) + 1;
+    remaining--;
   }
-  return board;
+
+  return shuffleWithRng(board, rng);
 }
 
-function getChoicePrizeOptions(choice){
-  const opts = getRevealOptions(choice);
-  if (!opts || typeof opts !== 'object') return [];
-  const keys = Object.keys(opts).filter((k) => k !== RANDOM_KEY);
-  return keys.map((key) => ({
-    key,
-    label: opts[key]?.label || key,
-    tier: opts[key]?.tier || null,
-    iconSrc: tierIconSrc(key),
-  }));
+function render(container, token, card){
+  // Card is expected to already exist in storage (redeem/setup creates it).
+  applyTheme(card.theme_id);
+
+  const contentId = 'content';
+
+  const params = new URLSearchParams(window.location.search);
+  const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
+  const hasSetupAccess = PREVIEW_MODE ? false : !!(setupParam && card.setup_key && setupParam === card.setup_key);
+
+  // If a setup param is present, cache it for this token so we can recover sender setup
+  // even if the backend redacts setup_key in intermediate responses (KV propagation, etc.).
+  if (!PREVIEW_MODE && token && setupParam){
+    const looksLikeKey = /^[A-Za-z0-9_-]{10,}$/.test(String(setupParam));
+    if (looksLikeKey){
+      try{ localStorage.setItem(`sc:setup:${token}`, String(setupParam)); }catch(_e){}
+    }
+  }
+
+
+// Persist sender setup key locally so we can recover from accidentally opening the recipient link (token-only).
+if (!PREVIEW_MODE && hasSetupAccess && token && card && card.setup_key){
+  try{ localStorage.setItem(`sc:setup:${token}`, String(card.setup_key)); }catch(_e){}
 }
 
-function getChosenPrize(card){
-  const choice = card?.choice || '';
-  if (!choice || choice === RANDOM_KEY) return null;
-  const opts = getRevealOptions(choice);
-  const item = opts?.[choice];
-  if (!item) return null;
-  return {
-    key: choice,
-    label: item.label || choice,
-    tier: item.tier || null,
-    iconSrc: tierIconSrc(choice),
-  };
-}
+const previewCta = PREVIEW_MODE ? `
+  <div class="preview-line" role="note" aria-label="Preview notice">
+    <span class="muted">Preview mode. Scratch for free. Activate to create a recipient link.</span>
+  </div>
+` : '';
 
-function getRevealAmountLabel(card){
-  const n = Number(card?.reveal_amount);
-  if (!Number.isFinite(n) || n <= 0) return '';
-  return String(n);
-}
-
-
-// ---------- UI: Setup screen ----------
-function renderSetupScreen(container, card){
-  const token = card.token;
-  const opts = getRevealOptions(card.card_type || card.type || '');
-  const theme = getCardTheme(card.card_type || card.type || '');
-
-  const items = Object.entries(opts || {}).map(([key, val]) => ({
-    key,
-    label: val?.label || key,
-    tier: val?.tier || null,
-    iconSrc: tierIconSrc(key),
-    isRandom: key === RANDOM_KEY
-  }));
-
-  const showRevealAmount = items.some((x) => x.isRandom);
 
   container.innerHTML = `
-    <main class="page-main">
-      <div class="container">
-        <section class="flow-screen">
-          <div class="flow-layout">
-            <div class="flow-intro">
-              <h1 class="flow-title">Choose the prize tier</h1>
-              <p class="flow-lead muted panel-meta">
-                This choice is private to the sender while setting up the card.
-              </p>
-            </div>
-
-            <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Choose prize">
-              ${theme?.thumbSrc ? `
-                <div class="card-thumb-wrap">
-                  <img class="card-thumb" src="${theme.thumbSrc}" alt="" />
-                </div>
-              ` : ''}
-
-              <div class="control-grid" id="choiceGrid">
-                ${items.map((item) => `
-                  <button
-                    type="button"
-                    class="choice-card ${item.isRandom ? 'choice-card--random' : ''}"
-                    data-choice="${item.key}"
-                    aria-pressed="false"
-                  >
-                    <div class="choice-card__media">
-                      ${item.iconSrc ? `<img class="choice-card__icon" src="${item.iconSrc}" alt="" />` : ''}
-                    </div>
-                    <div class="choice-card__body">
-                      <div class="choice-card__title">${item.label}</div>
-                      ${item.tier ? `<div class="choice-card__meta">Tier ${item.tier}</div>` : ''}
-                      ${item.isRandom ? `<div class="choice-card__meta">We’ll randomize the prize tier after activation.</div>` : ''}
-                    </div>
-                  </button>
-                `).join('')}
-              </div>
-
-              ${showRevealAmount ? `
-                <div class="field" id="revealAmountField" hidden>
-                  <label class="label" for="revealAmount">Reveal amount</label>
-                  <input
-                    class="input"
-                    id="revealAmount"
-                    type="number"
-                    inputmode="numeric"
-                    min="1"
-                    max="99"
-                    step="1"
-                    value="${Number.isFinite(Number(card.reveal_amount)) ? Number(card.reveal_amount) : 1}"
-                  />
-                  <div class="muted small" style="margin-top:6px;">
-                    Only used when “Surprise me” is selected.
-                  </div>
-                </div>
-              ` : ''}
-
-              <div class="actions" style="margin-top: 14px;">
-                <button class="btn primary" id="saveChoiceBtn" type="button" disabled>Save and continue</button>
-              </div>
-            </section>
-          </div>
-        </section>
-      </div>
-    </main>
+    ${previewCta}
+    <div id="${contentId}"></div>
   `;
 
-  const choiceGrid = container.querySelector('#choiceGrid');
-  const saveBtn = container.querySelector('#saveChoiceBtn');
-  const amountField = container.querySelector('#revealAmountField');
-  const amountInput = container.querySelector('#revealAmount');
+  const content = qs('#' + contentId, container);
 
-  let selected = '';
-
-  function refreshSelection(){
-    const buttons = Array.from(choiceGrid.querySelectorAll('.choice-card'));
-    for (const btn of buttons){
-      const active = btn.getAttribute('data-choice') === selected;
-      btn.classList.toggle('is-selected', active);
-      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-    }
-
-    setDisabled(saveBtn, !selected);
-
-    const isRandom = selected === RANDOM_KEY;
-    if (amountField){
-      amountField.hidden = !isRandom;
-    }
+  if (card.revealed){
+    renderRevealed(content, card);
+    return;
   }
 
-  choiceGrid?.addEventListener('click', (e) => {
-    const btn = e.target.closest('.choice-card');
-    if (!btn) return;
-    selected = btn.getAttribute('data-choice') || '';
-    refreshSelection();
-  });
+  // Sender private link (setup param) should always show setup UI (even after configured),
+  // so the buyer can copy/share the recipient link.
+  if (hasSetupAccess){
+    renderSetup(content, card, container);
+    return;
+  }
 
-  saveBtn?.addEventListener('click', async () => {
-    if (!selected) return;
+  if (!card.configured){
+    // On first open from another device (Messenger, etc.), Cloudflare KV can briefly return a stale record.
+    // Wait a short moment for the configured state before showing "Not ready yet".
+    renderPreparing(content);
 
-    saveBtn.textContent = 'Saving…';
-    setDisabled(saveBtn, true);
-
-    try{
-      let revealAmount = undefined;
-      if (selected === RANDOM_KEY){
-        const parsed = Number(amountInput?.value || 1);
-        revealAmount = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1;
+    (async () => {
+      const fresh = await _waitForConfigured(token, { attempts: 10, baseDelayMs: 450 });
+      if (fresh && fresh.configured){
+        render(container, token, fresh);
+        return;
       }
+      renderNotReady(content, card);
+    })();
 
-      const updated = await persistChoiceAndMaybeRevealAmount(token, selected, revealAmount);
+    return;
+  }
 
-      // Local continuity: get the freshest merged card and go straight into the card UI.
-      const next = sanitizePublicCard(updated || ensureCard(token) || { ...card, choice: selected, reveal_amount: revealAmount, configured: true });
-      next.token = token;
-      next.choice = selected;
-      if (selected === RANDOM_KEY) next.reveal_amount = revealAmount;
-      next.configured = true;
-
-      renderCardScreen(container, next);
-    }catch(err){
-      console.error(err);
-      toast(err?.message || 'Could not save choice');
-      saveBtn.textContent = 'Save and continue';
-      setDisabled(saveBtn, false);
-    }
-  });
-
-  refreshSelection();
+  renderScratch(content, card);
 }
 
+function renderSetup(root, card, container){
+  // Ensure the correct per-card prize labels/icons are active before rendering the choice buttons.
+  const cardKey = String(card?.card_key || '').trim() || 'men-novice1';
+  setTileSet(cardKey);
 
-// ---------- UI: Card screen shell ----------
-function baseCardScreenMarkup(card, theme, { senderSetupMode = false } = {}){
-  const token = card.token;
-  const openUrl = makeAbsoluteOpenLink(token);
-  const cardUrl = makeAbsoluteCardLink(token);
-  const setupUrl = senderSetupMode ? makeAbsoluteSetupLink(token, card.setup_key || getSetupKeyFromUrl()) : '';
+  const tierOptions = getRevealOptions().map(o => `
+      <button class="btn" data-choice="${o.key}" type="button">${o.label}</button>
+    `).join('');
 
-  return `
-    <main class="page-main">
-      <div class="container">
-        <section class="flow-screen card-screen" data-token="${token}">
-          <header class="card-header panel panel--glass">
-            <div class="brand-mark">ChicCanto</div>
-            <div class="card-actions" id="cardActions">
-              ${!PREVIEW_MODE ? `<button class="btn" id="copyBtn" type="button">Copy link</button>` : ''}
-            </div>
-          </header>
+  const theme = getCardTheme(card.card_key);
+  const thumbSrc = (theme && theme.thumbSrc) ? theme.thumbSrc : '/assets/img/thumb_men-novice1.jpg';
+  const cardName = (() => {
+    const raw = String(card.card_key || '').trim();
+    if (!raw) return 'Selected card';
+    const cleaned = raw.replace(/\d+$/, '').replace(/-/g, ' ').trim();
+    return cleaned.split(/\s+/).map(w => w ? (w[0].toUpperCase() + w.slice(1)) : '').join(' ');
+  })();
 
-          <section class="scratch-stage panel panel--glass" id="scratchStage">
-            <picture class="card-bg" aria-hidden="true" data-export-root="1">
-              <source media="(max-width: 720px)" srcset="${theme.bgMobileSrc || theme.bgDesktopSrc || ''}">
-              <img class="card-bg__img" src="${theme.bgDesktopSrc || theme.bgMobileSrc || ''}" alt="" />
-            </picture>
+  root.innerHTML = `
+    <div class="flow-screen stack">
+      <div class="flow-layout">
+        <div class="flow-intro">
+          <h1 class="flow-title">Select the prize</h1>
+          <p class="flow-lead muted">Pick the prize, then send the recipient link. After you confirm, you have 5 seconds to cancel.</p>
+        </div>
 
-            <div class="card-stage__content" id="cardStageContent">
-              <div class="card-stage__title-wrap">
-                ${theme.titleSrc ? `<img class="card-stage__title" src="${theme.titleSrc}" alt="" />` : ''}
+        <section class="flow-panel--combined panel panel--glass panel--padded setup-unified" aria-label="Sender controls">
+          <div class="panel-meta">
+            <div>Step 2 - Setup card</div>
+            <div class="flow-panel__hint">Choose prize</div>
+          </div>
+
+          <div class="setup-grid">
+            <!-- Left: trust + guidance + random -->
+            <div class="setup-left stack">
+  <div class="setup-thumb">
+    <div class="setup-thumb__media">
+      <img class="card-preview__img" src="${thumbSrc}" alt="Card thumbnail" />
+    </div>
+    <div class="setup-thumb__info">
+      <div class="mini-panel__kicker">Selected card</div>
+      <div class="h3">${cardName}</div>
+    </div>
+  </div>
+
+
+
+  <div class="mini-panel">
+    <div class="mini-panel__kicker" style="display:flex; align-items:center; justify-content:space-between;">
+      <span>Prefer not to choose?</span>
+      <span class="flow-panel__hint" style="text-transform:none; letter-spacing:0;">We pick</span>
+    </div>
+    <div class="small muted">Let ChicCanto pick one of the four prizes for you.</div>
+    <button class="btn outline w-full" data-choice="${RANDOM_KEY}" type="button" style="margin-top:12px;">Surprise me (we choose)</button>
+
+
+  </div>
+</div><div class="setup-right">
+              <div class="flow-section" aria-label="Prize level">
+                <div class="flow-panel__head">
+                  <div class="flow-panel__title">Prize level</div>
+                  <div class="flow-panel__meta muted small">Locks after confirmation</div>
+                </div>
+
+                <div class="choice-grid choice-grid--4" role="group" aria-label="Choose a prize level">
+                  ${tierOptions}
+                </div>
+
+                <div class="flow-status muted small" id="setupStatus"></div>
               </div>
 
-              <div class="card-screen__body">
-                <aside class="legend-panel" id="legendPanel">
-                  <div class="legend-panel__inner">
-                    <h2 class="legend-panel__title">MATCH 3 TO WIN</h2>
-                    <p class="legend-panel__subtitle">SCRATCH ALL CIRCLES TO REVEAL ICONS</p>
-                    <div class="legend-panel__list" id="legendList"></div>
+              <div class="flow-divider" role="separator" aria-hidden="true"></div>
+
+              <div class="flow-section" aria-label="Share link">
+                <div class="flow-panel__head">
+                  <div class="flow-panel__title">Recipient link</div>
+                </div>
+
+                <div class="sharebar">
+                  <div class="sharebar__url" id="shareUrl">Pick a prize to generate the link</div>
+
+                  <div class="sharebar__actions">
+                    <button class="btn" id="copyBtn" type="button">Copy</button>
+                    <button class="btn" id="shareBtn" type="button">Share</button>
+                    <button class="btn" id="openBtn" type="button">Open as recipient</button>
                   </div>
-                </aside>
 
-                <section class="scratch-board" id="scratchBoard" aria-label="Scratch board"></section>
+                  <div class="sharebar__lock" id="changeRow" hidden>
+                    <button class="btn" id="changeBtn" type="button">Cancel</button>
+                    <div class="small muted" id="lockHint"></div>
+                  </div>
+                </div>
+
+                <div class="flow-tip muted small">Tip: you can return to this setup link anytime to copy the recipient link again.</div>
               </div>
             </div>
-          </section>
-
-          <footer class="page-footer muted">
-            <a href="/privacy/" class="link">Privacy</a>
-            <span>•</span>
-            <a href="mailto:chiccanto@wearrs.com" class="link">chiccanto@wearrs.com</a>
-          </footer>
-
-          <div class="sr-only">
-            <a href="${openUrl}" id="openUrlAnchor">Open</a>
-            <a href="${cardUrl}" id="cardUrlAnchor">Card</a>
-            ${senderSetupMode && setupUrl ? `<a href="${setupUrl}" id="setupUrlAnchor">Setup</a>` : ''}
           </div>
         </section>
       </div>
-    </main>
+    </div>
+`;
+const shareUrlEl = qs('#shareUrl', root);
+  const copyBtn = qs('#copyBtn', root);
+  const shareBtn = qs('#shareBtn', root);
+  const openBtn = qs('#openBtn', root);
+  const changeRow = qs('#changeRow', root);
+  const changeBtn = qs('#changeBtn', root);
+  const lockHintEl = qs('#lockHint', root);
+
+  let shareUrl = null;
+
+  // Pending lock timer (lets first-time buyers realize it's irreversible without adding extra clicks)
+  let pending = null; // { interval, choice, chosen }
+
+// Cancel overlay (mobile first). Keeps the 5 second undo visible without scrolling.
+let _cancelModal = null;
+function _ensureCancelModal(){
+  if (_cancelModal) return _cancelModal;
+  const el = document.createElement('div');
+  el.className = 'cc-modal cc-modal--hidden';
+  el.innerHTML = `
+    <div class="cc-modal__backdrop" data-cc-close="1"></div>
+    <div class="cc-modal__panel" role="dialog" aria-modal="true" aria-labelledby="ccCancelTitle">
+      <div class="cc-modal__title mini-panel__kicker" id="ccCancelTitle">Prize selected</div>
+      <img class="cc-modal__icon" id="ccCancelIcon" alt="" style="width:86px;height:86px;display:block;margin:10px auto 12px;object-fit:contain;">
+      <div class="cc-modal__prize" id="ccCancelPrize"></div>
+      <div class="cc-modal__subtitle" id="ccCancelSubtitle"></div>
+      <div class="cc-modal__actions">
+        <button type="button" class="btn" id="ccCancelBtn">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(el);
+
+  const btn = el.querySelector('#ccCancelBtn');
+  const iconEl = el.querySelector('#ccCancelIcon');
+  const prizeEl = el.querySelector('#ccCancelPrize');
+  const subtitle = el.querySelector('#ccCancelSubtitle');
+
+  function open(){
+    el.classList.remove('cc-modal--hidden');
+  }
+  function close(){
+    el.classList.add('cc-modal--hidden');
+  }
+
+  el.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t && t.getAttribute && t.getAttribute('data-cc-close') === '1'){
+      cancelPending();
+    }
+  });
+  btn.addEventListener('click', () => cancelPending());
+
+  document.addEventListener('keydown', (e) => {
+    if (el.classList.contains('cc-modal--hidden')) return;
+    if (e.key === 'Escape') cancelPending();
+  });
+
+  _cancelModal = { el, btn, iconEl, prizeEl, subtitle, open, close };
+  return _cancelModal;
+}
+
+
+  function setChoiceButtonsEnabled(enabled){
+    qsa('button[data-choice]', root).forEach(b => {
+      b.disabled = !enabled;
+      b.style.pointerEvents = enabled ? 'auto' : 'none';
+      b.style.opacity = enabled ? '1' : '0.6';
+    });
+  }
+
+  function resetShareUI(){
+    shareUrl = null;
+    shareUrlEl.textContent = 'Pick a prize to generate the link.';
+    // Disable actions until a prize is selected
+    copyBtn.disabled = true;
+    copyBtn.style.opacity = '.5';
+    copyBtn.style.pointerEvents = 'none';
+
+    if (shareBtn){
+      shareBtn.disabled = true;
+      shareBtn.style.opacity = '.5';
+      shareBtn.style.pointerEvents = 'none';
+    }
+
+    openBtn.disabled = true;
+    openBtn.style.opacity = '.5';
+    openBtn.style.pointerEvents = 'none';
+
+    changeRow.style.display = 'none';
+    lockHintEl.textContent = '';
+  }
+
+  function enableShare(){
+    shareUrlEl.textContent = shareUrl;
+
+    copyBtn.disabled = false;
+    copyBtn.style.opacity = '1';
+    copyBtn.style.pointerEvents = 'auto';
+
+    if (shareBtn){
+      shareBtn.disabled = false;
+      shareBtn.style.opacity = '1';
+      shareBtn.style.pointerEvents = 'auto';
+    }
+
+    openBtn.disabled = false;
+    openBtn.style.opacity = '1';
+    openBtn.style.pointerEvents = 'auto';
+
+    changeRow.style.display = 'none';
+    lockHintEl.textContent = '';
+  }
+
+  function showPending(choice, chosen, secondsLeft){
+  const isRandom = (choice === RANDOM_KEY);
+  const label = isRandom ? 'Surprise me' : (chosen?.label || 'Your choice');
+
+  // Keep legacy inline hint text updated (harmless on desktop).
+  shareUrlEl.textContent = `Selected ${label}. Locking in ${secondsLeft}…`;
+
+  // Disable share actions while the cancel window is active.
+  copyBtn.disabled = true;
+  copyBtn.style.opacity = '.5';
+  copyBtn.style.pointerEvents = 'none';
+
+  if (shareBtn){
+    shareBtn.disabled = true;
+    shareBtn.style.opacity = '.5';
+    shareBtn.style.pointerEvents = 'none';
+  }
+
+  openBtn.disabled = true;
+  openBtn.style.opacity = '.5';
+  openBtn.style.pointerEvents = 'none';
+
+  // Hide the old bottom-row cancel UI during the pending state.
+  changeRow.style.display = 'none';
+  lockHintEl.textContent = '';
+
+  // Show modal overlay so mobile users always see Cancel.
+  const modal = _ensureCancelModal();
+  modal.prizeEl.textContent = label;
+  try{
+    const tier = chosen?.tier;
+    const src = (!isRandom && tier) ? tierIconSrc(tier) : '';
+    if (modal.iconEl){
+      if (src){
+        modal.iconEl.src = src;
+        modal.iconEl.alt = label;
+        modal.iconEl.style.display = 'block';
+      } else {
+        modal.iconEl.removeAttribute('src');
+        modal.iconEl.alt = '';
+        modal.iconEl.style.display = 'none';
+      }
+    }
+  }catch{}
+  modal.subtitle.textContent = `Locking in ${secondsLeft} seconds`;
+  modal.open();
+}
+
+  function cancelPending(){
+  if (!pending) return;
+  try{ clearInterval(pending.interval); }catch{}
+  pending = null;
+  setChoiceButtonsEnabled(true);
+  resetShareUI();
+
+  try{
+    if (_cancelModal) _cancelModal.close();
+  }catch{}
+}
+
+  async function lockChoice(choice, chosen){
+    const nextCard = {
+      ...card,
+      configured: true,
+      choice,
+      reveal_amount: chosen.amount,
+      fields: Number(card.fields || 9)
+    };
+
+    // Persist configuration to backend before enabling the recipient link.
+    // This avoids intermittent "Not ready yet" on the recipient side when the sender shares too fast.
+    const saved = await setConfiguredAndWait(card.token, {
+      choice,
+      reveal_amount: chosen.amount,
+      fields: Number(card.fields || 9),
+      card_key: card.card_key
+    });
+
+    if (!saved){
+      // Keep local mirror for sender UX, but do not enable sharing until server confirms.
+      _forcePersistConfiguredCard(card.token, nextCard);
+      setChoiceButtonsEnabled(true);
+      resetShareUI();
+      window.alert('Could not save the card setup yet. Please try again.');
+      return;
+    }
+
+    // Also keep local mirror aligned (helps if the browser reloads immediately).
+    _forcePersistConfiguredCard(card.token, { ...nextCard, ...saved });
+
+    shareUrl = makeAbsoluteCardLink(card.token);
+    enableShare();
+
+    // Lock setup after first configuration so the outcome can't be changed accidentally.
+    setChoiceButtonsEnabled(false);
+  }
+
+  changeBtn.addEventListener('click', cancelPending);
+
+  // If the card is already configured
+
+  // Default state: actions look disabled until a prize is selected
+  resetShareUI();
+
+  // If the card is already configured (e.g. returning to the private setup link),
+  // show the recipient link immediately and prevent changing the outcome.
+  if (card && card.configured){
+    shareUrl = makeAbsoluteCardLink(card.token);
+    enableShare();
+    setChoiceButtonsEnabled(false);
+  }
+
+  qsa('button[data-choice]', root).forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (card && card.configured) return;
+
+      // If user clicks again mid-countdown, treat it as a reset.
+      if (pending) cancelPending();
+
+      const choice = btn.dataset.choice;
+
+      let chosen = null;
+      if (choice === RANDOM_KEY) chosen = pickRandomOption();
+      else chosen = getRevealOptions().find(o => o.key === choice) || getRevealOptions()[0];
+
+      // IMPORTANT: persist the actual chosen tier key, not RANDOM_KEY.
+      // Some backends treat unknown choice keys as a default and may ignore reveal_amount.
+      // By storing the real tier key, the random pick becomes real and stable for the recipient.
+      const effectiveChoice = (choice === RANDOM_KEY) ? (chosen?.key || getRevealOptions()[0].key) : choice;
+
+      // Confirm before we start the lock countdown (prevents accidental taps).
+      const confirmMsg = (choice === RANDOM_KEY)
+        ? 'Confirm Surprise me? This locks a random prize tier and cannot be changed.'
+        : `Confirm ${chosen.label}? This locks your choice and cannot be changed.`;
+
+      if (!window.confirm(confirmMsg)) return;
+
+      // Micro-step: brief lock countdown with a Cancel option.
+      setChoiceButtonsEnabled(false);
+
+      let secondsLeft = 5;
+      showPending(choice, chosen, secondsLeft);
+
+      pending = { interval: null, choice: effectiveChoice, chosen, displayChoice: choice };
+      pending.interval = setInterval(async () => {
+        secondsLeft -= 1;
+
+        if (!pending) return;
+
+        if (secondsLeft <= 0){
+          try{ clearInterval(pending.interval); }catch{}
+          const finalChoice = pending.choice;
+          const finalChosen = pending.chosen;
+          pending = null;
+          try{ if (_cancelModal) _cancelModal.close(); }catch{}
+          await lockChoice(finalChoice, finalChosen);
+          return;
+        }
+
+        showPending(choice, chosen, secondsLeft);
+      }, 1000);
+    });
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    if (!shareUrl) return;
+    await safeCopyLink(shareUrl);
+  });
+
+  if (shareBtn){
+    shareBtn.addEventListener('click', async () => {
+      if (!shareUrl) return;
+      await safeShareLink(shareUrl, 'ChicCanto card');
+    });
+  }
+
+  // Open recipient link in a new tab/window so the sender can keep setup open.
+// IMPORTANT: do not fall back to same-tab navigation, because some in-app browsers
+// can return null from window.open() even when they still open a new view.
+if (openBtn){
+  openBtn.onclick = () => {
+    if (!shareUrl) return;
+    try{
+      window.open(shareUrl, '_blank', 'noopener,noreferrer');
+    }catch{
+      // If window.open is blocked, we intentionally do nothing here.
+      // The user can use Copy/Share instead.
+    }
+  };
+}
+}
+
+
+function renderPreparing(root){
+  root.innerHTML = `
+    <section class="flow-screen">
+      <div class="flow-layout">
+        <div class="flow-intro">
+          <h1 class="flow-title">Preparing your card…</h1>
+          <p class="flow-lead muted panel-meta">Just a moment. We are syncing the card setup.</p>
+        </div>
+        <section class="flow-panel--combined panel">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div aria-hidden="true" style="width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:rgba(255,255,255,.9);animation:ccspin 0.9s linear infinite;"></div>
+            <div class="muted panel-meta">Loading…</div>
+          </div>
+        </section>
+      </div>
+    </section>
+    <style>
+      @keyframes ccspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
   `;
 }
 
+function _sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
-// ---------- Theme → legend styling ----------
-function applyLegendPanelTheme(root, theme){
-  const panel = root.querySelector('#legendPanel');
-  if (!panel || !theme) return;
-
-  // Base panel background / blur / border
-  if (theme.legendPanelBg){
-    panel.style.background = theme.legendPanelBg;
+async function _apiGetCardFresh(token){
+  try{
+    const url = `/token/${encodeURIComponent(token)}?v=${Date.now()}`;
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'cache-control': 'no-cache' }
+    });
+    if (!res || !res.ok) return null;
+    const data = await res.json();
+    if (!data || typeof data !== 'object') return null;
+    return data;
+  }catch(_e){
+    return null;
   }
-  if (theme.legendPanelBlur){
-    panel.style.backdropFilter = `blur(${theme.legendPanelBlur})`;
-    panel.style.webkitBackdropFilter = `blur(${theme.legendPanelBlur})`;
-  }
-  if (theme.legendPanelBorder){
-    panel.style.borderColor = theme.legendPanelBorder;
-  }
-
-  // Text colors
-  const textColor = theme.legendPanelTextColor || '';
-  const mutedColor = theme.legendPanelMutedColor || textColor || '';
-
-  const title = panel.querySelector('.legend-panel__title');
-  const subtitle = panel.querySelector('.legend-panel__subtitle');
-  if (title && textColor) title.style.color = textColor;
-  if (subtitle && mutedColor) subtitle.style.color = mutedColor;
-
-  // Legend row colors are applied after rows are rendered too.
 }
 
-
-// ---------- Legend rendering ----------
-function renderLegendRows(root, theme, card){
-  const list = root.querySelector('#legendList');
-  if (!list) return;
-
-  const items = getChoicePrizeOptions(card.card_type || card.type || '');
-  list.innerHTML = items.map((item) => `
-    <div class="legend-row" data-prize="${item.key}">
-      <div class="legend-row__icon-wrap">
-        ${item.iconSrc ? `<img class="legend-row__icon" src="${item.iconSrc}" alt="" />` : ''}
-      </div>
-      <div class="legend-row__label">${item.label}</div>
-    </div>
-  `).join('');
-
-  const textColor = theme?.legendPanelTextColor || '';
-  const mutedColor = theme?.legendPanelMutedColor || textColor || '';
-
-  list.querySelectorAll('.legend-row').forEach((row) => {
-    if (mutedColor) row.style.borderColor = `${mutedColor}22`;
-    const label = row.querySelector('.legend-row__label');
-    if (label && textColor) label.style.color = textColor;
-
-    const iconWrap = row.querySelector('.legend-row__icon-wrap');
-    if (iconWrap && mutedColor){
-      iconWrap.style.borderColor = mutedColor;
-    }
-  });
-}
-
-
-// ---------- Scratch / reveal state ----------
-function getCardThemeSafe(card){
-  return getCardTheme(card?.card_type || card?.type || '');
-}
-
-function getAllPrizeKeysForCard(card){
-  return getChoicePrizeOptions(card?.card_type || card?.type || '').map((x) => x.key);
-}
-
-function buildBoardForCard(card){
-  const allKeys = getAllPrizeKeysForCard(card);
-  const chosen = getChosenPrize(card);
-
-  if (chosen?.key){
-    return buildWinningBoard(chosen.key, allKeys, 9);
-  }
-
-  // Random fallback if no explicit chosen prize.
-  const fallback = randomChoice(allKeys);
-  return buildWinningBoard(fallback, allKeys, 9);
-}
-
-function ensureBoard(card){
-  if (Array.isArray(card.board) && card.board.length === 9){
-    return card.board.slice();
-  }
-  const board = buildBoardForCard(card);
-  card.board = board.slice();
-  saveCard(card);
-  return board;
-}
-
-function getWinningPrizeKeyFromBoard(board){
-  const counts = new Map();
-  for (const key of board){
-    counts.set(key, (counts.get(key) || 0) + 1);
-  }
-  for (const [key, count] of counts.entries()){
-    if (count >= 3) return key;
+async function _waitForConfigured(token, { attempts = 10, baseDelayMs = 450 } = {}){
+  for (let i = 0; i < attempts; i++){
+    const fresh = await _apiGetCardFresh(token);
+    if (fresh && fresh.configured) return fresh;
+    // Gentle backoff to give KV time to replicate across edges.
+    await _sleep(baseDelayMs + (i * 180));
   }
   return null;
 }
 
-function getCurrentlyScratchedIndices(card){
-  const arr = Array.isArray(card?.scratched_indices) ? card.scratched_indices : [];
-  return arr
-    .map((n) => Number(n))
-    .filter((n) => Number.isInteger(n) && n >= 0 && n < 9);
-}
 
-function markWinningLegendRow(root, prizeKey){
-  qsa('.legend-row', root).forEach((row) => row.classList.remove('is-winning'));
-  if (!prizeKey) return;
-  const row = root.querySelector(`.legend-row[data-prize="${CSS.escape(prizeKey)}"]`);
-  if (row) row.classList.add('is-winning');
-}
+function renderNotReady(root, card){
+  const url = window.location.href;
+  const params = new URLSearchParams(window.location.search);
+  const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
+  const tokenParam = params.get('token') || (card && card.token) || '';
+  let storedSetup = '';
+  if (!setupParam && tokenParam){
+    try{ storedSetup = localStorage.getItem(`sc:setup:${tokenParam}`) || ''; }catch(_e){}
+  }
 
-function renderScratchBoard(root, card, board, scratchedIndices){
-  const boardEl = root.querySelector('#scratchBoard');
-  if (!boardEl) return;
+  const isRecipientLink = !setupParam;
+  const canRecoverSender = isRecipientLink && !!(tokenParam && storedSetup);
 
-  const theme = getCardThemeSafe(card);
+  const mainCopy = isRecipientLink
+    ? 'This is the recipient link. It cannot be used to set up the card.'
+    : 'The sender is still setting it up. Try again in a moment.';
 
-  boardEl.innerHTML = board.map((prizeKey, idx) => {
-    const iconSrc = tierIconSrc(prizeKey);
-    const scratched = scratchedIndices.includes(idx);
-    return `
-      <button
-        type="button"
-        class="scratch-tile ${scratched ? 'is-scratched' : ''}"
-        data-idx="${idx}"
-        data-prize="${prizeKey}"
-        aria-label="Scratch tile ${idx + 1}"
-      >
-        <div class="scratch-tile__inner">
-          <div class="scratch-tile__revealed">
-            ${iconSrc ? `<img class="scratch-tile__icon" src="${iconSrc}" alt="" />` : ''}
-          </div>
-          <div class="scratch-tile__overlay">
-            <span class="scratch-tile__overlay-text">scratch</span>
-          </div>
+  const senderHint = canRecoverSender
+    ? 'If you are the sender on this device, you can jump to your setup link now.'
+    : 'If you are the sender, open your setup link (it includes an extra setup code).';
+
+  root.innerHTML = `
+    <section class="flow-screen">
+      <div class="flow-layout">
+        <div class="flow-intro">
+          <h1 class="flow-title">Not ready yet</h1>
+          <p class="flow-lead muted panel-meta">${mainCopy}</p>
         </div>
-      </button>
-    `;
-  }).join('');
-
-  qsa('.scratch-tile', boardEl).forEach((tile) => {
-    if (theme?.tileSet) {
-      setTileSet(tile, theme.tileSet);
-    }
-  });
-}
-
-function getTileElements(root){
-  return qsa('.scratch-tile', root);
-}
-
-function setTileScratched(tile, scratched){
-  tile.classList.toggle('is-scratched', !!scratched);
-}
-
-function removeAllScratchOverlays(root){
-  qsa('.scratch-tile', root).forEach((tile) => setTileScratched(tile, true));
-}
-
-function getRevealedPrizeKey(card){
-  if (!card?.revealed) return null;
-  const board = Array.isArray(card.board) ? card.board : [];
-  const scratched = getCurrentlyScratchedIndices(card);
-  if (board.length === 9){
-    // If explicit winning key can be inferred from board, use it.
-    const counts = new Map();
-    for (const idx of scratched){
-      const key = board[idx];
-      if (!key) continue;
-      counts.set(key, (counts.get(key) || 0) + 1);
-    }
-    for (const [key, count] of counts.entries()){
-      if (count >= 3) return key;
-    }
-  }
-  return getWinningPrizeKeyFromBoard(board);
-}
-
-
-// ---------- Share / export actions ----------
-function renderCardHeaderActions(card, revealed){
-  const actions = qs('#cardActions');
-  if (!actions) return;
-
-  actions.innerHTML = '';
-
-  if (!PREVIEW_MODE){
-    const copyBtn = document.createElement('button');
-    copyBtn.type = 'button';
-    copyBtn.className = 'btn';
-    copyBtn.id = 'copyBtn';
-    copyBtn.textContent = 'Copy link';
-    copyBtn.addEventListener('click', async () => {
-      const url = makeAbsoluteOpenLink(card.token);
-      await safeCopyLink(url);
-    });
-    actions.appendChild(copyBtn);
-  }
-
-  if (!revealed) return;
-
-  const saveBtn = document.createElement('button');
-  saveBtn.type = 'button';
-  saveBtn.className = 'btn';
-  saveBtn.id = 'savePngBtn';
-  saveBtn.textContent = 'Save PNG';
-  saveBtn.addEventListener('click', async () => {
-    try{
-      setDisabled(saveBtn, true);
-      saveBtn.textContent = 'Rendering…';
-      await exportRevealedPng(card);
-      saveBtn.textContent = 'Saved';
-      setTimeout(() => (saveBtn.textContent = 'Save PNG'), 1200);
-    }catch(err){
-      console.error(err);
-      toast(err?.message || 'PNG export failed');
-      saveBtn.textContent = 'Save PNG';
-    }finally{
-      setDisabled(saveBtn, false);
-    }
-  });
-  actions.appendChild(saveBtn);
-
-  if (!PREVIEW_MODE){
-    const shareBtn = document.createElement('button');
-    shareBtn.type = 'button';
-    shareBtn.className = 'btn primary';
-    shareBtn.id = 'shareBtn';
-    shareBtn.textContent = 'Share result';
-    shareBtn.addEventListener('click', async () => {
-      const url = makeAbsoluteOpenLink(card.token);
-      await safeShareLink(url, 'Your ChicCanto card');
-    });
-    actions.appendChild(shareBtn);
-  }
-}
-
-
-// ---------- Export helpers ----------
-function _waitImageLoad(img){
-  return new Promise((resolve, reject) => {
-    if (img.complete && img.naturalWidth > 0) return resolve(img);
-    img.addEventListener('load', () => resolve(img), { once: true });
-    img.addEventListener('error', () => reject(new Error('Image failed to load')), { once: true });
-  });
-}
-
-function _xmlEscape(str){
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function _svgToDataUrl(svgMarkup){
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
-}
-
-async function _fetchAsDataUrl(url){
-  const abs = new URL(url, window.location.href).toString();
-  const res = await fetch(abs, { cache: 'force-cache' });
-  if (!res.ok) throw new Error(`Failed to fetch asset: ${res.status} ${res.statusText}`);
-  const blob = await res.blob();
-  return await new Promise((resolve, reject) => {
-    const fr = new FileReader();
-    fr.onload = () => resolve(fr.result);
-    fr.onerror = () => reject(new Error('Failed to read asset as data URL'));
-    fr.readAsDataURL(blob);
-  });
-}
-
-function _cloneForExport(el){
-  return el.cloneNode(true);
-}
-
-// Copy computed styles from source tree → clone tree (keeps clone visually faithful)
-function _inlineStylesDeep(sourceRoot, cloneRoot){
-  const sourceWalker = document.createTreeWalker(sourceRoot, NodeFilter.SHOW_ELEMENT);
-  const cloneWalker  = document.createTreeWalker(cloneRoot,  NodeFilter.SHOW_ELEMENT);
-
-  const sourceEls = [sourceRoot, ...(() => {
-    const out = [];
-    let n;
-    while ((n = sourceWalker.nextNode())) out.push(n);
-    return out;
-  })()];
-
-  const cloneEls = [cloneRoot, ...(() => {
-    const out = [];
-    let n;
-    while ((n = cloneWalker.nextNode())) out.push(n);
-    return out;
-  })()];
-
-  for (let i = 0; i < Math.min(sourceEls.length, cloneEls.length); i++){
-    const src = sourceEls[i];
-    const dst = cloneEls[i];
-    const cs = window.getComputedStyle(src);
-
-    const style = [];
-    for (const prop of cs){
-      try{
-        style.push(`${prop}:${cs.getPropertyValue(prop)};`);
-      }catch{}
-    }
-    dst.setAttribute('style', style.join(''));
-  }
-}
-
-async function _inlineImagesForExport(cloneRoot){
-  const imgs = Array.from(cloneRoot.querySelectorAll('img'));
-  await Promise.all(imgs.map(async (img) => {
-    const src = img.getAttribute('src');
-    if (!src) return;
-    try{
-      img.setAttribute('src', await _fetchAsDataUrl(src));
-    }catch{
-      // best effort; leave original src
-    }
-  }));
-}
-
-async function _inlineCssUrlsInStyleAttr(root){
-  const els = Array.from(root.querySelectorAll('[style]'));
-  const urlRe = /url\((['"]?)(.*?)\1\)/g;
-
-  await Promise.all(els.map(async (el) => {
-    const style = el.getAttribute('style') || '';
-    const matches = [...style.matchAll(urlRe)];
-    if (!matches.length) return;
-
-    let next = style;
-    for (const m of matches){
-      const original = m[0];
-      const rawUrl = m[2];
-      if (!rawUrl || rawUrl.startsWith('data:')) continue;
-      try{
-        const dataUrl = await _fetchAsDataUrl(rawUrl);
-        next = next.replace(original, `url("${dataUrl}")`);
-      }catch{
-        // keep original
-      }
-    }
-    el.setAttribute('style', next);
-  }));
-}
-
-function _makeSvgSnapshotMarkup(cloneEl, width, height){
-  const html = cloneEl.outerHTML;
-  return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-      <foreignObject x="0" y="0" width="100%" height="100%">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;height:${height}px;overflow:hidden;">
-          ${html}
-        </div>
-      </foreignObject>
-    </svg>
-  `.trim();
-}
-
-async function exportRevealedPng(card){
-  const stage = qs('#scratchStage');
-  if (!stage) throw new Error('Scratch stage not found');
-
-  // Force fully revealed export state when card is revealed.
-  const exportCard = { ...card };
-  if (exportCard.revealed) {
-    exportCard.scratched_indices = [0,1,2,3,4,5,6,7,8];
-  }
-
-  // Clone the live stage so current responsive layout is preserved.
-  const clone = _cloneForExport(stage);
-
-  // Ensure clone uses revealed state for export (no scratch overlays after reveal).
-  if (exportCard.revealed){
-    clone.querySelectorAll('.scratch-tile').forEach((tile) => {
-      tile.classList.add('is-scratched');
-    });
-  }
-
-  // Inline computed styles and image sources.
-  _inlineStylesDeep(stage, clone);
-  await _inlineImagesForExport(clone);
-  await _inlineCssUrlsInStyleAttr(clone);
-
-  // 1) Determine export size from the live stage.
-  const rect = stage.getBoundingClientRect();
-  const width  = Math.max(1, Math.round(rect.width));
-  const height = Math.max(1, Math.round(rect.height));
-
-  // 2) Resolve the active card background from the live DOM.
-  let exportBgDataUrl = null;
-  try{
-    const liveBgImg = stage.querySelector('.card-bg__img');
-    const picture = stage.querySelector('.card-bg');
-    let bgSrc = '';
-
-    if (picture){
-      const source = picture.querySelector('source');
-      const mq = source?.getAttribute('media') || '';
-      const srcset = source?.getAttribute('srcset') || '';
-      const desktopSrc = liveBgImg?.getAttribute('src') || '';
-
-      if (mq && srcset && window.matchMedia && window.matchMedia(mq).matches){
-        bgSrc = srcset;
-      }else{
-        bgSrc = liveBgImg?.currentSrc || desktopSrc || srcset || '';
-      }
-    }else{
-      bgSrc = liveBgImg?.currentSrc || liveBgImg?.getAttribute('src') || '';
-    }
-
-    if (bgSrc){
-      exportBgDataUrl = await _fetchAsDataUrl(bgSrc);
-    }
-  }catch{
-    exportBgDataUrl = null;
-  }
-
-  // 3) Hide the cloned DOM background so we don't double-paint.
-  clone.querySelectorAll('.card-bg').forEach((el) => {
-    el.remove();
-  });
-
-  // 4) Snapshot the foreground DOM to SVG.
-  const svg = _makeSvgSnapshotMarkup(clone, width, height);
-  const img = new Image();
-  img.decoding = 'sync';
-  img.src = _svgToDataUrl(svg);
-  await _waitImageLoad(img);
-
-  // 5) Draw export to canvas.
-  const pad = 24;
-  const canvas = document.createElement('canvas');
-  canvas.width = width + pad * 2;
-  canvas.height = height + pad * 2;
-  const ctx = canvas.getContext('2d');
-
-  // Padded dark background so rounded corners stay intact in export.
-  ctx.fillStyle = '#0b1017';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // 5a) Draw actual active card background image first, if available.
-  if (exportBgDataUrl){
-    const bgImg = new Image();
-    bgImg.decoding = 'sync';
-    bgImg.src = exportBgDataUrl;
-    await _waitImageLoad(bgImg);
-
-    // Cover behavior to match the live card background.
-    const scale = Math.max(width / bgImg.naturalWidth, height / bgImg.naturalHeight);
-    const drawW = bgImg.naturalWidth * scale;
-    const drawH = bgImg.naturalHeight * scale;
-    const dx = pad + (width - drawW) / 2;
-    const dy = pad + (height - drawH) / 2;
-
-    // Clip to the stage rounded corners before drawing background.
-    const radius = 28;
-    ctx.save();
-    roundedRectPath(ctx, pad, pad, width, height, radius);
-    ctx.clip();
-    ctx.drawImage(bgImg, dx, dy, drawW, drawH);
-    ctx.restore();
-  }
-
-  // 5b) Draw the cloned foreground DOM over the background.
-  ctx.drawImage(img, pad, pad);
-
-  // 6) Download
-  const a = document.createElement('a');
-  const now = new Date();
-  a.download = `chiccanto-card-${card.token}-${formatIso(now).replace(/[:.]/g, '_')}.png`;
-  a.href = canvas.toDataURL('image/png');
-  a.click();
-}
-
-function roundedRectPath(ctx, x, y, w, h, r){
-  const rr = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + rr, y);
-  ctx.arcTo(x + w, y, x + w, y + h, rr);
-  ctx.arcTo(x + w, y + h, x, y + h, rr);
-  ctx.arcTo(x, y + h, x, y, rr);
-  ctx.arcTo(x, y, x + w, y, rr);
-  ctx.closePath();
-}
-
-
-// ---------- Main card rendering ----------
-function renderRevealed(root, card){
-  const board = ensureBoard(card);
-  const winningPrize = getRevealedPrizeKey(card) || getWinningPrizeKeyFromBoard(board);
-
-  renderScratchBoard(root, card, board, [0,1,2,3,4,5,6,7,8]);
-  removeAllScratchOverlays(root);
-  markWinningLegendRow(root, winningPrize);
-  renderCardHeaderActions(card, true);
-}
-
-function renderScratch(root, card){
-  const board = ensureBoard(card);
-  const scratchedIndices = getCurrentlyScratchedIndices(card);
-
-  renderScratchBoard(root, card, board, scratchedIndices);
-  markWinningLegendRow(root, null);
-  renderCardHeaderActions(card, false);
-
-  const boardEl = root.querySelector('#scratchBoard');
-  const tiles = getTileElements(root);
-
-  // Debounced persistence of scratch progress.
-  let scratchSaveTimer = null;
-  const schedulePersistScratch = (indices) => {
-    clearTimeout(scratchSaveTimer);
-    scratchSaveTimer = setTimeout(() => {
-      card.scratched_indices = indices;
-      saveCard(card);
-    }, 120);
-  };
-
-  function revealWin(prizeKey, scratchedSet){
-    // Force full reveal state both visually and in persisted card state.
-    const all = [0,1,2,3,4,5,6,7,8];
-
-    // Cancel any pending stale scratch-progress write first.
-    clearTimeout(scratchSaveTimer);
-
-    // Update live in-memory card immediately so no later save can resurrect overlays.
-    card.revealed = true;
-    card.scratched_indices = all.slice();
-    card.board = board.slice();
-
-    // Force current DOM into full revealed state now.
-    tiles.forEach((tile) => setTileScratched(tile, true));
-    markWinningLegendRow(root, prizeKey);
-
-    // Persist full revealed state.
-    void setRevealedAndWait(card.token, {
-      board: board.slice(),
-      scratched_indices: all.slice()
-    });
-
-    renderCardHeaderActions(getCard(card.token) || card, true);
-  }
-
-  function onTileScratched(idx){
-    const tile = tiles[idx];
-    if (!tile || tile.classList.contains('is-scratched')) return;
-
-    setTileScratched(tile, true);
-
-    const nextSet = new Set(getCurrentlyScratchedIndices(card));
-    nextSet.add(idx);
-    const scratched = [...nextSet].sort((a, b) => a - b);
-
-    // Persist partial scratch progress.
-    schedulePersistScratch(scratched);
-
-    // Check for win condition.
-    const counts = new Map();
-    for (const i of scratched){
-      const key = board[i];
-      counts.set(key, (counts.get(key) || 0) + 1);
-    }
-
-    for (const [prizeKey, count] of counts.entries()){
-      if (count >= 3){
-        revealWin(prizeKey, nextSet);
-        break;
-      }
-    }
-  }
-
-  tiles.forEach((tile) => {
-    const idx = Number(tile.getAttribute('data-idx'));
-    if (tile.classList.contains('is-scratched')) return;
-
-    attachScratchTile(tile, {
-      onComplete: () => onTileScratched(idx)
-    });
-  });
-}
-
-function renderCardScreen(container, card){
-  const safeCard = sanitizePublicCard(card);
-  const theme = getCardThemeSafe(safeCard);
-  const senderSetupMode = isSenderSetupMode(card);
-
-  container.innerHTML = baseCardScreenMarkup(card, theme, { senderSetupMode });
-  applyLegendPanelTheme(container, theme);
-  renderLegendRows(container, theme, card);
-
-  if (card.revealed){
-    renderRevealed(container, card);
-  }else{
-    renderScratch(container, card);
-  }
-}
-
-
-// ---------- Public page boot ----------
-async function loadCardForPage(token){
-  // Prefer local first for smoother continuity, then hydrate from API if available.
-  let local = getCard(token);
-
-  // Token sanity check first, so obviously invalid tokens don't depend on API failures.
-  if (!TOKEN_RE.test(token || '')) {
-    throw new Error('This card link looks invalid.');
-  }
-
-  // If we already have a configured local card and we're not in preview mode, use it immediately.
-  // BUT: if the page URL carries a sender setup key, still try the API afterwards so we can
-  // merge/setup-authoritative fields (and persist setup_key for later local continuity).
-  if (local && local.configured && !PREVIEW_MODE) {
-    const setupKey = getSetupKeyFromUrl();
-    if (!setupKey) return sanitizePublicCard(local);
-  }
-
-  // Remote authoritative read
-  try{
-    // If URL has a sender setup key, include it so API can return owner-only fields (e.g. setup_key)
-    const setupKey = getSetupKeyFromUrl();
-    const url = setupKey
-      ? `/token/${encodeURIComponent(token)}?setup=${encodeURIComponent(setupKey)}`
-      : `/token/${encodeURIComponent(token)}`;
-
-    const remote = await apiGetJson(url);
-
-    // Merge into local store for continuity
-    if (remote && typeof remote === 'object'){
-      const merged = { ...(local || {}), ...remote };
-      try { saveCard(merged); } catch {}
-      return sanitizePublicCard(merged);
-    }
-  }catch(err){
-    // Fall back to local, but surface the remote error if nothing usable exists.
-    if (local) return sanitizePublicCard(local);
-    throw err;
-  }
-
-  if (local) return sanitizePublicCard(local);
-
-  throw new Error('Card not found.');
-}
-
-function renderErrorScreen(container, message){
-  container.innerHTML = `
-    <main class="page-main">
-      <div class="container">
-        <section class="flow-screen">
-          <div class="flow-layout">
-            <div class="flow-intro">
-              <h1 class="flow-title">This card can’t be opened</h1>
-              <p class="flow-lead muted panel-meta">${_xmlEscape(message || 'Unknown error')}</p>
+        <section class="flow-panel--combined panel panel--glass panel--padded" aria-label="Not ready">
+          <div class="panel-meta">
+            <div>Step 1</div>
+            <div class="flow-panel__hint">${canRecoverSender ? 'Open sender setup' : 'Try again soon'}</div>
+          </div>
+
+          <div class="control-grid">
+            <div class="actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+              ${canRecoverSender
+                ? '<button class="btn primary" type="button" data-action="sender">Open sender setup</button>'
+                : '<button class="btn primary" type="button" data-action="refresh">Refresh</button>'}
+              <button class="btn outline" type="button" data-action="copy">Copy this link</button>
+              <button class="btn outline" type="button" data-action="share">Share</button>
             </div>
+
+            <p class="muted small" style="margin-top: 10px;">${senderHint}</p>
           </div>
         </section>
       </div>
-    </main>
+    </section>
+  `;
+
+  const btnRefresh = root.querySelector('[data-action="refresh"]');
+  const btnSender = root.querySelector('[data-action="sender"]');
+  const btnCopy = root.querySelector('[data-action="copy"]');
+  const btnShare = root.querySelector('[data-action="share"]');
+
+  if (btnRefresh){
+    btnRefresh.addEventListener('click', () => window.location.reload());
+  }
+
+  if (btnSender){
+    btnSender.addEventListener('click', () => {
+      if (!tokenParam || !storedSetup) return;
+      const next = `${window.location.pathname}?token=${encodeURIComponent(tokenParam)}&setup=${encodeURIComponent(storedSetup)}`;
+      window.location.assign(next);
+    });
+  }
+
+  btnCopy.addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(url);
+      btnCopy.textContent = 'Copied';
+      setTimeout(() => (btnCopy.textContent = 'Copy this link'), 1200);
+    }catch(_e){
+      window.prompt('Copy this link:', url);
+    }
+  });
+
+  btnShare.addEventListener('click', async () => {
+    try{
+      if (navigator.share){
+        await navigator.share({ url });
+        return;
+      }
+    }catch(_e){}
+    try{
+      await navigator.clipboard.writeText(url);
+      btnShare.textContent = 'Copied';
+      setTimeout(() => (btnShare.textContent = 'Share'), 1200);
+    }catch(_e){
+      window.prompt('Share this link:', url);
+    }
+  });
+}
+
+function escapeHtml(value){
+  return String(value).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[c]));
+}
+
+function renderInvalidToken(container, token){
+  const safeToken = escapeHtml(token);
+  container.innerHTML = `
+    <div class="card stack">
+      <h2>Link not found</h2>
+      <p>This card link does not exist or is incomplete. If you copied it manually, double-check the link.</p>
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <a class="btn primary" href="/activate/">Go to activation</a>
+        <button class="btn" type="button" data-action="copy">Copy this link</button>
+      </div>
+      <p class="small">Reference: <span class="mono">${safeToken}</span></p>
+    </div>
+  `;
+
+  const btnCopy = container.querySelector('[data-action="copy"]');
+  if (btnCopy){
+    btnCopy.addEventListener('click', async () => {
+      const ok = await copyText(window.location.href);
+      btnCopy.textContent = ok ? 'Copied' : 'Copy failed';
+      setTimeout(() => (btnCopy.textContent = 'Copy this link'), 1200);
+    });
+  }
+}
+
+function renderApiUnavailable(container, token){
+  const safeToken = escapeHtml(token);
+  container.innerHTML = `
+    <div class="card stack">
+      <h2>Service unavailable</h2>
+      <p>We could not reach the card service. Check your connection and try again.</p>
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <button class="btn primary" type="button" data-action="retry">Try again</button>
+        <a class="btn" href="/activate/?store=api">Go to activation</a>
+        <button class="btn" type="button" data-action="local">Try local mode</button>
+      </div>
+      <p class="small">Reference: <span class="mono">${safeToken}</span></p>
+    </div>
+  `;
+
+  container.querySelector('[data-action="retry"]')?.addEventListener('click', () => {
+    window.location.reload();
+  });
+
+  container.querySelector('[data-action="local"]')?.addEventListener('click', () => {
+    const u = new URL(window.location.href);
+    u.searchParams.set('store', 'local');
+    window.location.href = u.toString();
+  });
+}
+
+
+function renderLegendPanel(opt){
+  const rows = getRevealOptions().map((o, idx) => {
+    const prizeNo = idx + 1;
+    const src = tierIconSrc ? tierIconSrc(o.tier) : `/assets/img/${o.tier}.svg`;
+    return `
+      <div class="prize-row" data-tier="${o.tier}">
+        <div class="prize-row__left">
+          <div class="prize-row__icon">
+            <img src="${src}" alt="${o.tier}" data-inline-svg="true">
+          </div>
+          <div class="prize-row__label">${o.label} <span class="prize-row__tag" data-role="prize-tag" hidden></span></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="card-legend panel panel--glass">
+      <h2>Match 3 to win</h2>
+      <p class="rule-text">Scratch all circles to reveal icons</p>
+      <div class="prize-list">
+        ${rows}
+      </div>
+    </div>
   `;
 }
 
-export async function bootCardPage(){
-  const container = document.getElementById('app');
-  if (!container) return;
 
-  const token = getTokenFromUrl();
-  if (!token){
-    renderErrorScreen(container, 'Missing card token.');
+function applyCardStageTheme(stageEl, theme){
+  if (!stageEl || !theme) return;
+
+  const bg = theme.background || { type: 'none' };
+
+  // Reset
+  stageEl.style.backgroundImage = '';
+  stageEl.style.backgroundRepeat = '';
+  stageEl.style.backgroundSize = '';
+  stageEl.style.backgroundPosition = '';
+  stageEl.style.backgroundColor = '';
+  stageEl.style.removeProperty('--scratch-card-bg');
+  stageEl.style.removeProperty('--scratch-card-pattern');
+  stageEl.style.removeProperty('--scratch-card-pattern-size');
+  stageEl.style.removeProperty('--scratch-card-pattern-opacity');
+
+  // Apply per-card legend panel styling directly on the legend element.
+  // IMPORTANT: the legend panel is a sibling of .scratch-stage, so CSS vars set on stageEl will not reach it.
+  const cardScreenEl = stageEl.closest('.card-screen') || stageEl.closest('.card-screen__body') || stageEl.parentElement;
+  const legendEl = cardScreenEl ? cardScreenEl.querySelector('.card-legend') : null;
+
+  if (legendEl){
+    // Clear any previous inline legend styles
+    legendEl.style.removeProperty('--legend-panel-bg');
+    legendEl.style.removeProperty('--legend-panel-border');
+    legendEl.style.removeProperty('--legend-panel-blur');
+    legendEl.style.removeProperty('--legend-panel-text');
+    legendEl.style.removeProperty('--legend-panel-muted');
+    legendEl.style.background = '';
+    legendEl.style.borderColor = '';
+    legendEl.style.webkitBackdropFilter = '';
+    legendEl.style.backdropFilter = '';
+    legendEl.style.color = '';
+    const _h2 = legendEl.querySelector('h2');
+    if (_h2) _h2.style.color = '';
+    const _rule = legendEl.querySelector('.rule-text');
+    if (_rule) _rule.style.color = '';
+    legendEl.querySelectorAll('.prize-row__label').forEach(el => { el.style.color = ''; });
+
+    const legendBg = theme.legendPanelBg || 'rgba(18, 22, 32, .42)';
+    const legendBorder = theme.legendPanelBorder || 'rgba(255, 255, 255, .14)';
+    const legendBlur = theme.legendPanelBlur || '6px';
+    const legendText = theme.legendPanelTextColor || 'rgba(255, 255, 255, 0.92)';
+    const legendMuted = theme.legendPanelMutedColor || 'rgba(255, 255, 255, 0.70)';
+
+    // Expose vars for CSS-based styling AND force inline values to beat any glass defaults.
+    legendEl.style.setProperty('--legend-panel-bg', legendBg);
+    legendEl.style.setProperty('--legend-panel-border', legendBorder);
+    legendEl.style.setProperty('--legend-panel-blur', legendBlur);
+    legendEl.style.setProperty('--legend-panel-text', legendText);
+    legendEl.style.setProperty('--legend-panel-muted', legendMuted);
+
+    legendEl.style.background = legendBg;
+    legendEl.style.borderColor = legendBorder;
+    legendEl.style.webkitBackdropFilter = `blur(${legendBlur})`;
+    legendEl.style.backdropFilter = `blur(${legendBlur})`;
+
+    // Text colors (force) so per-card theme controls the legend typography.
+    legendEl.style.color = legendText;
+    const h2 = legendEl.querySelector('h2');
+    if (h2) h2.style.color = legendText;
+    const rule = legendEl.querySelector('.rule-text');
+    if (rule) rule.style.color = legendMuted;
+    legendEl.querySelectorAll('.prize-row__label').forEach(el => { el.style.color = legendText; });
+  }
+
+
+  const inner = stageEl.querySelector('.scratch-stage__inner');
+
+  if (bg.type === 'image' && bg.imageSrc){
+    // Use the stage background for full-cover images.
+    stageEl.style.backgroundColor = bg.color || '#000';
+    stageEl.style.backgroundImage = `url("${bg.imageSrc}")`;
+
+    stageEl.style.backgroundRepeat = 'no-repeat';
+    stageEl.style.backgroundSize = 'cover';
+    stageEl.style.backgroundPosition = 'center';
+
+    // Disable the pattern layer.
+    if (inner){
+      inner.style.backgroundImage = 'none';
+      inner.style.opacity = '0';
+    }
     return;
   }
 
-  // Guard mobile/tablet in-app browsers in recipient view only.
-  // Sender setup links (?setup=...) must be allowed so the buyer can configure the card.
-  if (!hasSetupKey() && isMobileOrTablet() && isLikelyInAppBrowser()){
-    renderInAppBlocked(container, token);
-    return;
+
+  // Default: flat color + optional repeating pattern on inner layer.
+  stageEl.style.setProperty('--scratch-card-bg', bg.color || '#1c1e1e');
+
+  if (inner){
+    inner.style.opacity = (bg.patternOpacity != null) ? String(bg.patternOpacity) : '1';
   }
 
-  try{
-    const card = await loadCardForPage(token);
+  if (bg.patternSrc){
+    stageEl.style.setProperty('--scratch-card-pattern', `url("${bg.patternSrc}")`);
+  } else {
+    stageEl.style.setProperty('--scratch-card-pattern', 'none');
+    if (inner) inner.style.opacity = '0';
+  }
 
-    // If not configured yet, sender must choose prize tier first.
-    if (isSenderSetupMode(card)){
-      renderSetupScreen(container, card);
-      return;
+  if (bg.patternSize){
+    stageEl.style.setProperty('--scratch-card-pattern-size', String(bg.patternSize));
+  }
+}
+
+function renderScratch(root, card){
+  const cardKey = String(card?.card_key || '').trim() || 'men-novice1';
+  setTileSet(cardKey);
+
+  const theme = getCardTheme(cardKey);
+  // Scratch foil (silver default, gold for birthday themes)
+  const foil = (theme && theme.foil) ? theme.foil : (String(cardKey).includes('birthday') ? 'gold' : 'silver');
+  document.documentElement.dataset.foil = foil;
+  const titleSrc = (theme && theme.titleSrc) ? theme.titleSrc : '/assets/cards/men-novice1/title.svg';
+
+  const bgDesktopSrc = (theme && theme.bgDesktopSrc) ? theme.bgDesktopSrc : '/assets/cards/men-novice1/bg-desktop.jpg';
+  const bgMobileSrc  = (theme && theme.bgMobileSrc)  ? theme.bgMobileSrc  : bgDesktopSrc;
+
+
+  renderCardHeaderActions(card, false);
+  const shareUrl = makeAbsoluteCardLink(card.token);
+
+  const opt = resolveOptionFromCard(card);
+  const winTier = opt.tier || 't1';
+  const tiers = uniq(getRevealOptions().map(o => o.tier)).filter(Boolean);
+  const total = Math.max(1, Math.min(9, card.fields || 9));
+
+  const generatedBoard = buildMatch3Board(total, winTier, tiers, `${card.token}|${winTier}`);
+  const board = (Array.isArray(card.board) && card.board.length === total)
+    ? card.board
+    : generatedBoard;
+
+  root.innerHTML = `
+    <div class="card-screen">
+<div class="scratch-fx">
+        <span class="scratch-glow"></span>
+
+            <div class="scratch-stage" data-export-root="1">
+            <picture class="card-bg" aria-hidden="true" data-export-root="1">
+  <source media="(max-width: 720px)" srcset="${bgMobileSrc}">
+  <img class="card-bg__img" src="${bgDesktopSrc}" alt="" />
+</picture>
+              <h1 class="scratch-stage__title card-heading" aria-label="Scratch Match Up Game"><img class="scratch-title-img" src="${titleSrc}" alt="" /></h1>
+
+              <div class="card-screen__body">
+                ${renderLegendPanel(opt)}
+
+                <div class="scratch-board">
+                <div class="scratch-grid" id="board"></div>
+                </div>
+              </div>
+            </div>
+          </div>  
+
+    </div>
+  `;
+
+  // Apply per-card visuals (legend panel + any stage vars) after DOM is in place.
+  const stageEl = root.querySelector('.scratch-stage');
+  if (stageEl) applyCardStageTheme(stageEl, theme || {});
+
+  const boardEl = qs('#board', root);
+  const copyLinkTop = root.querySelector('#copyLinkTop');
+  if (copyLinkTop) {
+    copyLinkTop.addEventListener('click', async () => {
+      await safeCopyLink(shareUrl);
+    });
+  }
+
+  const scratched = new Array(total).fill(false);
+  const tileCtrls = new Array(total).fill(null);
+  const counts = {};
+  let alreadyWon = false;
+
+  // Restore scratch state on refresh (tiles that reached the scratch threshold must stay revealed).
+  const restored = Array.isArray(card.scratched_indices) ? card.scratched_indices.filter(n => Number.isInteger(n)) : [];
+  for (const idx of restored){
+    if (idx >= 0 && idx < total){
+      scratched[idx] = true;
+      const tier = tierForIndex(idx);
+      counts[tier] = (counts[tier] || 0) + 1;
+    }
+  }
+
+  // Debounced persistence of scratch progress so refresh doesn't re-cover already scratched tiles.
+  let scratchSaveTimer = null;
+  function persistScratchProgress(){
+    if (alreadyWon || card.revealed) return;
+    const indices = [];
+    for (let k = 0; k < total; k++){
+      if (scratched[k]) indices.push(k);
+    }
+    card.scratched_indices = indices;
+    saveCard(card);
+  }
+  function schedulePersistScratch(){
+    if (alreadyWon || card.revealed) return;
+    if (scratchSaveTimer) clearTimeout(scratchSaveTimer);
+    scratchSaveTimer = setTimeout(persistScratchProgress, 300);
+  }
+  function cancelPersistScratch(){
+    if (scratchSaveTimer){
+      clearTimeout(scratchSaveTimer);
+      scratchSaveTimer = null;
+    }
+  }
+
+  function tierForIndex(i){ return board[i] || winTier; }
+
+  for (let i = 0; i < total; i++){
+    const tier = tierForIndex(i);
+    const src = tierIconSrc ? tierIconSrc(tier) : `/assets/img/${tier}.svg`;
+
+    const el = document.createElement('div');
+    el.className = 'scratch-tile';
+    el.dataset.tier = tier;
+    el.innerHTML = `
+      <div class="under">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <img src="${src}" alt="${tier}" data-inline-svg="true">
+          <span class="sub">scratch</span>
+        </div>
+      </div>
+      <canvas aria-label="scratch tile"></canvas>
+    `;
+    boardEl.appendChild(el);
+
+    const canvas = el.querySelector('canvas');
+    tileCtrls[i] = attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
+    if (scratched[i]){
+      el.classList.add('done');
+      try{ tileCtrls[i].forceReveal(); }catch{}
+    }
+  }
+
+  void hydrateInlineSvgs(root);
+
+  installRotateGuard(root);
+
+  
+  // Exporter (Puppeteer) waits for this flag when present.
+
+  async function markExportReadyWhenStable() {
+    try {
+      // Wait for fonts (if supported)
+      if (document.fonts && document.fonts.ready) {
+        await Promise.race([
+          document.fonts.ready,
+          new Promise((r) => setTimeout(r, 1500))
+        ]);
+      }
+
+      // Give layout a couple of frames
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+      // Wait for images inside export root
+      const root = document.querySelector('[data-export-root="1"]') || document.querySelector('.scratch-stage') || document.body;
+      const imgs = Array.from(root.querySelectorAll('img'));
+      await Promise.race([
+        Promise.all(imgs.map((img) => img.complete ? Promise.resolve() : new Promise((res) => { img.onload = img.onerror = () => res(); }))),
+        new Promise((r) => setTimeout(r, 2000))
+      ]);
+
+    } catch {
+
+    }
+  }
+// Signal to the server exporter that the card is ready to be captured.
+  markExportReadyWhenStable();
+function clearLegendState(){
+    qsa('.prize-row__tag[data-role="prize-tag"]', root).forEach(el => {
+      el.hidden = true;
+      el.textContent = '';
+    });
+    qsa('.prize-row.is-winner', root).forEach(el => el.classList.remove('is-winner'));
+  }
+
+  function markLegendWinner(tier){
+    clearLegendState();
+    const winRow = qs(`.prize-row[data-tier="${tier}"]`, root);
+    if (winRow){
+      winRow.classList.add('is-winner');
+      const tag = qs('[data-role="prize-tag"]', winRow);
+      if (tag){
+        tag.hidden = false;
+      }
+    }
+  }
+
+  function showWinUI(){
+    // Show the result in the rules panel only.
+    markLegendWinner(opt.tier);
+
+    // Top-right only.
+
+  }
+
+  async function onTileScratched(i, el){
+
+    if (scratched[i]) return;
+
+    scratched[i] = true;
+    el.classList.add('done');
+
+    schedulePersistScratch();
+
+    const tier = tierForIndex(i);
+    counts[tier] = (counts[tier] || 0) + 1;
+
+    if (!alreadyWon && counts[winTier] >= 3){
+      alreadyWon = true;
+      cancelPersistScratch();
+      const scratched_indices = scratched
+        .map((v, idx) => v ? idx : -1)
+        .filter(idx => idx !== -1);
+      card.revealed = true;
+      card.board = board;
+      card.scratched_indices = scratched_indices;
+      await setRevealedAndWait(card.token, { board, scratched_indices });
+      // Show Save PNG immediately on reveal (no refresh required)
+      renderRevealedActions(getCard(card.token) || card);
+      fireWinTurboFlash();
+      showWinUI();
+    }
+  }
+}
+
+function renderRevealed(root, card){
+  renderRevealedActions(card);
+
+  const cardKey = String(card?.card_key || '').trim() || 'men-novice1';
+  setTileSet(cardKey);
+
+  const theme = getCardTheme(cardKey);
+  const titleSrc = (theme && theme.titleSrc) ? theme.titleSrc : '/assets/cards/men-novice1/title.svg';
+  const bgDesktopSrc = (theme && theme.bgDesktopSrc) ? theme.bgDesktopSrc : '/assets/cards/men-novice1/bg-desktop.jpg';
+  const bgMobileSrc  = (theme && theme.bgMobileSrc)  ? theme.bgMobileSrc  : bgDesktopSrc;
+
+  const opt = resolveOptionFromCard(card);
+  const winTier = opt.tier || 't1';
+  const tiers = uniq(getRevealOptions().map(o => o.tier)).filter(Boolean);
+  const total = Math.max(1, Math.min(9, card.fields || 9));
+
+  const generatedBoard = buildMatch3Board(total, winTier, tiers, `${card.token}|${winTier}`);
+  const board = (Array.isArray(card.board) && card.board.length === total)
+    ? card.board
+    : generatedBoard;
+
+  root.innerHTML = `
+    <div class="card-screen">
+      <div class="scratch-fx">
+        <span class="scratch-glow"></span>
+
+        <div class="scratch-stage" data-export-root="1">
+          <picture class="card-bg" aria-hidden="true" data-export-root="1">
+            <source media="(max-width: 720px)" srcset="${bgMobileSrc}">
+            <img class="card-bg__img" src="${bgDesktopSrc}" alt="" />
+          </picture>
+
+          <h1 class="scratch-stage__title card-heading" aria-label="Scratch Match Up Game">
+            <img class="scratch-title-img" src="${titleSrc}" alt="" />
+          </h1>
+
+          <div class="card-screen__body">
+            ${renderLegendPanel(opt)}
+            <div class="scratch-board">
+              <div class="scratch-grid" id="boardStatic"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Apply per-card visuals (legend panel + any stage vars) after DOM is in place.
+  const stageEl = root.querySelector('.scratch-stage');
+  if (stageEl) applyCardStageTheme(stageEl, theme || {});
+
+  const boardEl = qs('#boardStatic', root);
+  for (let i = 0; i < board.length; i++){
+    const tier = board[i];
+    const src = tierIconSrc(tier);
+    const el = document.createElement('div');
+    el.className = 'scratch-tile done';
+    el.dataset.tier = tier;
+    el.innerHTML = `
+      <div class="under">
+        <div style="display:flex; align-items:center; justify-content:center;">
+          <img src="${src}" alt="${tier}" data-inline-svg="true">
+        </div>
+      </div>
+    `;
+    boardEl.appendChild(el);
+  }
+
+  void hydrateInlineSvgs(root);
+  installRotateGuard(root);
+
+  // Legend: highlight the revealed tier only.
+  qsa('.prize-row__tag[data-role="prize-tag"]', root).forEach(el => {
+    el.hidden = true;
+    el.textContent = '';
+  });
+  qsa('.prize-row.is-winner', root).forEach(el => el.classList.remove('is-winner'));
+  const winRow = qs(`.prize-row[data-tier="${opt.tier}"]`, root);
+  if (winRow){
+    winRow.classList.add('is-winner');
+    const tag = qs('[data-role="prize-tag"]', winRow);
+    if (tag) tag.hidden = true;
+  }
+}
+
+export async function bootCard(){
+  const container = qs('#app');
+
+  const params = new URLSearchParams(window.location.search);
+  let token = getTokenFromUrl();
+
+  // Preview mode is only when explicitly requested and there is no real token in the URL.
+  PREVIEW_MODE = params.has('preview') && !token;
+
+  // Public preview: allow scratch without a shareable token in the URL.
+  if (!token && PREVIEW_MODE){
+    // Keep a stable token per tab session so the preview doesn't reset mid-try.
+    const key = 'sc:preview_token';
+    let t = '';
+    try{ t = sessionStorage.getItem(key) || ''; }catch{}
+    if (!TOKEN_RE.test(t)){
+      try{
+        t = (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Math.random().toString(16).slice(2) + '-0000');
+      }catch{
+        t = (Math.random().toString(16).slice(2) + '-0000');
+      }
+      try{ sessionStorage.setItem(key, t); }catch{}
+    }
+    token = t;
+
+    // Ensure a configured preview card exists (recipient scratch flow only).
+    const card0 = ensureCard(token);
+    if (!card0.configured){
+      const opt = pickRandomOption();
+      setConfigured(token, { choice: opt.key, reveal_amount: opt.amount, fields: Number(card0.fields || 9) });
     }
 
-    renderCardScreen(container, card);
-  }catch(err){
-    console.error(err);
-    renderErrorScreen(container, err?.message || 'Could not load this card.');
+    const card = getCard(token);
+    if (card){
+      render(container, token, card);
+      return;
+    }
+    // If storage is blocked and we can't create a card, fall through to the missing-link screen.
   }
-}
 
-
-// ---------- /open page boot ----------
-export async function bootOpenPage(){
-  const container = document.getElementById('app');
-  if (!container) return;
-
-  const token = getTokenFromUrl();
   if (!token){
-    renderErrorScreen(container, 'Missing card token.');
+    container.innerHTML = `
+      <section class="flow-screen">
+        <div class="flow-layout">
+          <div class="flow-intro">
+            <h1 class="flow-title">Link missing</h1>
+            <p class="flow-lead muted panel-meta">
+              Open a ChicCanto card link, or preview an example.
+            </p>
+          </div>
+
+          <section class="panel panel--glass panel--padded" aria-label="Link missing actions">
+            <div class="control-grid">
+              <a class="btn primary" href="/preview/">Preview</a>
+              <a class="btn outline" href="/activate/">Go to activation</a>
+            </div>
+          </section>
+        </div>
+      </section>
+    `;
     return;
   }
 
-  const cardUrl = makeAbsoluteCardLink(token);
+  // If the token doesn't even match expected format, treat as an invalid link immediately.
+  if (!TOKEN_RE.test(token)){
+    renderInvalidToken(container, token);
+    return;
+  }
 
-  // Messenger/IG in-app browsers: show guidance instead of auto-opening.
-  if (isLikelyInAppBrowser()){
+  
+  const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
+  // Block the scratch page inside mobile/tablet in-app browsers (recipient view only).
+  if (!PREVIEW_MODE && !setupParam && isMobileOrTablet() && isLikelyInAppBrowser()){
     renderInAppBlocked(container, token);
     return;
   }
 
-  // Normal browsers: auto-redirect to /card
-  window.location.replace(cardUrl);
+const storeParam = (params.get('store') || '').toLowerCase();
+
+  // Fast path: local mirror (works for same-device refreshes)
+  let card = getCard(token);
+
+  // If we didn't find a local record, try the API (same-origin on live/staging).
+  const isForceLocal = storeParam === 'local' || storeParam === 'memory';
+  if (!card && !isForceLocal){
+    card = await getCardAsync(token);
+  }
+
+  if (!card){
+    renderInvalidToken(container, token);
+    return;
+  }
+
+  render(container, token, card);
+}
+
+// --- Orientation / minimum tile size guard (mobile) ---
+
+function applyTheme(themeId){
+  try{
+    const body = document.body;
+    // remove existing theme-* classes
+    body.className.split(/\s+/).forEach(c => {
+      if (c && c.startsWith('theme-')) body.classList.remove(c);
+    });
+    if (typeof themeId === 'string' && themeId.startsWith('theme-')){
+      body.classList.add(themeId);
+    }
+  }catch{}
+}
+
+const CC_MIN_TILE_PX = 56;
+let rotateGuardInstalled = false;
+
+function ensureRotateOverlay(){
+  let el = document.getElementById('rotateOverlay');
+  if (el) return el;
+
+  el = document.createElement('div');
+  el.id = 'rotateOverlay';
+  el.className = 'rotate-overlay';
+  el.innerHTML = `
+    <div class="rotate-overlay__card" role="dialog" aria-modal="true" aria-label="Rotate device">
+      <div class="rotate-overlay__title">Rotate for the best scratch experience</div>
+      <div class="rotate-overlay__text">
+        This screen is a bit too narrow to scratch comfortably. Turn your phone to landscape.
+      </div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  return el;
+}
+
+function updateRotateGuard(){
+  const overlay = ensureRotateOverlay();
+  const isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
+
+  // Measure a tile (if present)
+  const tile = document.querySelector('.scratch-board .scratch-tile');
+  const w = tile ? tile.getBoundingClientRect().width : 999;
+
+  const needsLandscape = !!(isPortrait && w && w < CC_MIN_TILE_PX);
+  document.body.classList.toggle('force-landscape', needsLandscape);
+
+  // Keep overlay in DOM; CSS controls visibility
+  overlay.setAttribute('aria-hidden', needsLandscape ? 'false' : 'true');
+}
+
+function installRotateGuard(){
+  ensureRotateOverlay();
+  updateRotateGuard();
+
+  if (rotateGuardInstalled) return;
+  rotateGuardInstalled = true;
+
+  window.addEventListener('resize', updateRotateGuard, { passive: true });
+  window.addEventListener('orientationchange', updateRotateGuard, { passive: true });
+}
+
+function prefersReducedMotion(){
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 
-// ---------- Entry ----------
-document.addEventListener('DOMContentLoaded', async () => {
-  // Determine mode from URL path.
-  const path = window.location.pathname || '';
-  PREVIEW_MODE = new URL(window.location.href).searchParams.get('preview') === '1';
+// --- Foil flake burst (lightweight reveal FX) --------------------------------
+// Replaces the old fireworks lib (which can freeze iOS Safari and fails on repeated runs).
+// Goal: quick, fun "burst" with minimal main-thread work, safe on mobile.
 
-  // Make sure SVG titles/icons render/export consistently everywhere.
-  try { await inlineAllSvgs(document); } catch (e) { console.warn('inlineAllSvgs failed', e); }
+function _ccIsMobile(){
+  try{
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  }catch(_){ return false; }
+}
 
-  if (path.startsWith('/open/')){
-    bootOpenPage();
-  }else if (path.startsWith('/card/')){
-    bootCardPage();
+function _ccLowEndHint(){
+  // Conservative: treat unknown as not-low-end.
+  try{
+    const cores = Number(navigator.hardwareConcurrency || 0);
+    const mem = Number(navigator.deviceMemory || 0);
+    return (_ccIsMobile() && ((cores && cores <= 4) || (mem && mem <= 4)));
+  }catch(_){ return false; }
+}
+
+let _ccBurst = null;
+
+function _ccEnsureBurstCanvas(){
+  if (_ccBurst && _ccBurst.canvas && _ccBurst.ctx) return _ccBurst;
+
+  const canvas = document.createElement('canvas');
+  canvas.id = 'cc-burst-canvas';
+  canvas.setAttribute('aria-hidden', 'true');
+  Object.assign(canvas.style, {
+    position: 'fixed',
+    inset: '0',
+    width: '100vw',
+    height: '100vh',
+    pointerEvents: 'none',
+    zIndex: '9999',
+    display: 'none'
+  });
+  document.body.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d', { alpha: true });
+
+  _ccBurst = { canvas, ctx, raf: 0, running: false, particles: [] };
+  _ccResizeBurstCanvas();
+  window.addEventListener('resize', _ccResizeBurstCanvas, { passive: true });
+
+  // Warm-up: avoid "first draw" jank later.
+  try{
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }catch(_){}
+
+  return _ccBurst;
+}
+
+function _ccResizeBurstCanvas(){
+  if (!_ccBurst || !_ccBurst.canvas) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1); // cap DPR for perf
+  const w = Math.max(1, Math.floor(window.innerWidth * dpr));
+  const h = Math.max(1, Math.floor(window.innerHeight * dpr));
+  const c = _ccBurst.canvas;
+  if (c.width !== w) c.width = w;
+  if (c.height !== h) c.height = h;
+  _ccBurst.dpr = dpr;
+}
+
+function _ccGetBurstOrigin(){
+  // Try to burst from the center of the card stage.
+  const el = document.querySelector('.scratch-stage, .cc-card, .cc-card-wrap, .card-shell');
+  if (el){
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   }
-});
+  return { x: window.innerWidth / 2, y: window.innerHeight * 0.58 };
+}
+
+function _ccCreateFoilParticles(px, py, dpr, config){
+  const particles = [];
+  const count = config.count;
+  const spread = config.spread; // radians-ish factor
+  const minSpeed = config.minSpeed;
+  const maxSpeed = config.maxSpeed;
+
+  for (let i = 0; i < count; i++){
+    // Direction roughly upward with wide spread
+    const angle = (-Math.PI / 2) + (Math.random() - 0.5) * spread;
+    const speed = (minSpeed + Math.random() * (maxSpeed - minSpeed)) * dpr;
+
+    const w = (config.minSize + Math.random() * (config.maxSize - config.minSize)) * dpr;
+    const h = (w * (0.4 + Math.random() * 0.9));
+
+    particles.push({
+      x: px,
+      y: py,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      w,
+      h,
+      rot: Math.random() * Math.PI * 2,
+      vr: (Math.random() - 0.5) * config.spin,
+      life: 0,
+      ttl: config.durationMs,
+      // light "metal" palette
+      tone: Math.random()
+    });
+  }
+
+  return particles;
+}
+
+function _ccDrawFoil(ctx, p, alpha){
+  // Color: mostly silver/white with a hint of warm/cool variation
+  let r, g, b;
+  if (p.tone < 0.7){
+    r = 235; g = 235; b = 245; // cool silver
+  } else if (p.tone < 0.9){
+    r = 245; g = 240; b = 230; // warm pearl
+  } else {
+    r = 220; g = 240; b = 255; // icy sparkle
+  }
+
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = `rgb(${r},${g},${b})`;
+
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.rot);
+  ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+  ctx.restore();
+
+  // Tiny sparkle cross (very cheap)
+  if (alpha > 0.4 && p.life < 260){
+    ctx.globalAlpha = alpha * 0.55;
+    ctx.strokeStyle = `rgb(${255},${255},${255})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(p.x - p.w * 0.25, p.y);
+    ctx.lineTo(p.x + p.w * 0.25, p.y);
+    ctx.moveTo(p.x, p.y - p.h * 0.25);
+    ctx.lineTo(p.x, p.y + p.h * 0.25);
+    ctx.stroke();
+  }
+}
+
+function _ccStopBurst(){
+  if (!_ccBurst) return;
+  _ccBurst.running = false;
+  if (_ccBurst.raf) cancelAnimationFrame(_ccBurst.raf);
+  _ccBurst.raf = 0;
+  _ccBurst.particles = [];
+  try{
+    _ccBurst.ctx.clearRect(0, 0, _ccBurst.canvas.width, _ccBurst.canvas.height);
+  }catch(_){}
+  _ccBurst.canvas.style.display = 'none';
+}
+
+function _ccStartFoilBurst(originCssX, originCssY){
+  const b = _ccEnsureBurstCanvas();
+  if (!b.ctx) return;
+
+  // Kill any previous animation cleanly.
+  if (b.running) _ccStopBurst();
+
+  const dpr = b.dpr || 1;
+  const px = originCssX * dpr;
+  const py = originCssY * dpr;
+
+  const isMobile = _ccIsMobile();
+  const lowEnd = _ccLowEndHint();
+
+  const config = {
+    durationMs: lowEnd ? 650 : (isMobile ? 800 : 1000),
+    count: lowEnd ? 18 : (isMobile ? 28 : 56),
+    spread: isMobile ? 2.6 : 3.0,
+    minSpeed: isMobile ? 420 : 520,
+    maxSpeed: isMobile ? 900 : 1200,
+    minSize: isMobile ? 6 : 7,
+    maxSize: isMobile ? 12 : 14,
+    spin: isMobile ? 10 : 14,
+    gravity: (isMobile ? 1350 : 1650) * dpr,
+    drag: isMobile ? 0.975 : 0.982
+  };
+
+  b.particles = _ccCreateFoilParticles(px, py, dpr, config);
+
+  b.canvas.style.display = 'block';
+  b.running = true;
+
+  const ctx = b.ctx;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.filter = 'none'; // important: no blur filters on iOS
+
+  let start = 0;
+  let last = 0;
+
+  function step(t){
+    if (!b.running) return;
+    if (!start){ start = t; last = t; }
+
+    const dt = Math.min(0.033, (t - last) / 1000); // clamp dt
+    last = t;
+
+    const elapsed = t - start;
+    const p = Math.min(1, elapsed / config.durationMs);
+
+    ctx.clearRect(0, 0, b.canvas.width, b.canvas.height);
+
+    for (let i = 0; i < b.particles.length; i++){
+      const part = b.particles[i];
+      part.life = elapsed;
+
+      // Integrate motion
+      part.vx *= Math.pow(config.drag, dt * 60);
+      part.vy = part.vy * Math.pow(config.drag, dt * 60) + config.gravity * dt;
+
+      part.x += part.vx * dt;
+      part.y += part.vy * dt;
+      part.rot += part.vr * dt;
+
+      const alpha = (1 - p) * 0.95;
+      _ccDrawFoil(ctx, part, alpha);
+    }
+
+    if (elapsed < config.durationMs){
+      b.raf = requestAnimationFrame(step);
+    } else {
+      _ccStopBurst();
+    }
+  }
+
+  b.raf = requestAnimationFrame(step);
+}
+
+const _ccBurstShown = new Set();
+
+
+/* --------------------------
+   Win FX (border/glow pulse)
+   Uses existing .scratch-fx neon border, no canvas.
+-------------------------- */
+
+let _ccWinFxStyleInjected = false;
+
+function _ccInjectWinFxStyles(){
+  if (_ccWinFxStyleInjected) return;
+  _ccWinFxStyleInjected = true;
+  const css = `
+    /* Win pulse ring: fast, no blur, mobile-safe */
+    .scratch-fx.cc-win-pulse::after{
+      content:'';
+      position:absolute;
+      inset:0;
+      border-radius: inherit;
+      pointer-events:none;
+      opacity:0;
+      box-shadow: 0 0 0 2px rgba(255,255,255,.55);
+      animation: ccWinRing 650ms ease-out 1;
+    }
+    @keyframes ccWinRing{
+      0%   { opacity: 0; transform: scale(0.992); }
+      30%  { opacity: 1; transform: scale(1.002); }
+      100% { opacity: 0; transform: scale(1.01); }
+    }
+
+    /* Slightly lift the existing neon border during the pulse */
+    .scratch-fx.cc-win-pulse::before{
+      opacity: 1 !important;
+      box-shadow: 0 0 0 2px rgba(255,255,255,.12);
+    }
+
+    /* Never include win FX in export clones */
+    .is-exporting .scratch-fx.cc-win-pulse::after{ display:none !important; }
+
+    /* Star sparkle burst: light celebration, no blur, iOS-safe */
+    .cc-sparkle-burst{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      overflow:visible;
+      z-index: 5;
+    }
+    .cc-sparkle{
+      position:absolute;
+      left: var(--x, 50%);
+      top: var(--y, 50%);
+      width: var(--sz, 12px);
+      height: var(--sz, 12px);
+      margin-left: calc(var(--sz, 12px) * -0.5);
+      margin-top: calc(var(--sz, 12px) * -0.5);
+      background: linear-gradient(45deg, rgba(255,255,255,.95), rgba(255,255,255,.45));
+      opacity: 0;
+      transform: translate(0,0) scale(.4) rotate(0deg);
+      transform-origin: center;
+      /* Star shape */
+      -webkit-clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+      animation: ccSparkleBurst 650ms cubic-bezier(.2,.9,.2,1) var(--dly, 0ms) 1 both;
+    }
+    @keyframes ccSparkleBurst{
+      0%   { opacity: 0; transform: translate(0,0) scale(.35) rotate(0deg); }
+      18%  { opacity: 1; transform: translate(calc(var(--dx, 0px) * .15), calc(var(--dy, 0px) * .15)) scale(1.15) rotate(calc(var(--rot, 0deg) * .25)); }
+      100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(.25) rotate(var(--rot, 0deg)); }
+    }
+
+    /* Never include sparkle burst in export clones */
+    .is-exporting .cc-sparkle-burst{ display:none !important; }
+    `;
+  const style = document.createElement('style');
+  style.id = 'cc-winfx-style';
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+
+
+function fireWinTurboFlash(){
+  try{
+    if (prefersReducedMotion()) return;
+    const fx = document.querySelector('.scratch-fx');
+    if (!fx) return;
+
+    // Temporary turbo + flash driven by card.css (.cc-win-turbo)
+    fx.classList.remove('cc-win-turbo');
+    void fx.offsetWidth; // restart animation
+    fx.classList.add('cc-win-turbo');
+
+    window.setTimeout(() => {
+      fx.classList.remove('cc-win-turbo');
+    }, 1000);
+  } catch(_){}
+}
+
+function fireWinPulse(){
+  try{
+    if (prefersReducedMotion()) return;
+    _ccInjectWinFxStyles();
+    const fx = document.querySelector('.scratch-fx');
+    if (!fx) return;
+
+    // Restart animation reliably
+    fx.classList.remove('cc-win-pulse');
+    // Force reflow so the animation restarts
+    void fx.offsetWidth;
+    fx.classList.add('cc-win-pulse');
+
+    window.setTimeout(() => {
+      fx.classList.remove('cc-win-pulse');
+    }, 800);
+  } catch(_){}
+}
+
+
+function fireSparkleBurst(){
+  try{
+    if (prefersReducedMotion()) return;
+
+    _ccInjectWinFxStyles();
+
+    const fx = document.querySelector('.scratch-fx');
+    if (!fx) return;
+
+    // Remove any prior burst remnants
+    const old = fx.querySelector('.cc-sparkle-burst');
+    if (old) old.remove();
+
+    const wrap = document.createElement('div');
+    wrap.className = 'cc-sparkle-burst';
+
+    // Origin: center of the scratch stage (reads well and avoids layout work)
+    const originX = 50;
+    const originY = 40; // slightly above center feels nicer with the board
+
+    const isMobile = _ccIsMobile();
+    const lowEnd = _ccLowEndHint();
+    const count = lowEnd ? 8 : (isMobile ? 12 : 16);
+    const maxR = lowEnd ? 60 : (isMobile ? 85 : 110);
+
+    for (let i = 0; i < count; i++){
+      const s = document.createElement('span');
+      s.className = 'cc-sparkle';
+
+      const angle = Math.random() * Math.PI * 2;
+      const radius = (0.35 + Math.random() * 0.65) * maxR;
+
+      const dx = Math.cos(angle) * radius;
+      const dy = Math.sin(angle) * radius * 0.85;
+
+      const size = (lowEnd ? 10 : (isMobile ? 12 : 14)) + Math.random() * 6;
+      const rot = (Math.random() * 260 - 130).toFixed(1) + 'deg';
+      const dly = Math.floor(Math.random() * 90) + 'ms';
+
+      s.style.setProperty('--x', originX + '%');
+      s.style.setProperty('--y', originY + '%');
+      s.style.setProperty('--dx', dx.toFixed(1) + 'px');
+      s.style.setProperty('--dy', dy.toFixed(1) + 'px');
+      s.style.setProperty('--sz', size.toFixed(1) + 'px');
+      s.style.setProperty('--rot', rot);
+      s.style.setProperty('--dly', dly);
+
+      wrap.appendChild(s);
+    }
+
+    // Insert above stage so it aligns with the neon frame
+    fx.appendChild(wrap);
+
+    // Clean up after animation
+    window.setTimeout(() => {
+      try{ wrap.remove(); } catch(_){}
+    }, 900);
+  } catch(_){}
+}
+
+
+function fireFoilBurst(token){
+  // Burst FX is deprecated (kept for compatibility).
+  return;
+// Public entry point: safe, fast, and repeatable across multiple cards in one session.
+  if (prefersReducedMotion()) return;
+  if (typeof window.CC_REVEAL_FX === 'string' && window.CC_REVEAL_FX.toLowerCase() === 'off') return;
+  if (!token) token = 'no-token';
+
+  // Once per token per page-load. (No localStorage, so it won't "break" future cards.)
+  if (_ccBurstShown.has(token)) return;
+  _ccBurstShown.add(token);
+
+  const o = _ccGetBurstOrigin();
+  _ccStartFoilBurst(o.x, o.y);
+}
+
+// Warm up canvas after DOM is ready (reduces first-run jank on iOS).
+// (Burst warmup removed)
