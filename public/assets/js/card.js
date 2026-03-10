@@ -326,7 +326,7 @@ function renderCardHeaderActions(card, revealed){
       return b;
     };
 
-    const saveBtn = mkBtn('Save PNG');
+    const saveBtn = mkBtn('Save image');
     saveBtn.id = 'savePngBtn';
     saveBtn.addEventListener('click', async () => {
       if (saveBtn.disabled) return;
@@ -337,11 +337,11 @@ function renderCardHeaderActions(card, revealed){
         await exportRevealedPng(card);
         saveBtn.textContent = prev;
       }catch (err){
-        console.error('PNG export failed:', err);
-        alert('Could not export PNG. Please try again.');
+        console.error('Image export failed:', err);
+        alert('Could not save image. Please try again.');
       }finally{
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Save PNG';
+        saveBtn.textContent = 'Save image';
       }
     }, { passive: true });
     el.appendChild(saveBtn);
@@ -392,7 +392,7 @@ function renderCardHeaderActions(card, revealed){
 
   if (!revealed) return;
 
-  const saveBtn = mkBtn('Save PNG');
+  const saveBtn = mkBtn('Save image');
   saveBtn.id = 'savePngBtn';
   saveBtn.addEventListener('click', async () => {
     if (saveBtn.disabled) return;
@@ -403,11 +403,11 @@ function renderCardHeaderActions(card, revealed){
       await exportRevealedPng(card);
       saveBtn.textContent = prev;
     }catch (err){
-      console.error('PNG export failed:', err);
-      alert('Could not export PNG. Please try again.');
+      console.error('Image export failed:', err);
+      alert('Could not save image. Please try again.');
     }finally{
       saveBtn.disabled = false;
-      saveBtn.textContent = 'Save PNG';
+      saveBtn.textContent = 'Save image';
     }
   }, { passive: true });
 
@@ -616,7 +616,7 @@ async function exportRevealedPng(card, opts = {}){
   }catch(bgErr){
     // If the background fails to load, we continue without it.
     // The export will still contain all other card elements (icons, text, etc.).
-    console.warn('PNG export: background preload failed, continuing without it.', bgErr);
+    console.warn('Image export: background preload failed, continuing without it.', bgErr);
     bgImageForCanvas = null;
   }
 
@@ -787,11 +787,11 @@ async function exportRevealedPng(card, opts = {}){
     // Layer 3: SVG foreignObject (everything else: title, grid, icons, legend).
     ctx.drawImage(svgImg, pad, pad);
 
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-    if (!blob) throw new Error('PNG encode failed');
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    if (!blob) throw new Error('Image export failed');
 
     const ts = formatIso(new Date()).replace(/[:]/g, '').slice(0, 15);
-    const filename = `chiccanto-${card.productId || 'card'}-${card.token}-${ts}.png`;
+    const filename = `chiccanto-${card.productId || 'card'}-${card.token}-${ts}.jpg`;
 
     const download = opts.download !== false;
     const outName = opts.filename || filename;
@@ -1916,7 +1916,7 @@ function clearLegendState(){
       card.board = board;
       card.scratched_indices = scratched_indices;
       await setRevealedAndWait(card.token, { board, scratched_indices });
-      // Show Save PNG immediately on reveal (no refresh required)
+      // Show Save image immediately on reveal (no refresh required)
       renderRevealedActions(getCard(card.token) || card);
       fireWinTurboFlash();
       showWinUI();
