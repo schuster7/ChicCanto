@@ -1342,6 +1342,9 @@ function _ensureCancelModal(){
   copyBtn.addEventListener('click', async () => {
     if (!shareUrl) return;
     await safeCopyLink(shareUrl);
+    copyBtn.disabled = true;
+    copyBtn.textContent = 'Copied';
+    setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.disabled = false; }, 1200);
   });
 
   if (shareBtn){
