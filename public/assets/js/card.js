@@ -632,19 +632,13 @@ async function exportRevealedPng(card, opts = {}){
     }
   };
 
-  // Remove the <picture class="card-bg"> from the clone entirely.
-  // The background will be painted directly on the canvas (Step D below).
-  // This is the core mobile fix: foreignObject never needs to render it.
-  try{
-    clone.querySelectorAll('picture.card-bg').forEach((pic) => pic.remove());
-  }catch{}
+  // DO NOT remove the <picture class="card-bg"> yet.
+  // _inlineStylesDeep (below) walks source and clone by flat index.
+  // If the clone has fewer elements, every style after the gap lands on the
+  // wrong element and the entire layout breaks. We hide it AFTER style copying.
 
-  // Also clear any CSS background-image on the stage clone itself, in case
-  // applyCardStageTheme set one (the "image" type background path).
-  clone.style.backgroundImage = 'none';
-
-  // Inline remaining <img> elements (tile icons, title SVG, etc.) as data-URLs.
-  // These are small SVGs and always work fine in foreignObject.
+  // Inline all <img> elements (tile icons, title SVG, card-bg img) as data-URLs.
+  // The source and clone still have matching element counts at this point.
   try{
     const imgsSrc = stage.querySelectorAll('img');
     const imgsDst = clone.querySelectorAll('img');
@@ -677,11 +671,18 @@ async function exportRevealedPng(card, opts = {}){
 
   try{
     // Inline all computed CSS into the clone so the SVG snapshot is self-contained.
+    // IMPORTANT: clone still has the same element count as source at this point.
     _inlineStylesDeep(stage, clone);
 
-    // After _inlineStylesDeep, re-force background removal on the clone.
-    // _inlineStylesDeep copies the live stage's computed background-image,
-    // which would re-introduce the URL we just removed.
+    // NOW it is safe to remove the <picture class="card-bg"> from the clone.
+    // Style copying is done, so removing elements no longer misaligns anything.
+    // The background will be painted directly on the canvas (Step D).
+    try{
+      clone.querySelectorAll('picture.card-bg').forEach((pic) => pic.remove());
+    }catch{}
+
+    // Also clear any CSS background-image that _inlineStylesDeep copied onto
+    // the stage clone root (from the live stage's computed styles).
     clone.style.backgroundImage = 'none';
 
     const rect = stage.getBoundingClientRect();
