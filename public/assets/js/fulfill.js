@@ -416,9 +416,15 @@ async function replaceActivatedAssignment(){
 async function copyMessage(){
   const txt = byId('message')?.value || '';
   if (!txt) return;
+  const btn = byId('copyBtn');
   try{
     await navigator.clipboard.writeText(txt);
     setStatus('Copied.');
+    if (btn){
+      btn.disabled = true;
+      btn.textContent = 'Copied';
+      setTimeout(() => { btn.textContent = 'Copy'; btn.disabled = false; }, 1200);
+    }
   }catch(_){
     setStatus('Copy failed. Select text and copy manually.', true);
   }
