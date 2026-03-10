@@ -466,7 +466,18 @@ async function _fetchAsDataUrl(url){
   const res = await fetch(url, { cache: 'force-cache' });
   if (!res.ok) throw new Error('Fetch failed: ' + url + ' (' + res.status + ')');
   const buf = await res.arrayBuffer();
-  const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const bytes = new Uint8Array(buf);
+
+  // Convert bytes to base64 in chunks to avoid "Maximum call stack size exceeded"
+  // when using String.fromCharCode(...largeArray) on large files (JPEGs etc.).
+  let binary = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize){
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  const b64 = btoa(binary);
+
   const ext = url.split('.').pop().toLowerCase();
   const mime =
     ext === 'woff2' ? 'font/woff2' :
@@ -681,9 +692,13 @@ async function exportRevealedPng(card, opts = {}){
       clone.querySelectorAll('picture.card-bg').forEach((pic) => pic.remove());
     }catch{}
 
-    // Also clear any CSS background-image that _inlineStylesDeep copied onto
-    // the stage clone root (from the live stage's computed styles).
+    // Make the clone's background TRANSPARENT so the canvas-painted JPEG
+    // shows through the SVG foreignObject overlay. _inlineStylesDeep copied
+    // the live stage's opaque background-color (e.g. #1c1e1e) onto the clone,
+    // which would otherwise completely cover the JPEG underneath.
     clone.style.backgroundImage = 'none';
+    clone.style.backgroundColor = 'transparent';
+    clone.style.background = 'transparent';
 
     const rect = stage.getBoundingClientRect();
 
