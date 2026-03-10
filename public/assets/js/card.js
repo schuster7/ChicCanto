@@ -564,21 +564,65 @@ async function exportRevealedPng(card, opts = {}){
   const stage = document.querySelector('.scratch-stage');
   if (!stage) throw new Error('Missing .scratch-stage');
 
-  // Clone only the card stage (no page UI).
+  // --- Step A: Resolve the card background image BEFORE cloning ---
+  // Mobile Safari cannot reliably paint images inside SVG foreignObject.
+  // Our fix: load the background image separately, paint it directly onto the
+  // canvas, and remove it from the clone so foreignObject never sees it.
+  // Canvas drawImage() works everywhere (desktop + mobile).
+
+  let bgImageForCanvas = null;  // Will hold a loaded <img> element, or null.
+
+  try{
+    // The card background is a <picture class="card-bg"> inside .scratch-stage.
+    // The browser picks bg-mobile.jpg or bg-desktop.jpg based on screen width.
+    // We read currentSrc from the live DOM to get whichever the browser chose.
+    const livePicture = stage.querySelector('picture.card-bg');
+    if (livePicture){
+      const liveImg = livePicture.querySelector('img');
+      const resolvedUrl = liveImg
+        ? (liveImg.currentSrc || liveImg.getAttribute('src') || '').trim()
+        : '';
+
+      if (resolvedUrl && !resolvedUrl.startsWith('data:') && !resolvedUrl.startsWith('blob:')){
+        const absUrl = new URL(resolvedUrl, window.location.href);
+
+        // Only inline same-origin images (security restriction).
+        if (absUrl.origin === window.location.origin){
+          // Fetch as data-URL so it can survive the canvas security check.
+          const dataUrl = await _fetchAsDataUrl(absUrl.href);
+
+          // Pre-load into an <img> so we can drawImage() it onto the canvas later.
+          bgImageForCanvas = await new Promise((resolve, reject) => {
+            const pic = new Image();
+            pic.decoding = 'async';
+            pic.onload = () => resolve(pic);
+            pic.onerror = () => reject(new Error('BG image preload failed'));
+            pic.src = dataUrl;
+          });
+        }
+      }
+    }
+  }catch(bgErr){
+    // If the background fails to load, we continue without it.
+    // The export will still contain all other card elements (icons, text, etc.).
+    console.warn('PNG export: background preload failed, continuing without it.', bgErr);
+    bgImageForCanvas = null;
+  }
+
+  // --- Step B: Clone the stage and prepare it for SVG serialization ---
+
   const clone = stage.cloneNode(true);
   clone.classList.add('is-exporting');
 
-  // Ensure no shadow/filters on the clone root, regardless of computed styles.
+  // Ensure no shadow/filters on the clone root.
   clone.style.boxShadow = 'none';
   clone.style.filter = 'none';
 
-  // Best-effort: inline same-origin URLs so the SVG <foreignObject> snapshot includes
-  // the card background on export (especially <picture>/<source srcset> based backgrounds).
+  // Helper: resolve a URL to absolute same-origin, or null.
   const _toAbsSameOrigin = (maybeUrl) => {
     if (!maybeUrl) return null;
     const u = String(maybeUrl).trim();
-    if (!u) return null;
-    if (u.startsWith('data:') || u.startsWith('blob:')) return null;
+    if (!u || u.startsWith('data:') || u.startsWith('blob:')) return null;
     try{
       const abs = new URL(u, window.location.href);
       if (abs.origin !== window.location.origin) return null;
@@ -588,69 +632,19 @@ async function exportRevealedPng(card, opts = {}){
     }
   };
 
-  const _extractFirstUrl = (cssBg) => {
-    const s = String(cssBg || '');
-    const m = s.match(/url\(["']?([^"')]+)["']?\)/i);
-    return (m && m[1]) ? m[1] : '';
-  };
-
-  // 1) Inline background-image URLs (stage + inner) when used.
+  // Remove the <picture class="card-bg"> from the clone entirely.
+  // The background will be painted directly on the canvas (Step D below).
+  // This is the core mobile fix: foreignObject never needs to render it.
   try{
-    const innerSrc = stage.querySelector('.scratch-stage__inner');
-    const innerDst = clone.querySelector('.scratch-stage__inner');
-    if (innerSrc && innerDst){
-      const cs = getComputedStyle(innerSrc);
-      const url = _extractFirstUrl(cs.getPropertyValue('background-image'));
-      const abs = _toAbsSameOrigin(url);
-      if (abs){
-        const dataUrl = await _fetchAsDataUrl(abs);
-        innerDst.style.backgroundImage = `url("${dataUrl}")`;
-      }
-    }
+    clone.querySelectorAll('picture.card-bg').forEach((pic) => pic.remove());
   }catch{}
 
-  try{
-    const csStage = getComputedStyle(stage);
-    const url = _extractFirstUrl(csStage.getPropertyValue('background-image'));
-    const abs = _toAbsSameOrigin(url);
-    if (abs){
-      const dataUrl = await _fetchAsDataUrl(abs);
-      clone.style.backgroundImage = `url("${dataUrl}")`;
-    }
-  }catch{}
+  // Also clear any CSS background-image on the stage clone itself, in case
+  // applyCardStageTheme set one (the "image" type background path).
+  clone.style.backgroundImage = 'none';
 
-  // 2) Inline <picture> backgrounds (your card-bg pattern).
-  // We use the *resolved* currentSrc from the live DOM, so we don't have to guess
-  // whether <source> or <img src> is active.
-  try{
-    const picsSrc = stage.querySelectorAll('picture');
-    const picsDst = clone.querySelectorAll('picture');
-    const n = Math.min(picsSrc.length, picsDst.length);
-
-    for (let i = 0; i < n; i++){
-      const imgSrc = picsSrc[i].querySelector('img');
-      const imgDst = picsDst[i].querySelector('img');
-      if (!imgSrc || !imgDst) continue;
-
-      const resolved = (imgSrc.currentSrc || imgSrc.getAttribute('src') || '').trim();
-      const abs = _toAbsSameOrigin(resolved);
-      if (!abs) continue;
-
-      const dataUrl = await _fetchAsDataUrl(abs);
-
-      // Force the clone to use the embedded URL regardless of media queries.
-      imgDst.setAttribute('src', dataUrl);
-      imgDst.removeAttribute('srcset');
-      imgDst.removeAttribute('sizes');
-
-      picsDst[i].querySelectorAll('source').forEach((s) => {
-        s.setAttribute('srcset', dataUrl);
-        s.removeAttribute('sizes');
-      });
-    }
-  }catch{}
-
-  // 3) Inline any remaining <img> sources inside the export root.
+  // Inline remaining <img> elements (tile icons, title SVG, etc.) as data-URLs.
+  // These are small SVGs and always work fine in foreignObject.
   try{
     const imgsSrc = stage.querySelectorAll('img');
     const imgsDst = clone.querySelectorAll('img');
@@ -668,7 +662,8 @@ async function exportRevealedPng(card, opts = {}){
     }
   }catch{}
 
-  // Mount offscreen to compute styles consistently.
+  // --- Step C: Mount offscreen, inline computed styles, serialize to SVG ---
+
   const wrap = document.createElement('div');
   wrap.style.position = 'fixed';
   wrap.style.left = '-10000px';
@@ -681,112 +676,100 @@ async function exportRevealedPng(card, opts = {}){
   document.body.appendChild(wrap);
 
   try{
-    // Inline all computed CSS into the clone.
+    // Inline all computed CSS into the clone so the SVG snapshot is self-contained.
     _inlineStylesDeep(stage, clone);
 
-    // Mobile WebKit is unreliable at painting <picture>/<source> inside
-    // foreignObject snapshots. Flatten card background pictures into a simple
-    // positioned div with a data-URL background-image before serializing.
-    try{
-      clone.querySelectorAll('picture.card-bg').forEach((pic) => {
-        const img = pic.querySelector('img');
-        const src = (img && (img.getAttribute('src') || '').trim()) || '';
-        if (!src) return;
-
-        const flat = document.createElement('div');
-        flat.className = 'card-bg';
-        flat.setAttribute(
-          'style',
-          [
-            'position:absolute',
-            'inset:0',
-            'z-index:0',
-            'pointer-events:none',
-            `background-image:url("${src.replace(/"/g, '&quot;')}")`,
-            'background-size:cover',
-            'background-position:center',
-            'background-repeat:no-repeat',
-          ].join(';') + ';'
-        );
-        pic.replaceWith(flat);
-      });
-    }catch{}
+    // After _inlineStylesDeep, re-force background removal on the clone.
+    // _inlineStylesDeep copies the live stage's computed background-image,
+    // which would re-introduce the URL we just removed.
+    clone.style.backgroundImage = 'none';
 
     const rect = stage.getBoundingClientRect();
 
-// Export scale: 1 = same pixel size as on-screen.
-// Increase to 2 if you want higher-resolution PNGs.
-const scale = 2;
+    // Export at 2x for crisp PNGs on retina screens.
+    const scale = 2;
 
-const w0 = Math.max(1, Math.round(rect.width));
-const h0 = Math.max(1, Math.round(rect.height));
+    const w0 = Math.max(1, Math.round(rect.width));
+    const h0 = Math.max(1, Math.round(rect.height));
 
-// Force the cloned root to the exact on-screen size so % widths resolve.
-clone.style.width = w0 + 'px';
-clone.style.height = h0 + 'px';
-clone.style.maxWidth = 'none';
-clone.style.margin = '0';
-clone.style.display = 'block';
+    // Force the cloned root to the exact on-screen size so % widths resolve.
+    clone.style.width = w0 + 'px';
+    clone.style.height = h0 + 'px';
+    clone.style.maxWidth = 'none';
+    clone.style.margin = '0';
+    clone.style.display = 'block';
 
-const embeddedFontCss = await _embedInterFontCss();
+    const embeddedFontCss = await _embedInterFontCss();
 
-// SVG is authored at on-screen size; canvas handles pixel scaling.
-const svgMarkup = _makeSvgSnapshotMarkup(clone, w0, h0, embeddedFontCss);
-const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
+    // SVG snapshot: contains everything EXCEPT the background image.
+    const svgMarkup = _makeSvgSnapshotMarkup(clone, w0, h0, embeddedFontCss);
+    const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
 
-    const img = new Image();
-    img.decoding = 'async';
+    const svgImg = new Image();
+    svgImg.decoding = 'async';
 
     await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = () => reject(new Error('Snapshot image failed to load'));
-      img.src = svgDataUrl;
+      svgImg.onload = resolve;
+      svgImg.onerror = () => reject(new Error('Snapshot image failed to load'));
+      svgImg.src = svgDataUrl;
     });
+
+    // --- Step D: Compose the final PNG on canvas ---
+    // Layer order (bottom to top):
+    //   1. Dark padding background (#0e151a)
+    //   2. Card background image (JPEG, painted directly via canvas — works on mobile)
+    //   3. SVG foreignObject overlay (text, icons, layout — no background image)
 
     const canvas = document.createElement('canvas');
 
-// Add breathing room + dark background for share-friendly exports.
-// Padding is proportional to card size, clamped to sensible bounds.
-const pad = (() => {
-  const base = Math.min(w0, h0);
-  return Math.max(24, Math.min(96, Math.round(base * 0.06)));
-})();
+    // Padding for share-friendly exports with breathing room.
+    const pad = (() => {
+      const base = Math.min(w0, h0);
+      return Math.max(24, Math.min(96, Math.round(base * 0.06)));
+    })();
 
-const outW = w0 + pad * 2;
-const outH = h0 + pad * 2;
+    const outW = w0 + pad * 2;
+    const outH = h0 + pad * 2;
 
-canvas.width = Math.max(1, Math.round(outW * scale));
-canvas.height = Math.max(1, Math.round(outH * scale));
+    canvas.width = Math.max(1, Math.round(outW * scale));
+    canvas.height = Math.max(1, Math.round(outH * scale));
 
-const ctx = canvas.getContext('2d');
-if (!ctx) throw new Error('No canvas context');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('No canvas context');
 
-// Work in CSS pixels; apply pixel scaling once.
-ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    // Work in CSS pixels; apply pixel scaling once.
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
 
-// Background (solid dark).
-ctx.fillStyle = '#0e151a';
-ctx.fillRect(0, 0, outW, outH);
+    // Layer 1: solid dark background (visible as padding around the card).
+    ctx.fillStyle = '#0e151a';
+    ctx.fillRect(0, 0, outW, outH);
 
-// Force rounded-corner clipping in the export (foreignObject can be flaky with border-radius).
-const r = (() => {
-  try{
-    const br = getComputedStyle(stage).borderTopLeftRadius || '0px';
-    const n = parseFloat(br);
-    return Number.isFinite(n) ? n : 0;
-  }catch{
-    return 0;
-  }
-})();
+    // Rounded-corner clipping (matches the card's border-radius on screen).
+    const r = (() => {
+      try{
+        const br = getComputedStyle(stage).borderTopLeftRadius || '0px';
+        const n = parseFloat(br);
+        return Number.isFinite(n) ? n : 0;
+      }catch{
+        return 0;
+      }
+    })();
 
-if (r > 0){
-  const rr = Math.min(r, Math.min(w0, h0) / 2);
-  ctx.beginPath();
-  _roundedRectPath(ctx, pad, pad, w0, h0, rr);
-  ctx.clip();
-}
+    if (r > 0){
+      const rr = Math.min(r, Math.min(w0, h0) / 2);
+      ctx.beginPath();
+      _roundedRectPath(ctx, pad, pad, w0, h0, rr);
+      ctx.clip();
+    }
 
-ctx.drawImage(img, pad, pad);
+    // Layer 2: card background image (JPEG), drawn directly on canvas.
+    // This is the key mobile fix — canvas drawImage always works.
+    if (bgImageForCanvas){
+      ctx.drawImage(bgImageForCanvas, pad, pad, w0, h0);
+    }
+
+    // Layer 3: SVG foreignObject (everything else: title, grid, icons, legend).
+    ctx.drawImage(svgImg, pad, pad);
 
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
     if (!blob) throw new Error('PNG encode failed');
