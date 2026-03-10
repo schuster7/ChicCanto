@@ -1804,6 +1804,18 @@ function renderScratch(root, card){
     }
   }
 
+  // Flush any pending scratch progress on page unload (refresh / navigate away).
+  // The 300ms debounce can lose the last scratched tile if the user refreshes
+  // during that window. This listener fires synchronously before teardown.
+  function _flushScratchOnUnload(){
+    if (scratchSaveTimer){
+      clearTimeout(scratchSaveTimer);
+      scratchSaveTimer = null;
+      persistScratchProgress();
+    }
+  }
+  window.addEventListener('beforeunload', _flushScratchOnUnload);
+
   function tierForIndex(i){ return board[i] || winTier; }
 
   for (let i = 0; i < total; i++){
@@ -1933,6 +1945,28 @@ function clearLegendState(){
       card.revealed = true;
       card.board = board;
       card.scratched_indices = scratched_indices;
+
+      // CRITICAL: write revealed state to local storage SYNCHRONOUSLY.
+      // onTileScratched is called as fire-and-forget from scratch.js (not awaited).
+      // If the user refreshes immediately, the browser can tear down the page
+      // before the async setRevealedAndWait reaches its local mirror write.
+      // This synchronous write ensures the revealed state survives refresh.
+      try{
+        const lsKey = `sc:card:${card.token}`;
+        const raw = localStorage.getItem(lsKey);
+        if (raw){
+          const obj = JSON.parse(raw);
+          if (obj && typeof obj === 'object'){
+            obj.revealed = true;
+            obj.revealed_at = new Date().toISOString();
+            obj.board = board;
+            obj.scratched_indices = scratched_indices;
+            localStorage.setItem(lsKey, JSON.stringify(obj));
+          }
+        }
+      }catch(_e){}
+
+      // Now do the full async persist (API + local mirror alignment).
       await setRevealedAndWait(card.token, { board, scratched_indices });
       // Show Save image immediately on reveal (no refresh required)
       renderRevealedActions(getCard(card.token) || card);
