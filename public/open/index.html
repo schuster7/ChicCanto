@@ -130,8 +130,9 @@ const input = document.getElementById("cardLink");
       continueLink.href = cardUrl;
 
       const setCopied = () => {
+        copyBtn.disabled = true;
         copyBtn.textContent = "Copied";
-        window.setTimeout(() => (copyBtn.textContent = "Copy link"), 1200);
+        window.setTimeout(() => { copyBtn.textContent = "Copy link"; copyBtn.disabled = false; }, 1200);
       };
 
       copyBtn.addEventListener("click", async () => {
