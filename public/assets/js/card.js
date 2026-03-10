@@ -386,8 +386,12 @@ function renderCardHeaderActions(card, revealed){
   const copyBtn = mkBtn('Copy link');
   copyBtn.addEventListener('click', async () => {
     await safeCopyLink(url, 'Scratch card link');
+    copyBtn.disabled = true;
     copyBtn.textContent = 'Copied';
-    setTimeout(() => (copyBtn.textContent = 'Copy link'), 1200);
+    setTimeout(() => {
+      copyBtn.textContent = 'Copy link';
+      copyBtn.disabled = false;
+    }, 1200);
   }, { passive: true });
 
   el.appendChild(copyBtn);
