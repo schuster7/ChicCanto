@@ -759,11 +759,15 @@ async function exportRevealedPng(card, opts = {}){
       return Math.max(24, Math.min(96, Math.round(base * 0.06)));
     })();
 
-    // Extra space below the card for the promo line.
+    // Extra space for branding: logo at top, promo at bottom.
+    const logoAreaHeight = 32;
     const promoLineHeight = 36;
 
     const outW = w0 + pad * 2;
-    const outH = h0 + pad * 2 + promoLineHeight;
+    const outH = logoAreaHeight + pad + h0 + pad + promoLineHeight;
+
+    // Y offset: card starts below the logo area + top padding.
+    const cardY = logoAreaHeight + pad;
 
     canvas.width = Math.max(1, Math.round(outW * scale));
     canvas.height = Math.max(1, Math.round(outH * scale));
@@ -777,6 +781,13 @@ async function exportRevealedPng(card, opts = {}){
     // Layer 1: per-card background (visible as padding around the card).
     ctx.fillStyle = exportBg;
     ctx.fillRect(0, 0, outW, outH);
+
+    // Layer 1b: ChicCanto logo text at top center.
+    ctx.fillStyle = 'rgba(255,255,255,0.38)';
+    ctx.font = 'italic 500 14px Inter, ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('ChicCanto', outW / 2, logoAreaHeight / 2);
 
     // Rounded-corner clipping (matches the card's border-radius on screen).
     const r = (() => {
@@ -795,18 +806,18 @@ async function exportRevealedPng(card, opts = {}){
     if (r > 0){
       const rr = Math.min(r, Math.min(w0, h0) / 2);
       ctx.beginPath();
-      _roundedRectPath(ctx, pad, pad, w0, h0, rr);
+      _roundedRectPath(ctx, pad, cardY, w0, h0, rr);
       ctx.clip();
     }
 
     // Layer 2: card background image (JPEG), drawn directly on canvas.
     // This is the key mobile fix — canvas drawImage always works.
     if (bgImageForCanvas){
-      ctx.drawImage(bgImageForCanvas, pad, pad, w0, h0);
+      ctx.drawImage(bgImageForCanvas, pad, cardY, w0, h0);
     }
 
     // Layer 3: SVG foreignObject (everything else: title, grid, icons, legend).
-    ctx.drawImage(svgImg, pad, pad);
+    ctx.drawImage(svgImg, pad, cardY);
 
     // Restore context to remove the rounded-corner clip before drawing promo text.
     ctx.restore();
@@ -816,7 +827,7 @@ async function exportRevealedPng(card, opts = {}){
     ctx.font = '500 12px Inter, ui-sans-serif, system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const promoY = pad + h0 + pad * 0.5 + promoLineHeight * 0.5;
+    const promoY = cardY + h0 + pad * 0.5 + promoLineHeight * 0.5;
     ctx.fillText('Send one back?  \u2192  etsy.com/shop/ChicCanto', outW / 2, promoY);
 
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
