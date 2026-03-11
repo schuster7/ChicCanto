@@ -2652,14 +2652,18 @@ function fireWinTurboFlash(){
     const fx = document.querySelector('.scratch-fx');
     if (!fx) return;
 
-    // Temporary turbo + flash driven by card.css (.cc-win-turbo)
+    // Synchronized win sequence (~1.8s):
+    // 0ms:    border starts ramping up (CSS transition on custom properties)
+    // 0ms:    winning tiles start double pop + glow
+    // 700ms:  flash fires (via CSS animation-delay)
+    // 1800ms: border ramps back down (class removed, CSS transition eases out)
     fx.classList.remove('cc-win-turbo');
-    void fx.offsetWidth; // restart animation
+    void fx.offsetWidth;
     fx.classList.add('cc-win-turbo');
 
     window.setTimeout(() => {
       fx.classList.remove('cc-win-turbo');
-    }, 1000);
+    }, 1800);
   } catch(_){}
 }
 

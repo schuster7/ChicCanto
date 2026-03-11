@@ -154,46 +154,51 @@
   pointer-events: none;
 }
 
-/* Win turbo: speed up the neon frame briefly + add a quick flash.
-   Triggered by JS adding .cc-win-turbo to .scratch-fx for ~700ms. */
+/* Win sequence: smooth border acceleration + flash.
+   Triggered by JS adding .cc-win-turbo to .scratch-fx.
+   The border ramps up smoothly via CSS transitions on registered properties,
+   holds at peak, then decelerates. Total duration controlled by JS (~1.8s). */
+.scratch-fx{
+  transition:
+    --hue-speed 600ms cubic-bezier(.22, .61, .36, 1),
+    --glow-opacity 600ms cubic-bezier(.22, .61, .36, 1),
+    --glow-scale 600ms cubic-bezier(.22, .61, .36, 1);
+}
+
 .scratch-fx.cc-win-turbo{
-  --animation-speed: 0.55s;     /* faster hue + rotate */
-  --hue-speed: 3;              /* punchier color cycling */
-  --glow-opacity: 1.2;         /* stronger inner glow */
-  --glow-scale: 1.55;
+  --animation-speed: 0.7s;
+  --hue-speed: 3;
+  --glow-opacity: 1.3;
+  --glow-scale: 1.6;
   --glow-blur: 6;
 }
 
-
 .scratch-fx.cc-win-turbo::before{
   animation-timing-function:
-    cubic-bezier(0.55, 0.08, 0.68, 0.53),
-    cubic-bezier(0.55, 0.08, 0.68, 0.53);
+    cubic-bezier(0.22, 0.61, 0.36, 1),
+    cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-
-
 
 .scratch-fx.cc-win-turbo::after{
   content: "";
   position: absolute;
-  inset: -10%;               /* makes the flash extend beyond the frame */
+  inset: -10%;
   border-radius: inherit;
 
   background: radial-gradient(
     circle at 50% 42%,
-    rgba(255,255,255,.75) 0%,
-    rgba(255,255,255,.38) 24%,
-    rgba(255,255,255,0) 78%
+    rgba(255,255,255,.70) 0%,
+    rgba(255,255,255,.32) 28%,
+    rgba(255,255,255,0) 75%
   );
 
   mix-blend-mode: screen;
-  filter: blur(2px);         /* softens and makes it feel bigger */
+  filter: blur(3px);
   z-index: 6;
 
   opacity: 0;
-
-  animation: ccWinFlash 300ms ease-out 1 both;
-  animation-delay: 250ms; /* last 300ms of the 1000ms turbo window */
+  animation: ccWinFlash 400ms ease-out 1 both;
+  animation-delay: 700ms;
 }
 
 /* Never show the frame/flash in PNG export (if export ever captures wrappers). */
@@ -205,8 +210,9 @@
 
 @keyframes ccWinFlash{
   0%   { opacity: 0; transform: scale(1); }
-  12%  { opacity: 1; transform: scale(1.05); }
-  100% { opacity: 0; transform: scale(1.18); }
+  15%  { opacity: 1; transform: scale(1.03); }
+  50%  { opacity: .6; transform: scale(1.08); }
+  100% { opacity: 0; transform: scale(1.14); }
 }
 
 
@@ -564,20 +570,30 @@ border-radius: var(--scratch-tile-radius);
   content: none !important;
 }
 
-/* Winning tiles: glow pulse on the 3 matched tiles at prize reveal.
-   JS adds .cc-winner to the tile element when the game ends.
-   Glow is on the tile itself (not .under) because .under has overflow:hidden
-   which clips box-shadow. The tile is a circle (border-radius: 9999px). */
+/* Winning tiles: double scale pop + glow pulse at prize reveal.
+   JS adds .cc-winner to the 3 matching tiles.
+   Synchronized with the border turbo timeline (~1.8s total). */
 .scratch-tile.done.cc-winner{
-  animation: ccWinnerGlow 1.2s ease-out 1 both;
+  animation:
+    ccWinnerPop 800ms cubic-bezier(.34, 1.4, .64, 1) 1 both,
+    ccWinnerGlow 1.4s ease-out 200ms 1 both;
+}
+@keyframes ccWinnerPop{
+  0%   { transform: scale(1); }
+  18%  { transform: scale(1.12); }
+  36%  { transform: scale(1.0); }
+  54%  { transform: scale(1.08); }
+  72%  { transform: scale(1.0); }
+  100% { transform: scale(1); }
 }
 @keyframes ccWinnerGlow{
-  0%   { box-shadow: 0 0 0 0 rgba(255,255,255,.55); }
-  20%  { box-shadow: 0 0 20px 6px rgba(255,255,255,.50); }
-  50%  { box-shadow: 0 0 10px 3px rgba(255,255,255,.25); }
+  0%   { box-shadow: 0 0 0 0 rgba(255,255,255,.0); }
+  15%  { box-shadow: 0 0 16px 5px rgba(255,255,255,.50); }
+  40%  { box-shadow: 0 0 22px 7px rgba(255,255,255,.40); }
+  70%  { box-shadow: 0 0 8px 2px rgba(255,255,255,.15); }
   100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
 }
-/* Hide winner glow in export */
+/* Hide winner effects in export */
 .is-exporting .scratch-tile.cc-winner{
   animation: none !important;
   box-shadow: none !important;
