@@ -1343,8 +1343,9 @@ function _ensureCancelModal(){
     if (!shareUrl) return;
     await safeCopyLink(shareUrl);
     copyBtn.disabled = true;
+    copyBtn.style.opacity = '';
     copyBtn.textContent = 'Copied';
-    setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.disabled = false; }, 1200);
+    setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.disabled = false; copyBtn.style.opacity = '1'; }, 1200);
   });
 
   if (shareBtn){
