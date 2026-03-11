@@ -7,17 +7,18 @@ export const CARD_THEMES = {
     legendPanelBg: 'rgba(18, 22, 32, .42)',
     legendPanelBorder: 'rgba(255, 255, 255, .14)',
     legendPanelBlur: '6px',
-    // Optional text colors for legend panel
-    // legendPanelTextColor: 'rgba(255,255,255,0.92)',
-    // legendPanelMutedColor: 'rgba(255,255,255,0.70)',
     titleSrc: '/assets/cards/men-novice1/title.svg',
     thumbSrc: '/assets/img/thumb_men-novice1.jpg',
     bgDesktopSrc: '/assets/cards/men-novice1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/men-novice1/bg-mobile.jpg',
-    // Page background (body behind the card). Omit to keep the default dark theme.
-    // pageBg:    '#05060a',       // base background color
-    // pageGlowA: 'rgba(180, 130, 255, .22), rgba(140, 205, 255, .16), rgba(255, 170, 150, .10)',
-    // pageGlowB: 'rgba(255, 200, 150, .08), rgba(160, 140, 255, .10)',
+    // Page background: dark charcoal with warm gold undertones
+    pageBg: '#06080a',
+    pageBg1: '#0a0c10',
+    pageGlowA1: 'rgba(200, 170, 100, .12)',
+    pageGlowA2: 'rgba(160, 140, 100, .10)',
+    pageGlowA3: 'rgba(180, 150, 110, .06)',
+    pageGlowB1: 'rgba(200, 180, 120, .05)',
+    pageGlowB2: 'rgba(140, 120, 80, .06)',
     prizeOptions: [
       { tier: 't1', label: 'Blowjob', icon: 'blowjob' },
       { tier: 't2', label: 'Handjob', icon: 'handjob' },
@@ -37,6 +38,14 @@ export const CARD_THEMES = {
     thumbSrc: '/assets/img/thumb_women-novice1.jpg',
     bgDesktopSrc: '/assets/cards/women-novice1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-novice1/bg-mobile.jpg',
+    // Page background: deep rose/pink
+    pageBg: '#1a0a14',
+    pageBg1: '#24101c',
+    pageGlowA1: 'rgba(220, 80, 150, .18)',
+    pageGlowA2: 'rgba(255, 140, 190, .12)',
+    pageGlowA3: 'rgba(255, 180, 200, .07)',
+    pageGlowB1: 'rgba(255, 120, 170, .06)',
+    pageGlowB2: 'rgba(200, 60, 130, .08)',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
       { tier: 't2', label: 'Oral', icon: 'oral' },
@@ -56,6 +65,14 @@ export const CARD_THEMES = {
     thumbSrc: '/assets/img/thumb_women-novice-birthday1.jpg',
     bgDesktopSrc: '/assets/cards/women-novice-birthday1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-novice-birthday1/bg-mobile.jpg',
+    // Page background: warm ivory/cream with gold warmth
+    pageBg: '#14100a',
+    pageBg1: '#1c1610',
+    pageGlowA1: 'rgba(210, 180, 100, .16)',
+    pageGlowA2: 'rgba(240, 210, 150, .12)',
+    pageGlowA3: 'rgba(255, 230, 180, .08)',
+    pageGlowB1: 'rgba(230, 200, 130, .06)',
+    pageGlowB2: 'rgba(200, 170, 100, .07)',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
       { tier: 't2', label: 'Oral', icon: 'oral' },
@@ -76,6 +93,14 @@ export const CARD_THEMES = {
     thumbSrc: '/assets/img/thumb_men-novice-birthday1.jpg',
     bgDesktopSrc: '/assets/cards/men-novice-birthday1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/men-novice-birthday1/bg-mobile.jpg',
+    // Page background: black with gold glow
+    pageBg: '#060504',
+    pageBg1: '#0c0a06',
+    pageGlowA1: 'rgba(200, 160, 60, .14)',
+    pageGlowA2: 'rgba(180, 140, 50, .10)',
+    pageGlowA3: 'rgba(220, 180, 80, .06)',
+    pageGlowB1: 'rgba(200, 170, 70, .05)',
+    pageGlowB2: 'rgba(160, 130, 40, .06)',
     prizeOptions: [
       { tier: 't1', label: 'Blowjob', icon: 'blowjob' },
       { tier: 't2', label: 'Handjob', icon: 'handjob' },
@@ -89,12 +114,19 @@ export const CARD_THEMES = {
     legendPanelBg: 'rgba(2, 3, 3, 0.8)',
     legendPanelBorder: '#a53185',
     legendPanelBlur: '1px',
-    legendPanelMutedColor: 'rgb(255, 255, 255)',
     legendPanelMutedColor: '#a53185',
     titleSrc: '/assets/cards/men-advanced1/title.svg',
     thumbSrc: '/assets/img/thumb_men-advanced1.jpg',
     bgDesktopSrc: '/assets/cards/men-advanced1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/men-advanced1/bg-mobile.jpg',
+    // Page background: dark with magenta/pink accents
+    pageBg: '#0a0408',
+    pageBg1: '#10060e',
+    pageGlowA1: 'rgba(180, 50, 140, .16)',
+    pageGlowA2: 'rgba(220, 80, 170, .10)',
+    pageGlowA3: 'rgba(255, 120, 200, .06)',
+    pageGlowB1: 'rgba(200, 60, 150, .05)',
+    pageGlowB2: 'rgba(160, 40, 120, .07)',
     prizeOptions: [
       { tier: 't1', label: 'Watch Porn', icon: 'watch-porn' },
       { tier: 't2', label: 'Lingerie', icon: 'lingerie' },
@@ -114,6 +146,14 @@ export const CARD_THEMES = {
     thumbSrc: '/assets/img/thumb_women-advanced1.jpg',
     bgDesktopSrc: '/assets/cards/women-advanced1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/women-advanced1/bg-mobile.jpg',
+    // Page background: deep purple
+    pageBg: '#0c0614',
+    pageBg1: '#140a1e',
+    pageGlowA1: 'rgba(120, 60, 180, .18)',
+    pageGlowA2: 'rgba(160, 90, 220, .12)',
+    pageGlowA3: 'rgba(180, 120, 240, .07)',
+    pageGlowB1: 'rgba(140, 80, 200, .06)',
+    pageGlowB2: 'rgba(100, 50, 160, .08)',
     prizeOptions: [
       { tier: 't1', label: '69', icon: '69' },
       { tier: 't2', label: 'Blindfold', icon: 'blindfold' },
