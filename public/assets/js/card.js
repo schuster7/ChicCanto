@@ -738,10 +738,18 @@ async function exportRevealedPng(card, opts = {}){
 
     // --- Step D: Compose the final image on canvas ---
     // Layer order (bottom to top):
-    //   1. Dark padding background (#0e151a)
+    //   1. Page-themed padding background (from card theme, falls back to dark)
     //   2. Card background image (JPEG, painted directly via canvas — works on mobile)
     //   3. SVG foreignObject overlay (text, icons, layout — no background image)
     //   4. Promo text below the card
+
+    // Read the per-card page background for the export padding area.
+    const exportBg = (() => {
+      try{
+        const t = getCardTheme(card.card_key);
+        return (t && t.pageBg) ? t.pageBg : '#0e151a';
+      }catch{ return '#0e151a'; }
+    })();
 
     const canvas = document.createElement('canvas');
 
@@ -766,8 +774,8 @@ async function exportRevealedPng(card, opts = {}){
     // Work in CSS pixels; apply pixel scaling once.
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
 
-    // Layer 1: solid dark background (visible as padding around the card).
-    ctx.fillStyle = '#0e151a';
+    // Layer 1: per-card background (visible as padding around the card).
+    ctx.fillStyle = exportBg;
     ctx.fillRect(0, 0, outW, outH);
 
     // Rounded-corner clipping (matches the card's border-radius on screen).
