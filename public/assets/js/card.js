@@ -763,11 +763,16 @@ async function exportRevealedPng(card, opts = {}){
     // Both areas use the same height for visual balance.
     const brandingHeight = 36;
 
-    const outW = w0 + pad * 2;
-    const outH = brandingHeight + pad + h0 + pad + brandingHeight;
+    // Layout: topGap | card | bottomGap
+    // topGap = bottomGap = pad + brandingHeight
+    // Logo is vertically centered in topGap, promo in bottomGap.
+    const gapHeight = pad + brandingHeight;
 
-    // Y offset: card starts below the logo area + top padding.
-    const cardY = brandingHeight + pad;
+    const outW = w0 + pad * 2;
+    const outH = gapHeight + h0 + gapHeight;
+
+    // Y offset: card starts after the top gap.
+    const cardY = gapHeight;
 
     canvas.width = Math.max(1, Math.round(outW * scale));
     canvas.height = Math.max(1, Math.round(outH * scale));
@@ -797,7 +802,7 @@ async function exportRevealedPng(card, opts = {}){
       const logoH = brandingHeight * 0.40;
       const logoW = Math.min(logoH * logoAspect, outW * 0.22);
       const logoX = (outW - logoW) / 2;
-      const logoY = (brandingHeight - logoH) / 2;
+      const logoY = (gapHeight - logoH) / 2;
       ctx.globalAlpha = 0.38;
       ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
       ctx.globalAlpha = 1;
@@ -807,7 +812,7 @@ async function exportRevealedPng(card, opts = {}){
       ctx.font = 'italic 500 13px Inter, ui-sans-serif, system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('ChicCanto', outW / 2, brandingHeight / 2);
+      ctx.fillText('ChicCanto', outW / 2, gapHeight / 2);
     }
 
     // Rounded-corner clipping (matches the card's border-radius on screen).
@@ -848,7 +853,7 @@ async function exportRevealedPng(card, opts = {}){
     ctx.font = '500 12px Inter, ui-sans-serif, system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const promoY = cardY + h0 + pad * 0.5 + brandingHeight * 0.5;
+    const promoY = cardY + h0 + gapHeight / 2;
     ctx.fillText('Send one back?  \u2192  etsy.com/shop/ChicCanto', outW / 2, promoY);
 
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
