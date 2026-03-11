@@ -2097,8 +2097,7 @@ function renderRevealed(root, card){
     </div>
 
     <div class="cc-promo" aria-label="ChicCanto promotion">
-      <p class="cc-promo__text">Want to send one back? Browse scratch-off cards for every occasion.</p>
-      <a class="cc-promo__link" href="https://www.etsy.com/shop/ChicCanto" target="_blank" rel="noopener noreferrer">etsy.com/shop/ChicCanto</a>
+      <p class="cc-promo__text">Want to send one back? <a class="cc-promo__link" href="https://www.etsy.com/shop/ChicCanto" target="_blank" rel="noopener noreferrer">etsy.com/shop/ChicCanto</a></p>
     </div>
   `;
 
