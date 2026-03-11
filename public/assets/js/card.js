@@ -760,14 +760,14 @@ async function exportRevealedPng(card, opts = {}){
     })();
 
     // Extra space for branding: logo at top, promo at bottom.
-    const logoAreaHeight = 32;
-    const promoLineHeight = 36;
+    // Both areas use the same height for visual balance.
+    const brandingHeight = 36;
 
     const outW = w0 + pad * 2;
-    const outH = logoAreaHeight + pad + h0 + pad + promoLineHeight;
+    const outH = brandingHeight + pad + h0 + pad + brandingHeight;
 
     // Y offset: card starts below the logo area + top padding.
-    const cardY = logoAreaHeight + pad;
+    const cardY = brandingHeight + pad;
 
     canvas.width = Math.max(1, Math.round(outW * scale));
     canvas.height = Math.max(1, Math.round(outH * scale));
@@ -792,23 +792,22 @@ async function exportRevealedPng(card, opts = {}){
         img.onerror = () => reject(new Error('Logo load failed'));
         img.src = logoDataUrl;
       });
-      // Scale logo to fit the logo area height, preserving aspect ratio.
-      const logoMaxH = logoAreaHeight * 0.6;
+      // Scale logo: cap height at ~40% of branding area, cap width for subtlety.
       const logoAspect = logoImg.naturalWidth / logoImg.naturalHeight;
-      const logoH = logoMaxH;
-      const logoW = logoH * logoAspect;
+      const logoH = brandingHeight * 0.40;
+      const logoW = Math.min(logoH * logoAspect, outW * 0.22);
       const logoX = (outW - logoW) / 2;
-      const logoY = (logoAreaHeight - logoH) / 2;
+      const logoY = (brandingHeight - logoH) / 2;
       ctx.globalAlpha = 0.38;
       ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
       ctx.globalAlpha = 1;
     }catch(_e){
       // Fallback: plain text if SVG fails to load.
       ctx.fillStyle = 'rgba(255,255,255,0.38)';
-      ctx.font = 'italic 500 14px Inter, ui-sans-serif, system-ui, sans-serif';
+      ctx.font = 'italic 500 13px Inter, ui-sans-serif, system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('ChicCanto', outW / 2, logoAreaHeight / 2);
+      ctx.fillText('ChicCanto', outW / 2, brandingHeight / 2);
     }
 
     // Rounded-corner clipping (matches the card's border-radius on screen).
@@ -849,7 +848,7 @@ async function exportRevealedPng(card, opts = {}){
     ctx.font = '500 12px Inter, ui-sans-serif, system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const promoY = cardY + h0 + pad * 0.5 + promoLineHeight * 0.5;
+    const promoY = cardY + h0 + pad * 0.5 + brandingHeight * 0.5;
     ctx.fillText('Send one back?  \u2192  etsy.com/shop/ChicCanto', outW / 2, promoY);
 
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
