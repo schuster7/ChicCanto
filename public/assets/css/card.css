@@ -565,22 +565,20 @@ border-radius: var(--scratch-tile-radius);
 }
 
 /* Winning tiles: glow pulse on the 3 matched tiles at prize reveal.
-   JS adds .cc-winner to the matching tiles when the game ends. */
-.scratch-tile.cc-winner .under{
-  animation: ccWinnerGlow 1.2s ease-out 1;
+   JS adds .cc-winner to the tile element when the game ends.
+   Glow is on the tile itself (not .under) because .under has overflow:hidden
+   which clips box-shadow. The tile is a circle (border-radius: 9999px). */
+.scratch-tile.done.cc-winner{
+  animation: ccWinnerGlow 1.2s ease-out 1 both;
 }
 @keyframes ccWinnerGlow{
-  0%   { box-shadow: 0 0 0 0 rgba(255,255,255,.5); }
-  25%  { box-shadow: 0 0 18px 4px rgba(255,255,255,.45); }
-  60%  { box-shadow: 0 0 8px 2px rgba(255,255,255,.2); }
+  0%   { box-shadow: 0 0 0 0 rgba(255,255,255,.55); }
+  20%  { box-shadow: 0 0 20px 6px rgba(255,255,255,.50); }
+  50%  { box-shadow: 0 0 10px 3px rgba(255,255,255,.25); }
   100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
 }
-/* Keep tile pop from re-triggering on winner class add */
-.scratch-tile.cc-winner .under{
-  animation: ccWinnerGlow 1.2s ease-out 1;
-}
 /* Hide winner glow in export */
-.is-exporting .scratch-tile.cc-winner .under{
+.is-exporting .scratch-tile.cc-winner{
   animation: none !important;
   box-shadow: none !important;
 }
