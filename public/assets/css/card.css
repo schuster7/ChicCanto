@@ -154,31 +154,8 @@
   pointer-events: none;
 }
 
-/* Win sequence: smooth border acceleration + flash.
-   Triggered by JS adding .cc-win-turbo to .scratch-fx.
-   The border ramps up smoothly via CSS transitions on registered properties,
-   holds at peak, then decelerates. Total duration controlled by JS (~1.8s). */
-.scratch-fx{
-  transition:
-    --hue-speed 600ms cubic-bezier(.22, .61, .36, 1),
-    --glow-opacity 600ms cubic-bezier(.22, .61, .36, 1),
-    --glow-scale 600ms cubic-bezier(.22, .61, .36, 1);
-}
-
-.scratch-fx.cc-win-turbo{
-  --animation-speed: 0.7s;
-  --hue-speed: 3;
-  --glow-opacity: 1.3;
-  --glow-scale: 1.6;
-  --glow-blur: 6;
-}
-
-.scratch-fx.cc-win-turbo::before{
-  animation-timing-function:
-    cubic-bezier(0.22, 0.61, 0.36, 1),
-    cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-
+/* Win sequence: border acceleration is driven by JS (ramps --hue-speed continuously).
+   The .cc-win-turbo class only triggers the light flash at the peak moment. */
 .scratch-fx.cc-win-turbo::after{
   content: "";
   position: absolute;
@@ -198,7 +175,6 @@
 
   opacity: 0;
   animation: ccWinFlash 400ms ease-out 1 both;
-  animation-delay: 700ms;
 }
 
 /* Never show the frame/flash in PNG export (if export ever captures wrappers). */

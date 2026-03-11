@@ -2652,18 +2652,57 @@ function fireWinTurboFlash(){
     const fx = document.querySelector('.scratch-fx');
     if (!fx) return;
 
-    // Synchronized win sequence (~1.8s):
-    // 0ms:    border starts ramping up (CSS transition on custom properties)
-    // 0ms:    winning tiles start double pop + glow
-    // 700ms:  flash fires (via CSS animation-delay)
-    // 1800ms: border ramps back down (class removed, CSS transition eases out)
-    fx.classList.remove('cc-win-turbo');
-    void fx.offsetWidth;
-    fx.classList.add('cc-win-turbo');
+    // Continuous border acceleration: ramps --hue-speed from 1 to peak
+    // along an ease-in curve (slow start, fast end), then snaps back.
+    // The flash is triggered via CSS class at the peak moment.
 
-    window.setTimeout(() => {
-      fx.classList.remove('cc-win-turbo');
-    }, 1800);
+    const duration = 1800;   // total ramp time (ms)
+    const peakHueSpeed = 4;  // max multiplier at the end
+    const baseHueSpeed = 1;  // normal idle value
+    const flashAt = 0.7;     // fire flash at 70% through the ramp
+
+    let start = 0;
+    let flashFired = false;
+    let rafId = 0;
+
+    function ramp(t){
+      if (!start) start = t;
+      const elapsed = t - start;
+      const p = Math.min(1, elapsed / duration);
+
+      // Ease-in curve (slow start, accelerates toward end)
+      const eased = p * p * p;
+
+      const speed = baseHueSpeed + (peakHueSpeed - baseHueSpeed) * eased;
+      fx.style.setProperty('--hue-speed', speed.toFixed(2));
+
+      // Glow intensity follows the same curve
+      fx.style.setProperty('--glow-opacity', (1 + eased * 0.4).toFixed(2));
+      fx.style.setProperty('--glow-scale', (1.5 + eased * 0.15).toFixed(3));
+
+      // Fire the flash class near the peak
+      if (!flashFired && p >= flashAt){
+        flashFired = true;
+        fx.classList.remove('cc-win-turbo');
+        void fx.offsetWidth;
+        fx.classList.add('cc-win-turbo');
+      }
+
+      if (p < 1){
+        rafId = requestAnimationFrame(ramp);
+      } else {
+        // Snap back to normal
+        fx.style.removeProperty('--hue-speed');
+        fx.style.removeProperty('--glow-opacity');
+        fx.style.removeProperty('--glow-scale');
+        // Remove flash class after it finishes
+        window.setTimeout(() => {
+          fx.classList.remove('cc-win-turbo');
+        }, 500);
+      }
+    }
+
+    rafId = requestAnimationFrame(ramp);
   } catch(_){}
 }
 
