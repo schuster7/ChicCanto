@@ -158,13 +158,12 @@ export function bootLanding(){
     const tl = window.gsap.timeline({ defaults: { ease: 'power2.out' } });
 
     // Start delay for nicer flow
-    const startDelay = 0.30;
+    const startDelay = 0.25;
 
-    // Timing (slower overall)
-    // Goal: word 1 -> word 2 -> word 3 -> card -> button
-    const wordDur = 0.80;
-    const wordStagger = 0.70;
-    const cardDur = 1.00;
+    // Timing: Unluck -> The -> Moment+Card (simultaneous)
+    const wordDur = 0.70;
+    const wordStagger = 0.55;
+    const cardDur = 0.90;
 
     // Ensure start states are consistent (kept for safety)
     if (words.length){
@@ -183,9 +182,8 @@ export function bootLanding(){
       }, startDelay);
     }
 
-    // Card flip: AFTER the last word finishes (no overlap)
-    const wordsDoneAt = (words.length ? ((words.length - 1) * wordStagger + wordDur) : 0);
-    const cardStart = startDelay + wordsDoneAt;
+    // Card flip: starts at the same time as the LAST word (Moment), not after it.
+    const lastWordStart = startDelay + (Math.max(0, words.length - 1) * wordStagger);
 
     tl.to(stage, {
       opacity: 1,
@@ -193,9 +191,9 @@ export function bootLanding(){
       rotationX: 0,
       duration: cardDur,
       ease: 'power3.out'
-    }, cardStart);
+    }, lastWordStart);
     // After the card finishes
-    const cardDoneAt = cardStart + cardDur;
+    const cardDoneAt = lastWordStart + cardDur;
 
     // Auto-forward to activation after the intro finishes (splash screen behavior)
     if (AUTO_FORWARD_TO_ACTIVATE){
