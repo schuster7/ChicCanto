@@ -1994,8 +1994,13 @@ function clearLegendState(){
     // Show the result in the rules panel only.
     markLegendWinner(opt.tier);
 
-    // Top-right only.
-
+    // Highlight the 3 winning tiles with a glow pulse.
+    const allTiles = boardEl.querySelectorAll('.scratch-tile');
+    for (let i = 0; i < board.length; i++){
+      if (board[i] === winTier && allTiles[i]){
+        allTiles[i].classList.add('cc-winner');
+      }
+    }
   }
 
   async function onTileScratched(i, el){
