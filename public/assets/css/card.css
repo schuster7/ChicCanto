@@ -591,3 +591,29 @@ border-radius: var(--scratch-tile-radius);
 
 
 
+
+/* ---------------------------------
+   Post-reveal promo / branding
+   --------------------------------- */
+.cc-promo{
+  text-align: center;
+  padding: 20px 16px 8px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.cc-promo__text{
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(255,255,255,.55);
+  margin: 0 0 6px;
+}
+.cc-promo__link{
+  font-size: 13px;
+  color: rgba(255,255,255,.40);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+.cc-promo__link:hover{
+  color: rgba(255,255,255,.72);
+  text-decoration: underline;
+}

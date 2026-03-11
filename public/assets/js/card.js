@@ -736,11 +736,12 @@ async function exportRevealedPng(card, opts = {}){
       svgImg.src = svgDataUrl;
     });
 
-    // --- Step D: Compose the final PNG on canvas ---
+    // --- Step D: Compose the final image on canvas ---
     // Layer order (bottom to top):
     //   1. Dark padding background (#0e151a)
     //   2. Card background image (JPEG, painted directly via canvas — works on mobile)
     //   3. SVG foreignObject overlay (text, icons, layout — no background image)
+    //   4. Promo text below the card
 
     const canvas = document.createElement('canvas');
 
@@ -750,8 +751,11 @@ async function exportRevealedPng(card, opts = {}){
       return Math.max(24, Math.min(96, Math.round(base * 0.06)));
     })();
 
+    // Extra space below the card for the promo line.
+    const promoLineHeight = 36;
+
     const outW = w0 + pad * 2;
-    const outH = h0 + pad * 2;
+    const outH = h0 + pad * 2 + promoLineHeight;
 
     canvas.width = Math.max(1, Math.round(outW * scale));
     canvas.height = Math.max(1, Math.round(outH * scale));
@@ -777,6 +781,9 @@ async function exportRevealedPng(card, opts = {}){
       }
     })();
 
+    // Save context before clip so we can draw the promo text outside the clip region.
+    ctx.save();
+
     if (r > 0){
       const rr = Math.min(r, Math.min(w0, h0) / 2);
       ctx.beginPath();
@@ -792,6 +799,17 @@ async function exportRevealedPng(card, opts = {}){
 
     // Layer 3: SVG foreignObject (everything else: title, grid, icons, legend).
     ctx.drawImage(svgImg, pad, pad);
+
+    // Restore context to remove the rounded-corner clip before drawing promo text.
+    ctx.restore();
+
+    // Layer 4: promo text below the card.
+    ctx.fillStyle = 'rgba(255,255,255,0.38)';
+    ctx.font = '500 12px Inter, ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const promoY = pad + h0 + pad * 0.5 + promoLineHeight * 0.5;
+    ctx.fillText('Send one back?  \u2192  etsy.com/shop/ChicCanto', outW / 2, promoY);
 
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
     if (!blob) throw new Error('Image export failed');
@@ -2030,6 +2048,11 @@ function renderRevealed(root, card){
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="cc-promo" aria-label="ChicCanto promotion">
+      <p class="cc-promo__text">Want to send one back? Browse scratch-off cards for every occasion.</p>
+      <a class="cc-promo__link" href="https://www.etsy.com/shop/ChicCanto" target="_blank" rel="noopener noreferrer">etsy.com/shop/ChicCanto</a>
     </div>
   `;
 
