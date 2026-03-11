@@ -782,12 +782,34 @@ async function exportRevealedPng(card, opts = {}){
     ctx.fillStyle = exportBg;
     ctx.fillRect(0, 0, outW, outH);
 
-    // Layer 1b: ChicCanto logo text at top center.
-    ctx.fillStyle = 'rgba(255,255,255,0.38)';
-    ctx.font = 'italic 500 14px Inter, ui-sans-serif, system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('ChicCanto', outW / 2, logoAreaHeight / 2);
+    // Layer 1b: ChicCanto SVG logo at top center.
+    // Loaded as a data-URL image so it renders crisp at any scale.
+    try{
+      const logoDataUrl = await _fetchAsDataUrl('/assets/img/logo1.svg');
+      const logoImg = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Logo load failed'));
+        img.src = logoDataUrl;
+      });
+      // Scale logo to fit the logo area height, preserving aspect ratio.
+      const logoMaxH = logoAreaHeight * 0.6;
+      const logoAspect = logoImg.naturalWidth / logoImg.naturalHeight;
+      const logoH = logoMaxH;
+      const logoW = logoH * logoAspect;
+      const logoX = (outW - logoW) / 2;
+      const logoY = (logoAreaHeight - logoH) / 2;
+      ctx.globalAlpha = 0.38;
+      ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
+      ctx.globalAlpha = 1;
+    }catch(_e){
+      // Fallback: plain text if SVG fails to load.
+      ctx.fillStyle = 'rgba(255,255,255,0.38)';
+      ctx.font = 'italic 500 14px Inter, ui-sans-serif, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('ChicCanto', outW / 2, logoAreaHeight / 2);
+    }
 
     // Rounded-corner clipping (matches the card's border-radius on screen).
     const r = (() => {
