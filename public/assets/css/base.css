@@ -10,6 +10,17 @@
 
   --page-max: 1000px;
 
+  /* Per-card page background (set by JS, defaults = current dark theme) */
+  --page-bg: var(--bg0);
+  --page-bg1: var(--bg1);
+  --page-glow-a1: rgba(180, 130, 255, .22);
+  --page-glow-a2: rgba(140, 205, 255, .16);
+  --page-glow-a3: rgba(255, 170, 150, .10);
+  --page-glow-b1: rgba(255, 200, 150, .08);
+  --page-glow-b2: rgba(160, 140, 255, .10);
+  --page-glow-a-opacity: .9;
+  --page-glow-b-opacity: .45;
+
   /* Card page width control (keeps site header unchanged) */
   --card-max: 980px;
   /* Total width to subtract from container when sizing the card (both sides combined). */
@@ -128,10 +139,10 @@ body {
 
   background-image:
     url("/assets/img/noise.png"),
-    radial-gradient(1100px 800px at 18% 22%, rgba(170, 120, 255, .16), transparent 62%),
-    radial-gradient(1000px 760px at 82% 18%, rgba(120, 190, 255, .12), transparent 60%),
-    radial-gradient(900px 700px at 55% 80%, rgba(255, 170, 150, .08), transparent 62%),
-    linear-gradient(180deg, var(--bg1), var(--bg0));
+    radial-gradient(1100px 800px at 18% 22%, var(--page-glow-a1), transparent 62%),
+    radial-gradient(1000px 760px at 82% 18%, var(--page-glow-a2), transparent 60%),
+    radial-gradient(900px 700px at 55% 80%, var(--page-glow-a3), transparent 62%),
+    linear-gradient(180deg, var(--page-bg1), var(--page-bg));
 
   background-repeat:
     repeat,
@@ -191,20 +202,20 @@ body::after {
 
 /* Layer A: plum/ink lights */
 body::before {
-  opacity: .9;
+  opacity: var(--page-glow-a-opacity);
   background:
-    radial-gradient(900px 700px at 20% 30%, rgba(180, 130, 255, .22), transparent 62%),
-    radial-gradient(900px 700px at 75% 25%, rgba(140, 205, 255, .16), transparent 62%),
-    radial-gradient(950px 750px at 55% 80%, rgba(255, 170, 150, .10), transparent 65%);
+    radial-gradient(900px 700px at 20% 30%, var(--page-glow-a1), transparent 62%),
+    radial-gradient(900px 700px at 75% 25%, var(--page-glow-a2), transparent 62%),
+    radial-gradient(950px 750px at 55% 80%, var(--page-glow-a3), transparent 65%);
   animation: driftA 36s ease-in-out infinite alternate;
 }
 
 /* Layer B: subtle warm lift + a bit of depth */
 body::after {
-  opacity: .45;
+  opacity: var(--page-glow-b-opacity);
   background:
-    radial-gradient(850px 680px at 30% 70%, rgba(255, 200, 150, .08), transparent 64%),
-    radial-gradient(820px 650px at 70% 60%, rgba(160, 140, 255, .10), transparent 64%);
+    radial-gradient(850px 680px at 30% 70%, var(--page-glow-b1), transparent 64%),
+    radial-gradient(820px 650px at 70% 60%, var(--page-glow-b2), transparent 64%);
   animation: driftB 52s ease-in-out infinite alternate;
 }
 

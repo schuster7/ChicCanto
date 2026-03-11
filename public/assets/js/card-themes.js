@@ -14,6 +14,10 @@ export const CARD_THEMES = {
     thumbSrc: '/assets/img/thumb_men-novice1.jpg',
     bgDesktopSrc: '/assets/cards/men-novice1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/men-novice1/bg-mobile.jpg',
+    // Page background (body behind the card). Omit to keep the default dark theme.
+    // pageBg:    '#05060a',       // base background color
+    // pageGlowA: 'rgba(180, 130, 255, .22), rgba(140, 205, 255, .16), rgba(255, 170, 150, .10)',
+    // pageGlowB: 'rgba(255, 200, 150, .08), rgba(160, 140, 255, .10)',
     prizeOptions: [
       { tier: 't1', label: 'Blowjob', icon: 'blowjob' },
       { tier: 't2', label: 'Handjob', icon: 'handjob' },

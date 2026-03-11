@@ -910,6 +910,7 @@ function buildMatch3Board(totalTiles, winTier, tiers, seedKey){
 function render(container, token, card){
   // Card is expected to already exist in storage (redeem/setup creates it).
   applyTheme(card.theme_id);
+  applyPageTheme(card.card_key);
 
   const contentId = 'content';
 
@@ -2202,6 +2203,33 @@ function applyTheme(themeId){
     if (typeof themeId === 'string' && themeId.startsWith('theme-')){
       body.classList.add(themeId);
     }
+  }catch{}
+}
+
+// Per-card page background: sets CSS custom properties on <body> so the
+// background gradient and animated glow layers adapt to the card's mood.
+// If the theme doesn't define page values, the CSS defaults (dark theme) remain.
+function applyPageTheme(cardKey){
+  try{
+    const theme = getCardTheme(cardKey);
+    if (!theme) return;
+
+    const root = document.documentElement;
+
+    if (theme.pageBg){
+      root.style.setProperty('--page-bg', theme.pageBg);
+      // If only pageBg is set, use it for both stops of the base gradient.
+      root.style.setProperty('--page-bg1', theme.pageBg1 || theme.pageBg);
+    }
+
+    if (theme.pageGlowA1) root.style.setProperty('--page-glow-a1', theme.pageGlowA1);
+    if (theme.pageGlowA2) root.style.setProperty('--page-glow-a2', theme.pageGlowA2);
+    if (theme.pageGlowA3) root.style.setProperty('--page-glow-a3', theme.pageGlowA3);
+    if (theme.pageGlowB1) root.style.setProperty('--page-glow-b1', theme.pageGlowB1);
+    if (theme.pageGlowB2) root.style.setProperty('--page-glow-b2', theme.pageGlowB2);
+
+    if (theme.pageGlowAOpacity != null) root.style.setProperty('--page-glow-a-opacity', String(theme.pageGlowAOpacity));
+    if (theme.pageGlowBOpacity != null) root.style.setProperty('--page-glow-b-opacity', String(theme.pageGlowBOpacity));
   }catch{}
 }
 
