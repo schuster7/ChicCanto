@@ -49,7 +49,7 @@ function _getRequestedStoreMode(){
 // API mode is for local dev (Checkpoint 4) and later for real backends.
 // For now we support two backends automatically:
 // 1) Local dev API (node dev-api.js) on :8787
-// 2) Same-origin backend (Netlify Functions/other) via /redeem and /token/*
+// 2) Same-origin backend (Cloudflare Pages/Workers) via /redeem and /token/*
 function _apiBaseCandidates(){
   const bases = [];
   const host = window.location.hostname;

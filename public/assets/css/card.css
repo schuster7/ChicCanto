@@ -216,48 +216,6 @@
 }
 
 
-.scratch-fx__content {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: var(--card-color);
-  border-radius: calc(calc(var(--card-radius) * 0.9));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  text-transform: uppercase;
-  font-stretch: 150%;
-  font-size: 18px;
-  font-size: clamp(1.5vw, 1.5vmin, 32px);
-  color: var(--text-color);
-
-}
-.scratch-fx__content > .scratch-fx__badge {
-  display: inline-block;
-  padding: 0.25em;
-  border-radius: 4px;
-  background: var(--text-color);
-  color: black;
-  margin-right: 8px;
-  font-weight: 900;
-}
-.scratch-fx__content:before {
-  content: "";
-  display: block;
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: calc(calc(var(--card-radius) * 0.9));
-  box-shadow: 0 0 20px black;
-  mix-blend-mode: color-burn;
-  z-index: -1;
-  background: #292929 radial-gradient(30% 30% at calc(var(--bg-x) * 1%) calc(var(--bg-y) * 1%), hsl(calc(calc(var(--hue) * var(--hue-speed)) * 1deg), 100%, 90%) calc(0% * var(--bg-size)), hsl(calc(calc(var(--hue) * var(--hue-speed)) * 1deg), 100%, 80%) calc(20% * var(--bg-size)), hsl(calc(calc(var(--hue) * var(--hue-speed)) * 1deg), 100%, 60%) calc(40% * var(--bg-size)), transparent 100%);
-  width: calc(100% + var(--border-width));
-  height: calc(100% + var(--border-width));
-  animation: hue-animation var(--animation-speed) linear infinite, rotate-bg var(--animation-speed) linear infinite;
-  transition: --bg-size var(--interaction-speed) ease;
-}
 .scratch-glow{
   --glow-translate-y: 0;
   display: block;
@@ -387,9 +345,6 @@
 .scratch-stage {
   --scratch-card-pattern: none;
   --scratch-card-pattern-opacity: 0;
-}
-.scratch-stage.scratch-stage--pattern {
-  --scratch-card-pattern-opacity: 1;
 }
 
 /* Make the scratch card fill the fx wrapper exactly */

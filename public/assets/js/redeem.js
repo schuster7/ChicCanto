@@ -88,16 +88,7 @@ function apiBaseCandidates(){
     // Also allow same-origin (in case you proxy locally)
     bases.push(window.location.origin);
   } else {
-    // Optional: Netlify Functions, if you ever deploy there again
-    const isNetlify =
-      host.endsWith('netlify.app') ||
-      host.endsWith('netlify.live');
-
-    if (isNetlify){
-      bases.push(`${window.location.origin}/.netlify/functions`);
-    }
-
-    // Default: same-origin backend (Cloudflare Pages/Workers, or any host with /redeem)
+    // Default: same-origin backend (Cloudflare Pages/Workers)
     bases.push(window.location.origin);
   }
 
