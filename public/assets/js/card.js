@@ -1004,12 +1004,20 @@ const previewCta = PREVIEW_MODE ? `
     renderPreparing(content);
 
     (async () => {
-      const fresh = await _waitForConfigured(token, { attempts: 10, baseDelayMs: 450 });
+      const fresh = await _waitForConfigured(token, { attempts: 15, baseDelayMs: 500 });
       if (fresh && fresh.configured){
         render(container, token, fresh);
         return;
       }
       renderNotReady(content, card);
+      // Auto-refresh once after 12s as a last-chance fallback for slow KV propagation.
+      setTimeout(() => {
+        try{
+          if (!document.querySelector('.scratch-stage')){
+            window.location.reload();
+          }
+        }catch(_){}
+      }, 12000);
     })();
 
     return;
@@ -2323,4 +2331,3 @@ function fireWinTurboFlash(){
     }, 1800);
   } catch(_){}
 }
-
