@@ -12,20 +12,6 @@ export const PRODUCTS = {
     name: "ChicCanto scratch card",
     theme_id: "theme-default",
     fields: 9
-  },
-  "demo-christmas": {
-    id: "demo-christmas",
-    slug: "christmas",
-    name: "Christmas scratch card (preview)",
-    theme_id: "theme-christmas",
-    fields: 9
-  },
-  "demo-couples": {
-    id: "demo-couples",
-    slug: "couples",
-    name: "Couples scratch card (preview)",
-    theme_id: "theme-couples",
-    fields: 9
   }
 };
 
