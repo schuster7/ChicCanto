@@ -395,7 +395,7 @@ export function setConfigured(token, { choice, reveal_amount, fields, product_id
   return saveCard(card);
 }
 
-export async function setConfiguredAndWait(token, { choice, reveal_amount, fields, product_id, theme_id, card_key }){
+export async function setConfiguredAndWait(token, { choice, reveal_amount, fields, product_id, theme_id, card_key, message, visible_title }){
   const card = ensureCard(token);
 
   // Lock product/theme/card identity on first configuration only.
@@ -408,6 +408,10 @@ export async function setConfiguredAndWait(token, { choice, reveal_amount, field
   card.configured = true;
   card.choice = choice;
   card.reveal_amount = reveal_amount;
+
+  // Message-reveal card fields
+  if (message !== undefined) card.message = message;
+  if (visible_title !== undefined) card.visible_title = visible_title;
 
   if (typeof fields === 'number' && Number.isFinite(fields)) card.fields = fields;
 
