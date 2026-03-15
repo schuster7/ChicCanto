@@ -161,6 +161,35 @@ export const CARD_THEMES = {
       { tier: 't4', label: 'Tie Her Up', icon: 'tie-her-up' },
     ],
   },
+
+  // --- Message-reveal cards ---
+
+  'custom-card1': {
+    key: 'custom-card1',
+    gameType: 'message',
+    messageMode: 'freetext',
+    messageMaxLength: 200,
+    messagePlaceholder: 'Type your hidden message...',
+    titlePlaceholder: 'Your title here...',
+    titleMaxLength: 92,
+    scratchMask: '/assets/img/tile-heart.svg',
+    bgDesktopSrc: '/assets/cards/custom-card1/bg-desktop.jpg',
+    bgMobileSrc: '/assets/cards/custom-card1/bg-mobile.jpg',
+    // Light page background
+    pageBg: '#f5f0ea',
+    pageBg1: '#faf7f2',
+    pageGlowA1: 'rgba(180, 160, 120, .08)',
+    pageGlowA2: 'rgba(200, 180, 140, .06)',
+    pageGlowA3: 'rgba(220, 200, 160, .04)',
+    pageGlowB1: 'rgba(180, 160, 120, .04)',
+    pageGlowB2: 'rgba(160, 140, 100, .05)',
+    // Scratch area foil color
+    foil: 'gold',
+    // Message text styling (CSS values)
+    messageFont: "'Inter', sans-serif",
+    messageColor: '#2a2a2a',
+    messageFontSize: 'clamp(1rem, 3.5vw, 1.5rem)',
+  },
 };
 
 export function getCardTheme(card_key){

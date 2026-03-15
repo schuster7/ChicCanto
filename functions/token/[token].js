@@ -96,6 +96,14 @@ function applyAllowedUpdates(existing, body, { allowSender = false } = {}){
     if ('board' in body){
       next.board = (body.board == null) ? null : (isValidTierBoard(body.board) ? body.board : next.board);
     }
+
+    // Message-reveal card fields (sender-only).
+    if ('message' in body){
+      next.message = (body.message == null) ? null : String(body.message).slice(0, 500);
+    }
+    if ('visible_title' in body){
+      next.visible_title = (body.visible_title == null) ? null : String(body.visible_title).slice(0, 200);
+    }
   }
 
   // Recipient-writable fields.

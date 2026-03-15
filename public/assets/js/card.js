@@ -3,6 +3,7 @@ import { getRevealOptions, RANDOM_KEY, tierIconSrc, setTileSet } from './config.
 import { getCardTheme } from './card-themes.js';
 import { getCard, getCardAsync, ensureCard, saveCard, setConfigured, setConfiguredAndWait, setRevealed, setRevealedAndWait } from './store.js';
 import { attachScratchTile } from './scratch.js';
+import { renderMessageSetup, renderMessageScratch, renderMessageRevealed } from './game-message.js';
 
 function isLikelyInAppBrowser(){
   const ua = navigator.userAgent || '';
@@ -986,15 +987,27 @@ const previewCta = PREVIEW_MODE ? `
 
   const content = qs('#' + contentId, container);
 
+  // Determine game type from card theme
+  const _theme = getCardTheme(card.card_key);
+  const _gameType = (_theme && _theme.gameType) || 'match3';
+
   if (card.revealed){
-    renderRevealed(content, card);
+    if (_gameType === 'message'){
+      renderMessageRevealed(content, card);
+    } else {
+      renderRevealed(content, card);
+    }
     return;
   }
 
   // Sender private link (setup param) should always show setup UI (even after configured),
   // so the buyer can copy/share the recipient link.
   if (hasSetupAccess){
-    renderSetup(content, card, container);
+    if (_gameType === 'message'){
+      renderMessageSetup(content, card, container, { previewMode: PREVIEW_MODE });
+    } else {
+      renderSetup(content, card, container);
+    }
     return;
   }
 
@@ -1023,7 +1036,11 @@ const previewCta = PREVIEW_MODE ? `
     return;
   }
 
-  renderScratch(content, card);
+  if (_gameType === 'message'){
+    renderMessageScratch(content, card);
+  } else {
+    renderScratch(content, card);
+  }
 }
 
 function renderSetup(root, card, container){
@@ -2147,10 +2164,36 @@ export async function bootCard(){
     token = t;
 
     // Ensure a configured preview card exists (recipient scratch flow only).
-    const card0 = ensureCard(token);
+    let card0 = ensureCard(token);
+
+    // Check if a specific card_key is requested (e.g., ?preview&card_key=custom-card1)
+    const previewCardKey = params.get('card_key') || '';
+    if (previewCardKey && card0.card_key !== previewCardKey){
+      // Card key changed — reset the preview card so it reconfigures for the new type.
+      card0.card_key = previewCardKey;
+      card0.configured = false;
+      card0.revealed = false;
+      card0.message = null;
+      card0.visible_title = null;
+      card0.choice = null;
+      card0.board = null;
+      card0.scratched_indices = null;
+      saveCard(card0);
+    }
+
+    const previewTheme = getCardTheme(card0.card_key);
+    const previewGameType = (previewTheme && previewTheme.gameType) || 'match3';
+
     if (!card0.configured){
-      const opt = pickRandomOption();
-      setConfigured(token, { choice: opt.key, reveal_amount: opt.amount, fields: Number(card0.fields || 9) });
+      if (previewGameType === 'message'){
+        // Message cards: pre-fill with sample text for preview
+        card0.visible_title = 'Your Title Here';
+        card0.message = 'Your hidden message will appear here!';
+        card0.configured = true;
+        saveCard(card0);
+      } else {
+        setConfigured(token, { choice: pickRandomOption().key, reveal_amount: pickRandomOption().amount, fields: Number(card0.fields || 9) });
+      }
     }
 
     const card = getCard(token);

@@ -615,3 +615,316 @@ border-radius: var(--scratch-tile-radius);
   text-decoration: underline;
 }
 
+
+/* =================================================================
+   Message-reveal card styles (game-message.js)
+   ================================================================= */
+
+/* --- Card display (scratch + revealed) --- */
+.msg-card-wrapper{
+  width: 100%;
+  max-width: var(--card-max, 980px);
+  margin: 0 auto;
+}
+
+.msg-stage{
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--card-radius, 3.6vw);
+}
+
+.msg-stage .card-bg{
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.msg-stage .card-bg img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.msg-card__content{
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(2rem, 6vw, 4rem) clamp(1.5rem, 4vw, 3rem);
+  min-height: 50vh;
+  gap: clamp(1rem, 3vw, 2rem);
+}
+
+.msg-card__visible-title{
+  font-size: clamp(1.4rem, 4.5vw, 2.6rem);
+  font-weight: 600;
+  color: #2a2a2a;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Scratch area: container for canvas + hidden message */
+.msg-card__scratch-area{
+  position: relative;
+  width: clamp(200px, 55vw, 380px);
+  aspect-ratio: 400 / 350; /* matches heart SVG viewBox */
+  margin: 0 auto;
+}
+
+/* The message hidden under the scratch */
+.msg-card__under-message{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 15% 10%;
+  font-size: clamp(0.95rem, 3vw, 1.4rem);
+  font-weight: 500;
+  color: #2a2a2a;
+  line-height: 1.35;
+  word-break: break-word;
+  z-index: 1;
+  /* Masked to heart shape (set by JS from theme) */
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  background: #f8f4ee;
+}
+
+.msg-card__under-message.is-revealed{
+  animation: ccMsgReveal 600ms ease-out 1 both;
+}
+
+@keyframes ccMsgReveal{
+  0%   { opacity: 0.6; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Scratch canvas tile (heart-shaped via mask) */
+.msg-card__scratch-tile{
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  cursor: grab;
+  /* Heart mask applied by JS */
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+.msg-card__scratch-tile:active{
+  cursor: grabbing;
+}
+.msg-card__scratch-tile canvas{
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+
+/* --- Setup (sender view) --- */
+
+.msg-setup{
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 3vw, 2rem);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* Live preview card in setup */
+.msg-setup__card{
+  width: 100%;
+}
+.msg-setup__card .msg-card{
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--card-radius, 3.6vw);
+  background: #faf7f2;
+}
+.msg-setup__card .msg-card .card-bg{
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.msg-setup__card .msg-card .card-bg img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.msg-setup__card .msg-card__content{
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 3vw, 2rem);
+  gap: clamp(0.8rem, 2vw, 1.5rem);
+  min-height: 280px;
+}
+
+.msg-card__title-preview{
+  font-size: clamp(1.2rem, 4vw, 2.2rem);
+  font-weight: 600;
+  color: #2a2a2a;
+  text-align: center;
+  min-height: 1.4em;
+  line-height: 1.2;
+}
+.msg-card__title-preview.is-empty::after{
+  content: attr(data-empty-label);
+  color: rgba(0,0,0,.25);
+}
+
+/* Heart foil preview in setup */
+.msg-card__heart-area{
+  position: relative;
+  width: clamp(180px, 50vw, 320px);
+  aspect-ratio: 400 / 350;
+}
+
+.msg-card__heart-foil{
+  position: absolute;
+  inset: 0;
+  background: #c9a84c;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  z-index: 2;
+}
+
+.msg-card__heart-message{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 15% 10%;
+  font-size: clamp(0.85rem, 2.5vw, 1.2rem);
+  font-weight: 500;
+  color: #2a2a2a;
+  line-height: 1.35;
+  word-break: break-word;
+  z-index: 1;
+}
+.msg-card__heart-message.is-empty::after{
+  content: attr(data-empty-label);
+  color: rgba(0,0,0,.25);
+}
+
+/* Setup controls */
+.msg-setup__controls{
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.msg-setup__field{
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.msg-setup__field-header{
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--fs-sm);
+}
+.msg-setup__field-header label{
+  font-weight: 600;
+  color: var(--text);
+}
+.msg-setup__counter{
+  font-size: var(--fs-xs);
+  color: var(--muted2);
+}
+
+.msg-setup__input,
+.msg-setup__textarea{
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--glass, rgba(18,20,28,.45));
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--fs-input);
+  line-height: var(--lh-input);
+  outline: none;
+  transition: border-color 160ms ease;
+}
+.msg-setup__input:focus,
+.msg-setup__textarea:focus{
+  border-color: var(--accent);
+}
+.msg-setup__input:disabled,
+.msg-setup__textarea:disabled{
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.msg-setup__textarea{
+  resize: vertical;
+  min-height: 80px;
+}
+
+.msg-setup__actions{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.msg-setup__done{
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.msg-setup__done-text{
+  font-size: var(--fs-md);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.msg-setup__hint{
+  font-size: var(--fs-xs);
+  margin-top: 0.25rem;
+}
+
+/* --- Light theme overrides for message cards --- */
+/* Applied when page background is light (via per-card page theme).
+   The glass panels need darker tints on light backgrounds. */
+.msg-setup__controls{
+  --glass: rgba(255, 255, 255, .65);
+  --stroke: rgba(0, 0, 0, .12);
+  --text: #2a2a2a;
+  --muted: rgba(0, 0, 0, .55);
+  --muted2: rgba(0, 0, 0, .40);
+  --accent: #b9a178;
+}
+.msg-setup__controls .btn{
+  color: #2a2a2a;
+  border-color: rgba(0, 0, 0, .18);
+}
+.msg-setup__controls .btn.primary{
+  background: #2a2a2a;
+  color: #fff;
+  border-color: #2a2a2a;
+}
+.msg-setup__controls .btn.primary:disabled{
+  background: rgba(0,0,0,.15);
+  color: rgba(0,0,0,.35);
+  border-color: transparent;
+}
