@@ -624,11 +624,13 @@ function activationCodeInfo(code){
 
   // Support both legacy inventory codes and newer human-readable codes.
   // Legacy: CC-S-XXXX-XXXX-XXXX-XXXX (or CC-F-...)
-  // New:    CC-<AUD>-<TYPE>-<RANDOM8>  (e.g. CC-MEN-STD1-YC7EHS26)
+  // New 3-seg: CC-<AUD>-<TYPE>-<RANDOM8>  (e.g. CC-MEN-STD1-YC7EHS26)
+  // New 2-seg: CC-<TYPE>-<RANDOM8>         (e.g. CC-CARD-54K6TD4S)
   const LEGACY = /^CC-(S|F)-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
-  const NEW = /^CC-[A-Z0-9]{2,6}-[A-Z0-9]{2,10}-[A-Z0-9]{8}$/;
+  const NEW3 = /^CC-[A-Z0-9]{2,6}-[A-Z0-9]{2,10}-[A-Z0-9]{8}$/;
+  const NEW2 = /^CC-[A-Z0-9]{2,10}-[A-Z0-9]{8}$/;
 
-  const ok = LEGACY.test(c) || NEW.test(c);
+  const ok = LEGACY.test(c) || NEW3.test(c) || NEW2.test(c);
   if (ok) return { normalized: c, ok: true, reason: null };
 
   if (!/^CC-/i.test(c)) return { normalized: c, ok: false, reason: "prefix" };
