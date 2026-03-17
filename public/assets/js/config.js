@@ -87,5 +87,5 @@ export function setTileSet(cardKey){
 export function tierIconSrc(tier){
   const t = String(tier || '').toLowerCase();
   const name = _CURRENT_TIER_ICON_MAP[t] || 'fantasy';
-  return `/assets/tiles/${TILE_SET}/${name}.svg`;
+  return `/assets/cards/naughty/${TILE_SET}/tiles/${name}.svg`;
 }
