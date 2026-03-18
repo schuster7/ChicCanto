@@ -3,7 +3,12 @@
     "allow": [
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(cp \"E:/Sites/ChicCanto/card-themes.js_20260318-140000.txt\" \"E:/Sites/ChicCanto/public/assets/js/card-themes.js\")",
+      "Bash(cp \"E:/Sites/ChicCanto/game-message.js_20260318-140000.txt\" \"E:/Sites/ChicCanto/public/assets/js/game-message.js\")",
+      "Bash(cp \"E:/Sites/ChicCanto/store.js_20260318-140000.txt\" \"E:/Sites/ChicCanto/public/assets/js/store.js\")",
+      "Bash(cp \"E:/Sites/ChicCanto/card.js_20260318-140000.txt\" \"E:/Sites/ChicCanto/public/assets/js/card.js\")",
+      "Bash(cp \"E:/Sites/ChicCanto/token_token.js_20260318-140000.txt\" \"E:/Sites/ChicCanto/functions/token/[token].js\")"
     ]
   }
 }
