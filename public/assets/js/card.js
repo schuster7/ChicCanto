@@ -2175,6 +2175,9 @@ export async function bootCard(){
       card0.revealed = false;
       card0.message = null;
       card0.visible_title = null;
+      card0.from_line = null;
+      card0.card_style = null;
+      card0.scratch_shape = null;
       card0.choice = null;
       card0.board = null;
       card0.scratched_indices = null;
@@ -2189,6 +2192,9 @@ export async function bootCard(){
         // Message cards: pre-fill with sample text for preview
         card0.visible_title = 'Your Title Here';
         card0.message = 'Your hidden message will appear here!';
+        card0.from_line = 'Sarah & Tom';
+        card0.card_style = (previewTheme && previewTheme.defaultStyle) || 'stardust';
+        card0.scratch_shape = (previewTheme && previewTheme.defaultShape) || 'heart';
         card0.configured = true;
         saveCard(card0);
       } else {
