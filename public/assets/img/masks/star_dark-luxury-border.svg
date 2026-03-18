@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+viewBox="0 0 356.484 407.397"
+preserveAspectRatio="xMidYMid meet">
+<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="0" y1="203.6983" x2="356.4836" y2="203.6983">
+	<stop  offset="0" style="stop-color:#D7AA2D"/>
+	<stop  offset="0.2127" style="stop-color:#D7AA2D"/>
+	<stop  offset="0.3867" style="stop-color:#F2E278"/>
+	<stop  offset="0.4771" style="stop-color:#FFFB9A"/>
+	<stop  offset="0.499" style="stop-color:#F9EE89"/>
+	<stop  offset="0.6172" style="stop-color:#D7AA2D"/>
+	<stop  offset="0.7125" style="stop-color:#C39729"/>
+	<stop  offset="0.9061" style="stop-color:#916720"/>
+	<stop  offset="1" style="stop-color:#764E1B"/>
+</linearGradient>
+<path fill="url(#SVGID_1_)" d="M178.242,3.698l61.167,95.142l113.833,4.858l-52.666,100l52.666,100l-113.833,4.858l-61.167,95.142
+	l-61.167-95.142L3.242,303.698l52.666-100l-52.666-100l113.833-4.858L178.242,3.698 M178.242,0l-1.682,2.617l-60.606,94.27
+	L3.157,101.7L0,101.835l1.472,2.795l52.175,99.068L1.472,302.766L0,305.562l3.157,0.135l112.797,4.814l60.606,94.27l1.682,2.617
+	l1.682-2.617l60.606-94.27l112.797-4.814l3.157-0.135l-1.472-2.795l-52.175-99.068l52.175-99.068l1.472-2.795l-3.157-0.135
+	L240.53,96.886l-60.606-94.27L178.242,0L178.242,0z"/>
+</svg>
