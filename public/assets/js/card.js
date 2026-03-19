@@ -956,7 +956,7 @@ function render(container, token, card){
 
   const params = new URLSearchParams(window.location.search);
   const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
-  const hasSetupAccess = PREVIEW_MODE ? true : !!(setupParam && card.setup_key && setupParam === card.setup_key);
+  const hasSetupAccess = PREVIEW_MODE ? false : !!(setupParam && card.setup_key && setupParam === card.setup_key);
 
   // If a setup param is present, cache it for this token so we can recover sender setup
   // even if the backend redacts setup_key in intermediate responses (KV propagation, etc.).
@@ -2195,7 +2195,7 @@ export async function bootCard(){
         card0.from_line = 'Sarah & Tom';
         card0.card_style = (previewTheme && previewTheme.defaultStyle) || 'stardust';
         card0.scratch_shape = (previewTheme && previewTheme.defaultShape) || 'heart';
-        card0.configured = false;
+        card0.configured = true;
         saveCard(card0);
       } else {
         setConfigured(token, { choice: pickRandomOption().key, reveal_amount: pickRandomOption().amount, fields: Number(card0.fields || 9) });
