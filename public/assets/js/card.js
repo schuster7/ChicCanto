@@ -2195,7 +2195,7 @@ export async function bootCard(){
         card0.from_line = 'Sarah & Tom';
         card0.card_style = (previewTheme && previewTheme.defaultStyle) || 'stardust';
         card0.scratch_shape = (previewTheme && previewTheme.defaultShape) || 'heart';
-        card0.configured = true;
+        card0.configured = false;
         saveCard(card0);
       } else {
         setConfigured(token, { choice: pickRandomOption().key, reveal_amount: pickRandomOption().amount, fields: Number(card0.fields || 9) });
