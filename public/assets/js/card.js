@@ -2292,6 +2292,10 @@ function applyPageTheme(cardKey, cardStyle){
 
     const root = document.documentElement;
 
+    // Set color mode for UI theming
+    const colorMode = theme.colorMode || 'dark';
+    root.dataset.colorMode = colorMode;
+
     if (theme.pageBg){
       root.style.setProperty('--page-bg', theme.pageBg);
       // If only pageBg is set, use it for both stops of the base gradient.

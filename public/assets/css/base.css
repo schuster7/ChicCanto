@@ -14,12 +14,74 @@
   font-display: swap;
 }
 
+/* ─── Color mode: light / dark ─────────────────────────────────── */
+/* Set via data-color-mode on <html>. Card pages switch dynamically. */
+[data-color-mode="light"] {
+  --ui-text: #1a1a2e;
+  --ui-text-soft: #3a3a4e;
+  --ui-muted: rgba(0, 0, 0, .55);
+  --ui-muted2: rgba(0, 0, 0, .38);
+  --ui-bg: #f5f3ef;
+  --ui-panel: rgba(255, 255, 255, .72);
+  --ui-panel-border: rgba(0, 0, 0, .08);
+  --ui-panel-hover: rgba(255, 255, 255, .85);
+  --ui-input-bg: rgba(255, 255, 255, .8);
+  --ui-input-border: rgba(0, 0, 0, .12);
+  --ui-input-focus: rgba(0, 0, 0, .25);
+  --ui-btn-bg: rgba(0, 0, 0, .04);
+  --ui-btn-border: rgba(0, 0, 0, .14);
+  --ui-btn-hover: rgba(0, 0, 0, .08);
+  --ui-btn-text: #1a1a2e;
+  --ui-btn-primary-bg: #1a1a2e;
+  --ui-btn-primary-text: #fff;
+  --ui-btn-primary-border: #1a1a2e;
+  --ui-btn-primary-hover: #2a2a3e;
+  --ui-link: #4a5578;
+  --ui-link-hover: #1a1a2e;
+  --ui-link-underline: rgba(0, 0, 0, .25);
+  --ui-divider: rgba(0, 0, 0, .08);
+  --ui-header-bg: rgba(255, 255, 255, .72);
+  --ui-header-border: rgba(0, 0, 0, .08);
+  --ui-footer-border: rgba(0, 0, 0, .08);
+  --ui-accent: #8a7450;
+}
+
+[data-color-mode="dark"] {
+  --ui-text: #eef0f6;
+  --ui-text-soft: #c0c4d0;
+  --ui-muted: rgba(238, 240, 246, .72);
+  --ui-muted2: rgba(238, 240, 246, .55);
+  --ui-bg: #05060a;
+  --ui-panel: rgba(18, 20, 28, .55);
+  --ui-panel-border: rgba(255, 255, 255, .10);
+  --ui-panel-hover: rgba(18, 20, 28, .65);
+  --ui-input-bg: rgba(0, 0, 0, .20);
+  --ui-input-border: rgba(255, 255, 255, .12);
+  --ui-input-focus: rgba(255, 255, 255, .25);
+  --ui-btn-bg: rgba(255, 255, 255, .05);
+  --ui-btn-border: rgba(255, 255, 255, .14);
+  --ui-btn-hover: rgba(255, 255, 255, .08);
+  --ui-btn-text: #eef0f6;
+  --ui-btn-primary-bg: linear-gradient(180deg, rgba(185, 161, 120, .22), rgba(185, 161, 120, .10));
+  --ui-btn-primary-text: #eef0f6;
+  --ui-btn-primary-border: rgba(185, 161, 120, .55);
+  --ui-btn-primary-hover: linear-gradient(180deg, rgba(185, 161, 120, .30), rgba(185, 161, 120, .12));
+  --ui-link: rgba(255, 255, 255, .86);
+  --ui-link-hover: rgba(255, 255, 255, .98);
+  --ui-link-underline: rgba(255, 255, 255, .35);
+  --ui-divider: rgba(255, 255, 255, .08);
+  --ui-header-bg: rgba(18, 22, 32, .34);
+  --ui-header-border: rgba(255, 255, 255, .14);
+  --ui-footer-border: rgba(238, 240, 246, .10);
+  --ui-accent: #b9a178;
+}
+
 :root {
   --bg0: #05060a;
   --bg1: #070816;
-  --text: #eef0f6;
-  --muted: rgba(238, 240, 246, .72);
-  --muted2: rgba(238, 240, 246, .55);
+  --text: var(--ui-text, #eef0f6);
+  --muted: var(--ui-muted, rgba(238, 240, 246, .72));
+  --muted2: var(--ui-muted2, rgba(238, 240, 246, .55));
 
   --accent: #b9a178;
   --accent2: #8dd6ff;
@@ -44,15 +106,15 @@
   --radius: 12px;
   --radius-sm: 16px;
 
-  --link-color: rgba(255, 255, 255, 0.86);
-  --link-hover: rgba(255, 255, 255, 0.98);
-  --link-underline: rgba(255, 255, 255, 0.35);
-  --link-focus: rgba(255, 255, 255, 0.28);
+  --link-color: var(--ui-link, rgba(255, 255, 255, 0.86));
+  --link-hover: var(--ui-link-hover, rgba(255, 255, 255, 0.98));
+  --link-underline: var(--ui-link-underline, rgba(255, 255, 255, 0.35));
+  --link-focus: var(--ui-link, rgba(255, 255, 255, 0.28));
 
-  --glass: rgba(18, 20, 28, .45);
-  --glass2: rgba(12, 14, 20, .28);
-  --stroke: rgba(255, 255, 255, .12);
-  --stroke2: rgba(255, 255, 255, .08);
+  --glass: var(--ui-panel, rgba(18, 20, 28, .45));
+  --glass2: var(--ui-panel, rgba(12, 14, 20, .28));
+  --stroke: var(--ui-panel-border, rgba(255, 255, 255, .12));
+  --stroke2: var(--ui-panel-border, rgba(255, 255, 255, .08));
   --shadow: 0 18px 60px rgba(0, 0, 0, .55);
   --shadow-soft: 0 10px 30px rgba(0, 0, 0, .35);
 
@@ -367,10 +429,8 @@ a.btn {
   width: min(var(--page-max), calc(100% - 44px));
   margin: var(--gap-xl) auto 0;
   border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, .14);
-  background: rgba(18, 22, 32, .34);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--ui-header-border, rgba(255, 255, 255, .14));
+  background: var(--ui-header-bg, rgba(18, 22, 32, .34));
   overflow: hidden;
 }
 
@@ -418,7 +478,7 @@ a.btn {
 }
 
 .nav-link {
-  color: rgba(238, 240, 246, .72);
+  color: var(--ui-muted);
   text-decoration: none;
   font-size: var(--fs-sm);
   padding: 10px 10px;
@@ -427,7 +487,7 @@ a.btn {
 
 .nav-link:hover {
   color: var(--text);
-  background: rgba(255, 255, 255, .06);
+  background: var(--ui-btn-hover, rgba(255, 255, 255, .06));
 }
 
 .site-actions {
@@ -471,10 +531,8 @@ a.btn {
 .panel--glass,
 .glass {
   border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, .14);
-  background: rgba(18, 22, 32, .34);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--ui-panel-border, rgba(255, 255, 255, .14));
+  background: var(--ui-panel, rgba(18, 20, 28, .55));
   overflow: hidden;
 }
 
@@ -496,17 +554,15 @@ a.btn {
 
 /* Slightly stronger glass */
 .panel--glass-strong {
-  background: linear-gradient(180deg, rgba(18, 20, 28, .68), rgba(10, 12, 18, .30));
-  border: 1px solid rgba(255, 255, 255, .14);
+  background: var(--ui-panel, rgba(18, 20, 28, .55));
+  border: 1px solid var(--ui-panel-border, rgba(255, 255, 255, .14));
   box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
 }
 
 /* Optional internal panel sections */
 .panel__header {
   padding: 14px var(--gap-xl) 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, .10);
+  border-bottom: 1px solid var(--ui-divider, rgba(255, 255, 255, .10));
 }
 
 .panel__body {
@@ -515,7 +571,7 @@ a.btn {
 
 .panel__footer {
   padding: 12px var(--gap-xl) var(--gap-xl);
-  border-top: 1px solid rgba(255, 255, 255, .10);
+  border-top: 1px solid var(--ui-divider, rgba(255, 255, 255, .10));
 }
 
 
@@ -822,7 +878,7 @@ body[data-page="landing"] {
 }
 
 label {
-  color: rgba(238, 240, 246, .70);
+  color: var(--ui-muted, rgba(238, 240, 246, .70));
   font-size: var(--fs-xs);
 }
 
@@ -862,9 +918,9 @@ textarea::placeholder {
 .input {
   border-radius: var(--radius);
   padding: 14px 14px;
-  border: 1px solid rgba(255, 255, 255, .12);
+  border: 1px solid var(--ui-input-border, rgba(255, 255, 255, .12));
   color: var(--text);
-  background: rgba(0, 0, 0, .20);
+  background: var(--ui-input-bg, rgba(0, 0, 0, .20));
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -872,7 +928,7 @@ textarea::placeholder {
 
 .input:focus {
   outline: none;
-  border: 1px solid rgba(255, 255, 255, .25);
+  border: 1px solid var(--ui-input-focus, rgba(255, 255, 255, .25));
 }
 
 .mono {
@@ -888,9 +944,9 @@ textarea::placeholder {
   gap: var(--gap);
   padding: 12px 16px;
   border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, .14);
-  background: rgba(255, 255, 255, .05);
-  color: var(--text);
+  border: 1px solid var(--ui-btn-border, rgba(255, 255, 255, .14));
+  background: var(--ui-btn-bg, rgba(255, 255, 255, .05));
+  color: var(--ui-btn-text, var(--text));
   text-decoration: none;
   -webkit-appearance: none;
   appearance: none;
@@ -915,16 +971,17 @@ button.btn::-moz-focus-inner {
 
 
 .btn:hover {
-  background: rgba(255, 255, 255, .08);
+  background: var(--ui-btn-hover, rgba(255, 255, 255, .08));
 }
 
 .btn.primary {
-  border-color: rgba(185, 161, 120, .55);
-  background: linear-gradient(180deg, rgba(185, 161, 120, .22), rgba(185, 161, 120, .10));
+  border-color: var(--ui-btn-primary-border, rgba(185, 161, 120, .55));
+  background: var(--ui-btn-primary-bg, linear-gradient(180deg, rgba(185, 161, 120, .22), rgba(185, 161, 120, .10)));
+  color: var(--ui-btn-primary-text, var(--text));
 }
 
 .btn.primary:hover {
-  background: linear-gradient(180deg, rgba(185, 161, 120, .30), rgba(185, 161, 120, .12));
+  background: var(--ui-btn-primary-hover, linear-gradient(180deg, rgba(185, 161, 120, .30), rgba(185, 161, 120, .12)));
 }
 
 .btn.ghost {
@@ -953,7 +1010,7 @@ button.btn::-moz-focus-inner {
 
 .hr {
   height: 1px;
-  background: rgba(255, 255, 255, .08);
+  background: var(--ui-divider, rgba(255, 255, 255, .08));
   margin: 12px 0;
 }
 
@@ -1765,7 +1822,7 @@ button.btn::-moz-focus-inner {
 .site-footer{
   margin-top: 28px;
   padding: 18px 0 26px;
-  border-top: 1px solid rgba(238, 240, 246, .10);
+  border-top: 1px solid var(--ui-footer-border, rgba(238, 240, 246, .10));
 }
 .site-footer__inner{
   max-width: var(--page-max);

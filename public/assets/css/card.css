@@ -903,32 +903,6 @@ border-radius: var(--scratch-tile-radius);
   margin-top: 0.25rem;
 }
 
-/* --- Light theme overrides for message cards --- */
-/* Applied when page background is light (via per-card page theme).
-   The glass panels need darker tints on light backgrounds. */
-.msg-setup__controls{
-  --glass: rgba(255, 255, 255, .65);
-  --stroke: rgba(0, 0, 0, .12);
-  --text: #2a2a2a;
-  --muted: rgba(0, 0, 0, .55);
-  --muted2: rgba(0, 0, 0, .40);
-  --accent: #b9a178;
-}
-.msg-setup__controls .btn{
-  color: #2a2a2a;
-  border-color: rgba(0, 0, 0, .18);
-}
-.msg-setup__controls .btn.primary{
-  background: #2a2a2a;
-  color: #fff;
-  border-color: #2a2a2a;
-}
-.msg-setup__controls .btn.primary:disabled{
-  background: rgba(0,0,0,.15);
-  color: rgba(0,0,0,.35);
-  border-color: transparent;
-}
-
 
 /* =================================================================
    Custom card v2: style picker, shape picker, from-line, border ring
