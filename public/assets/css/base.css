@@ -44,6 +44,10 @@
   --ui-header-border: rgba(0, 0, 0, .08);
   --ui-footer-border: rgba(0, 0, 0, .08);
   --ui-accent: #8a7450;
+  --ui-surface: #ffffff;
+  --ui-surface-alt: #f5f3f0;
+  --ui-placeholder: #a0a0b0;
+  --ui-border: rgba(0, 0, 0, .08);
 }
 
 [data-color-mode="dark"] {
@@ -74,6 +78,10 @@
   --ui-header-border: rgba(255, 255, 255, .14);
   --ui-footer-border: rgba(238, 240, 246, .10);
   --ui-accent: #b9a178;
+  --ui-surface: rgba(18, 20, 28, .90);
+  --ui-surface-alt: rgba(0, 0, 0, .18);
+  --ui-placeholder: rgba(255, 255, 255, .42);
+  --ui-border: rgba(255, 255, 255, .08);
 }
 
 :root {
@@ -1140,7 +1148,7 @@ button.btn::-moz-focus-inner {
 .flow-panel--combined .flow-section+.flow-section {
   margin-top: 18px;
   padding-top: 18px;
-  border-top: 1px solid var(--ui-divider, rgba(255, 255, 255, .10));
+  border-top: 1px solid var(--ui-border);
 }
 
 
@@ -1596,8 +1604,8 @@ button.btn::-moz-focus-inner {
 .choice-grid .btn {
   padding: 12px 14px;
   border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, .14);
-  background: rgba(255, 255, 255, .06);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
   color: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -1605,8 +1613,8 @@ button.btn::-moz-focus-inner {
 }
 
 .choice-grid .btn:hover {
-  background: rgba(255, 255, 255, .10);
-  border-color: rgba(255, 255, 255, .22);
+  background: var(--ui-surface-alt);
+  border-color: var(--ui-text);
 }
 
 .choice-grid .btn:active {
@@ -1627,8 +1635,8 @@ button.btn::-moz-focus-inner {
 .sharebar__url {
   border-radius: var(--radius);
   padding: 14px 14px;
-  border: 1px solid rgba(255, 255, 255, .12);
-  background: rgba(0, 0, 0, .20);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -2059,9 +2067,9 @@ button.btn::-moz-focus-inner {
 
 [data-page="fulfill"] .flow-panel.fulfill-panel {
   border-radius: 22px;
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(4, 8, 18, .90);
-  box-shadow: 0 8px 30px rgba(0,0,0,.18);
+  border: 1px solid var(--ui-border, rgba(0,0,0,.08));
+  background: var(--ui-surface, #fff);
+  box-shadow: none;
   padding: 18px;
 }
 
@@ -2084,23 +2092,22 @@ button.btn::-moz-focus-inner {
 [data-page="fulfill"] .fulfill-panel .textarea {
   min-height: 54px;
   border-radius: 16px;
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.04);
-  color: #fff;
+  border: 1px solid var(--ui-border, rgba(0,0,0,.08));
+  background: var(--ui-surface, #fff);
+  color: var(--ui-text, #1a1a2e);
   box-shadow: none;
 }
 
 [data-page="fulfill"] .fulfill-panel .input::placeholder,
 [data-page="fulfill"] .fulfill-panel .textarea::placeholder {
-  color: rgba(255,255,255,.42);
+  color: var(--ui-placeholder, #a0a0b0);
 }
 
 [data-page="fulfill"] .fulfill-panel .input:focus,
 [data-page="fulfill"] .fulfill-panel .select:focus,
 [data-page="fulfill"] .fulfill-panel .textarea:focus {
-  border-color: rgba(255,255,255,.18);
+  border-color: var(--ui-text, #1a1a2e);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255,255,255,.05);
 }
 
 [data-page="fulfill"] .fulfill-panel #assignBtn {
@@ -2139,7 +2146,7 @@ button.btn::-moz-focus-inner {
 [data-page="fulfill"] .fulfill-message-head .h2 {
   font-size: 1.05rem;
   font-weight: 550;
-  color: rgba(255,255,255,.82);
+  color: var(--ui-text);
 }
 
 [data-page="fulfill"] .fulfill-message-head .btn {
@@ -2160,7 +2167,7 @@ button.btn::-moz-focus-inner {
 
 [data-page="fulfill"] .fulfill-panel .footnote {
   margin: 0;
-  color: rgba(255,255,255,.60);
+  color: var(--ui-muted);
 }
 
 @media (max-width: 860px) {
@@ -2193,19 +2200,6 @@ button.btn::-moz-focus-inner {
 
 
 
-.fulfill-panel .btn,
-.fulfill-panel .btn.primary,
-.fulfill-panel .btn.outline {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.14);
-  color: #fff;
-}
-
-.fulfill-panel .btn:hover,
-.fulfill-panel .btn.primary:hover,
-.fulfill-panel .btn.outline:hover {
-  background: rgba(255,255,255,0.08);
-}
 
 .fulfill-message-head .kicker { display: none; }
 
@@ -2246,27 +2240,13 @@ button.btn::-moz-focus-inner {
 }
 
 [data-page="fulfill"] .flow-panel__hint {
-  color: rgba(255,255,255,.72);
+  color: var(--ui-muted);
   font-size: 13px;
   letter-spacing: .01em;
 }
 
-[data-page="fulfill"] .fulfill-panel .btn,
-[data-page="fulfill"] .fulfill-panel .btn.primary,
-[data-page="fulfill"] .fulfill-panel .btn.outline {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.14);
-  color: #fff;
-}
-
-[data-page="fulfill"] .fulfill-panel .btn:hover,
-[data-page="fulfill"] .fulfill-panel .btn.primary:hover,
-[data-page="fulfill"] .fulfill-panel .btn.outline:hover {
-  background: rgba(255,255,255,.08);
-}
-
 [data-page="fulfill"] .fulfill-message-head .h2 {
-  color: rgba(255,255,255,.9);
+  color: var(--ui-text);
 }
 
 [data-page="fulfill"] .fulfill-message-box {
@@ -2335,13 +2315,13 @@ button.btn::-moz-focus-inner {
 
 
 [data-page="fulfill"] select.select {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 /* Dropdown list styling (browser support varies) */
 [data-page="fulfill"] select.select option {
-  background-color: rgba(4, 8, 18, .98);
-  color: rgba(238, 240, 246, .96);
+  background-color: var(--ui-surface, #fff);
+  color: var(--ui-text);
   padding: 10px 14px;
 }
 
@@ -2386,16 +2366,16 @@ button.btn::-moz-focus-inner {
   gap: 12px;
   padding: 18px 18px;
   border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(10, 14, 24, .55);
-  color: rgba(238, 240, 246, .96);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface, #fff);
+  color: var(--ui-text);
   cursor: pointer;
 }
 
 [data-page="fulfill"] .cselect__btn:focus {
   outline: none;
-  border-color: rgba(255,255,255,.22);
-  box-shadow: 0 0 0 4px rgba(255,255,255,.06);
+  border-color: var(--ui-text);
+  box-shadow: none;
 }
 
 [data-page="fulfill"] .cselect__value {
@@ -2417,9 +2397,9 @@ button.btn::-moz-focus-inner {
   z-index: 50;
   padding: 10px;
   border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(6, 8, 14, .98);
-  box-shadow: 0 18px 60px rgba(0,0,0,.55);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface, #fff);
+  box-shadow: 0 8px 24px rgba(0,0,0,.10);
   display: none;
 }
 
@@ -2432,7 +2412,7 @@ button.btn::-moz-focus-inner {
   text-align: left;
   border: 0;
   background: transparent;
-  color: rgba(238, 240, 246, .96);
+  color: var(--ui-text);
   padding: 14px 14px;
   border-radius: 14px;
   cursor: pointer;
@@ -2454,7 +2434,7 @@ button.btn::-moz-focus-inner {
 
 
 [data-page="fulfill"] .cselect.is-empty .cselect__value {
-  color: rgba(238, 240, 246, .55);
+  color: var(--ui-muted);
 }
 
 /* ---------------------------------------------------------------
@@ -2499,14 +2479,14 @@ button.btn::-moz-focus-inner {
 
 [data-page="redeem"] .flow-intro .flow-lead.panel-meta {
   margin: 0;
-  color: var(--ui-text-soft, rgba(255,255,255,.78));
+  color: var(--ui-muted);
   max-width: 60ch;
 }
 
 [data-page="redeem"] .flow-panel--combined.panel--glass {
   border-radius: 22px;
-  border: 1px solid var(--ui-panel-border, rgba(255,255,255,.08));
-  background: var(--ui-panel, rgba(4, 8, 18, .90));
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
   box-shadow: 0 8px 30px rgba(0,0,0,.18);
   padding: 18px;
 }
@@ -2537,11 +2517,9 @@ button.btn::-moz-focus-inner {
 
 [data-page="card"] .card-setup-panel {
   border-radius: 22px;
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(4, 8, 18, .90);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
   box-shadow: 0 8px 30px rgba(0,0,0,.18);
-  backdrop-filter: blur(var(--legend-panel-blur, 6px));
-  -webkit-backdrop-filter: blur(var(--legend-panel-blur, 6px));
 }
 
 [data-page="card"] .card-setup-panel .card-preview {
@@ -2549,7 +2527,7 @@ button.btn::-moz-focus-inner {
 }
 
 [data-page="card"] .card-setup-panel .card-preview__title {
-  color: rgba(255,255,255,.92);
+  color: var(--ui-text);
 }
 
 [data-page="card"] .card-setup-note {
@@ -2569,11 +2547,9 @@ button.btn::-moz-focus-inner {
 
 [data-page="card"] .setup-unified {
   border-radius: 22px;
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(4, 8, 18, .90);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
   box-shadow: 0 8px 30px rgba(0,0,0,.18);
-  backdrop-filter: blur(var(--legend-panel-blur, 6px));
-  -webkit-backdrop-filter: blur(var(--legend-panel-blur, 6px));
 }
 
 [data-page="card"] .setup-grid {
@@ -2627,8 +2603,8 @@ button.btn::-moz-focus-inner {
 
 [data-page="card"] .mini-panel {
   border-radius: 4px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.18);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface-alt);
   padding: 16px 16px;
 }
 
@@ -2636,7 +2612,7 @@ button.btn::-moz-focus-inner {
   font-size: 12px;
   letter-spacing: .32em;
   text-transform: uppercase;
-  color: rgba(255,255,255,.55);
+  color: var(--ui-muted);
   margin-bottom: 8px;
 }
 
@@ -2658,26 +2634,6 @@ button.btn::-moz-focus-inner {
 
 [data-page="card"] .btn.w-full {
   width: 100%;
-}
-
-[data-page="card"] .btn.outline {
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.10);
-  color: rgba(255,255,255,.90);
-}
-
-[data-page="card"] .btn.outline:hover {
-  background: rgba(255,255,255,.10);
-}
-
-[data-page="card"] .btn.primary {
-  background: rgba(255,255,255,1);
-  color: rgba(0,0,0,.90);
-  border: 0;
-}
-
-[data-page="card"] .btn.primary:hover {
-  background: rgba(255,255,255,.92);
 }
 
 /* ---------------------------------------------------------------
@@ -2758,12 +2714,12 @@ button.btn::-moz-focus-inner {
 .cc-modal__panel{
   position: relative;
   width: min(520px, 100%);
-  background: rgba(18,18,18,0.96);
-  border: 1px solid rgba(255,255,255,0.10);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
   border-radius: 16px;
   box-shadow: 0 18px 50px rgba(0,0,0,0.55);
   padding: 22px 20px 18px;
-  color: #fff;
+  color: var(--ui-text);
   text-align: center;
 }
 
