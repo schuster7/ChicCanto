@@ -175,7 +175,7 @@ export const CARD_THEMES = {
     titlePlaceholder: 'Your title here...',
     titleMaxLength: 92,
     fromMaxLength: 60,
-    fromPlaceholder: 'e.g. Sarah & Tom',
+    fromPlaceholder: 'From Sarah & Tom',
 
     // Default style/shape (used when card record has no card_style/scratch_shape yet)
     defaultStyle: 'stardust',
@@ -295,15 +295,11 @@ export const CARD_THEMES = {
         titleFont: "'Cormorant Garamond', serif",
         titleWeight: '500',
         titleColor: '#c9a84c',
-        titleTransform: 'uppercase',
-        titleLetterSpacing: '0.08em',
         // From line styling
         fromFont: "'Cormorant Garamond', serif",
         fromWeight: '500',
         fromColor: '#c9a84c',
         fromStyle: 'normal',
-        fromTransform: 'uppercase',
-        fromLetterSpacing: '0.08em',
         // Message under scratch
         messageColor: '#c9a84c',
         messageBg: '#0a0a0a',

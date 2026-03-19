@@ -106,15 +106,25 @@ function paintFoilBase(ctx, rect, pal){
 }
 
 
-function paintHintText(ctx, rect, pal){
+function paintHintText(ctx, rect, pal, hintStyle){
+  if (hintStyle === 'none') return;
   ctx.fillStyle = pal.text;
-  ctx.font = '700 12px ui-sans-serif, system-ui';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('scratch', rect.width/2, rect.height/2);
+  if (hintStyle === 'thin'){
+    ctx.font = '400 11px Inter, ui-sans-serif, system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.letterSpacing = '0.3em';
+    ctx.fillText('SCRATCH', rect.width/2, rect.height/2);
+    ctx.letterSpacing = '0px';
+  } else {
+    ctx.font = '700 12px ui-sans-serif, system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('scratch', rect.width/2, rect.height/2);
+  }
 }
 
-function paintCover(ctx, rect, { sheenX = null } = {}){
+function paintCover(ctx, rect, { sheenX = null, hintStyle } = {}){
   ctx.save();
 
   const pal = getFoilPalette();
@@ -147,7 +157,7 @@ function paintCover(ctx, rect, { sheenX = null } = {}){
   }
 
   // Hint text
-  paintHintText(ctx, rect, pal);
+  paintHintText(ctx, rect, pal, hintStyle);
 
   ctx.restore();
 }
@@ -166,7 +176,7 @@ function percentCleared(canvas){
   return cleared / total;
 }
 
-export function attachScratchTile(canvas, { onScratched }){
+export function attachScratchTile(canvas, { onScratched, hintStyle }){
   let isDown = false;
   let scratched = false;
   let hasInteracted = false;
@@ -174,7 +184,7 @@ export function attachScratchTile(canvas, { onScratched }){
   let lastClientY = 0;
 
   let { ctx, rect } = resizeCanvasToElement(canvas);
-  paintCover(ctx, rect);
+  paintCover(ctx, rect, { hintStyle });
 
   // Begin loading brush immediately (non-blocking)
   ensureBrush();
@@ -206,7 +216,7 @@ export function attachScratchTile(canvas, { onScratched }){
       const x = startX + (endX - startX) * p;
 
       // Redraw full cover each frame (only while untouched).
-      paintCover(ctx, rect, { sheenX: x });
+      paintCover(ctx, rect, { sheenX: x, hintStyle });
 
       rafId = requestAnimationFrame(loop);
     };
@@ -329,7 +339,7 @@ export function attachScratchTile(canvas, { onScratched }){
       return;
     }
 
-    paintCover(ctx, rect);
+    paintCover(ctx, rect, { hintStyle });
     if (!hasInteracted) startSheen();
   });
 
@@ -339,7 +349,7 @@ export function attachScratchTile(canvas, { onScratched }){
       scratched = false;
       isDown = false;
       hasInteracted = false;
-      paintCover(ctx, rect);
+      paintCover(ctx, rect, { hintStyle });
       startSheen();
     },
     forceReveal(){

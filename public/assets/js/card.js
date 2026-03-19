@@ -1905,7 +1905,7 @@ function renderScratch(root, card){
     boardEl.appendChild(el);
 
     const canvas = el.querySelector('canvas');
-    tileCtrls[i] = attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el) });
+    tileCtrls[i] = attachScratchTile(canvas, { onScratched: () => onTileScratched(i, el), hintStyle: 'none' });
     if (scratched[i]){
       el.classList.add('done');
       // Hide the canvas immediately so the foil never flashes on screen.

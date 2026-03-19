@@ -44,8 +44,6 @@ function _styleTitleEl(el, resolved){
   if (resolved.titleFont)  el.style.fontFamily = resolved.titleFont;
   if (resolved.titleWeight) el.style.fontWeight = resolved.titleWeight;
   if (resolved.titleColor) el.style.color = resolved.titleColor;
-  if (resolved.titleTransform) el.style.textTransform = resolved.titleTransform;
-  if (resolved.titleLetterSpacing) el.style.letterSpacing = resolved.titleLetterSpacing;
 }
 
 /** Apply inline from-line styling from resolved theme. */
@@ -55,8 +53,6 @@ function _styleFromEl(el, resolved){
   if (resolved.fromWeight) el.style.fontWeight = resolved.fromWeight;
   if (resolved.fromColor)  el.style.color = resolved.fromColor;
   if (resolved.fromStyle)  el.style.fontStyle = resolved.fromStyle;
-  if (resolved.fromTransform) el.style.textTransform = resolved.fromTransform;
-  if (resolved.fromLetterSpacing) el.style.letterSpacing = resolved.fromLetterSpacing;
 }
 
 /** Apply mask shape to an element. */
@@ -70,11 +66,6 @@ function _applyMask(el, maskUrl){
 function _borderRingHtml(resolved){
   if (!resolved || !resolved.borderRingSrc) return '';
   return `<img class="msg-card__border-ring" src="${resolved.borderRingSrc}" alt="" draggable="false" aria-hidden="true">`;
-}
-
-/** Build the "SCRATCH" overlay SVG element. */
-function _scratchOverlayHtml(){
-  return `<img class="msg-card__scratch-word" src="/assets/img/overlay-word.svg" alt="" draggable="false" aria-hidden="true">`;
 }
 
 
@@ -149,7 +140,6 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
               ${_borderRingHtml(resolved)}
               <div class="msg-card__foil-preview"></div>
               <div class="msg-card__message-preview" data-empty-label="${msgPlaceholder}"></div>
-              ${_scratchOverlayHtml()}
             </div>
             <div class="msg-card__from-preview"></div>
           </div>
@@ -178,7 +168,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
 
         <div class="msg-setup__field">
           <div class="msg-setup__field-header">
-            <label for="msgFrom">From (optional):</label>
+            <label for="msgFrom">Sign-off (hidden if left empty):</label>
             <span class="msg-setup__counter"><span id="fromCount">${maxFrom - existingFrom.length}</span> characters available</span>
           </div>
           <input type="text" id="msgFrom" class="msg-setup__input" maxlength="${maxFrom}" placeholder="${fromPlaceholder}" value="${_escHtml(existingFrom)}" ${isConfigured ? 'disabled' : ''}>
@@ -322,7 +312,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
       msgPreview.classList.toggle('is-empty', !msg);
     }
     if (fromPreview){
-      fromPreview.textContent = from ? `From ${from}` : '';
+      fromPreview.textContent = from ? `${from}` : '';
       fromPreview.classList.toggle('is-hidden', !from);
     }
     if (titleCounter) titleCounter.textContent = String(maxTitle - title.length);
@@ -446,9 +436,8 @@ export function renderMessageScratch(root, card){
               <div class="msg-card__scratch-tile" id="msgScratchTile">
                 <canvas id="msgScratchCanvas"></canvas>
               </div>
-              ${_scratchOverlayHtml()}
             </div>
-            ${fromLine ? `<div class="msg-card__from-line">From ${_escHtml(fromLine)}</div>` : ''}
+            ${fromLine ? `<div class="msg-card__from-line">${_escHtml(fromLine)}</div>` : ''}
           </div>
         </div>
       </div>
@@ -482,7 +471,8 @@ export function renderMessageScratch(root, card){
   attachScratchTile(canvas, {
     onScratched: () => {
       _onScratchComplete(root, card, resolved);
-    }
+    },
+    hintStyle: 'thin'
   });
 }
 
@@ -517,17 +507,9 @@ async function _onScratchComplete(root, card, resolved){
     tileEl.style.opacity = '0';
   }
 
-  // Hide the SCRATCH overlay word too
-  const wordEl = root.querySelector('.msg-card__scratch-word');
-  if (wordEl){
-    wordEl.style.transition = 'opacity 600ms ease';
-    wordEl.style.opacity = '0';
-  }
-
   // Show the message clearly after foil fades
   setTimeout(() => {
     if (tileEl) tileEl.style.display = 'none';
-    if (wordEl) wordEl.style.display = 'none';
     const msgEl = root.querySelector('.msg-card__under-message');
     if (msgEl) msgEl.classList.add('is-revealed');
   }, 650);
@@ -560,7 +542,7 @@ export function renderMessageRevealed(root, card){
               ${_borderRingHtml(resolved)}
               <div class="msg-card__under-message is-revealed">${_escHtml(message)}</div>
             </div>
-            ${fromLine ? `<div class="msg-card__from-line">From ${_escHtml(fromLine)}</div>` : ''}
+            ${fromLine ? `<div class="msg-card__from-line">${_escHtml(fromLine)}</div>` : ''}
           </div>
         </div>
       </div>
