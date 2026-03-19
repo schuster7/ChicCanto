@@ -263,7 +263,7 @@ a:visited {
 a:hover,
 a:focus-visible {
   color: var(--link-hover);
-  text-decoration-color: rgba(255, 255, 255, .65);
+  text-decoration-color: currentColor;
 }
 
 
@@ -333,6 +333,22 @@ body::after {
   }
 }
 
+/* Light mode: kill dark background layers */
+[data-color-mode="light"] body,
+html[data-color-mode="light"] body {
+  background-image: none;
+  background-color: var(--ui-bg, #f5f3ef);
+}
+
+[data-color-mode="light"] body::before,
+[data-color-mode="light"] body::after {
+  display: none;
+}
+
+/* Light mode: invert the header logo */
+[data-color-mode="light"] .brand__logo {
+  filter: brightness(0);
+}
 
 a {
   color: var(--link-color);
@@ -1124,7 +1140,7 @@ button.btn::-moz-focus-inner {
 .flow-panel--combined .flow-section+.flow-section {
   margin-top: 18px;
   padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, .10);
+  border-top: 1px solid var(--ui-divider, rgba(255, 255, 255, .10));
 }
 
 
@@ -2290,7 +2306,7 @@ button.btn::-moz-focus-inner {
   font-size: 12px;
   letter-spacing: .22em;
   text-transform: uppercase;
-  color: rgba(255,255,255,.62);
+  color: var(--ui-muted);
 }
 
 .panel-meta {
@@ -2299,7 +2315,7 @@ button.btn::-moz-focus-inner {
   justify-content: space-between;
   gap: 12px;
   font-size: 12px;
-  color: rgba(255,255,255,.62);
+  color: var(--ui-muted);
   margin-bottom: 14px;
 }
 
@@ -2483,18 +2499,16 @@ button.btn::-moz-focus-inner {
 
 [data-page="redeem"] .flow-intro .flow-lead.panel-meta {
   margin: 0;
-  color: rgba(255,255,255,.78);
+  color: var(--ui-text-soft, rgba(255,255,255,.78));
   max-width: 60ch;
 }
 
 [data-page="redeem"] .flow-panel--combined.panel--glass {
   border-radius: 22px;
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(4, 8, 18, .90);
+  border: 1px solid var(--ui-panel-border, rgba(255,255,255,.08));
+  background: var(--ui-panel, rgba(4, 8, 18, .90));
   box-shadow: 0 8px 30px rgba(0,0,0,.18);
   padding: 18px;
-  backdrop-filter: blur(var(--legend-panel-blur, 6px));
-  -webkit-backdrop-filter: blur(var(--legend-panel-blur, 6px));
 }
 
 [data-page="redeem"] .panel-kicker {
