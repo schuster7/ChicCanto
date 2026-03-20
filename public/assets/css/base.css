@@ -1000,6 +1000,13 @@ button.btn::-moz-focus-inner {
   cursor: not-allowed;
 }
 
+.btn.outline.is-selected,
+.btn.outline.is-selected:disabled {
+  background: #ffffff;
+  color: #67676d;
+  opacity: 1;
+}
+
 .btn:disabled {
   background: #ffffff;
   color: #a7a5af;
@@ -1615,7 +1622,8 @@ button.btn::-moz-focus-inner {
   opacity: 1;
 }
 
-.choice-grid .btn.is-selected {
+.choice-grid .btn.is-selected,
+.choice-grid .btn.is-selected:disabled {
   background: #ffffff;
   color: #67676d;
   opacity: 1;
