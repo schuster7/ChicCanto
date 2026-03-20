@@ -2139,6 +2139,11 @@ function renderRevealed(root, card){
 }
 
 export async function bootCard(){
+  // Landing page stays dark
+  if (document.body.dataset.page === 'landing') {
+    document.documentElement.dataset.colorMode = 'dark';
+  }
+
   const container = qs('#app');
 
   const params = new URLSearchParams(window.location.search);
@@ -2310,6 +2315,21 @@ function applyPageTheme(cardKey, cardStyle){
 
     if (theme.pageGlowAOpacity != null) root.style.setProperty('--page-glow-a-opacity', String(theme.pageGlowAOpacity));
     if (theme.pageGlowBOpacity != null) root.style.setProperty('--page-glow-b-opacity', String(theme.pageGlowBOpacity));
+
+    // For dark mode cards, restore dark body background and show glow layers
+    if (colorMode === 'dark') {
+      document.body.style.backgroundColor = theme.pageBg || '#05060a';
+      document.body.style.backgroundImage = `url("/assets/img/noise.png"), radial-gradient(1100px 800px at 18% 22%, var(--page-glow-a1), transparent 62%), radial-gradient(1000px 760px at 82% 18%, var(--page-glow-a2), transparent 60%), radial-gradient(900px 700px at 55% 80%, var(--page-glow-a3), transparent 62%), linear-gradient(180deg, var(--page-bg1), var(--page-bg))`;
+      // Restore dark mode text/UI colors
+      root.style.setProperty('--text', '#eef0f6');
+      root.style.setProperty('--muted', 'rgba(238, 240, 246, .72)');
+      root.style.setProperty('--link-color', 'rgba(255, 255, 255, .86)');
+      root.style.setProperty('--link-hover', 'rgba(255, 255, 255, .98)');
+      root.style.setProperty('--link-underline', 'rgba(255, 255, 255, .35)');
+      root.style.setProperty('--glass', 'rgba(18, 20, 28, .45)');
+      root.style.setProperty('--stroke', 'rgba(255, 255, 255, .12)');
+      root.style.setProperty('--shadow', '0 18px 60px rgba(0, 0, 0, .55)');
+    }
   }catch{}
 }
 
