@@ -8,7 +8,7 @@ function setStatus(msg, isErr=false){
   const el = byId('status');
   if (!el) return;
   el.textContent = msg || '';
-  el.style.color = isErr ? '#ff6961' : '#c7f0c2';
+  el.style.color = isErr ? '#cc526f' : '#52ccac';
 }
 
 function setAssigned(code){

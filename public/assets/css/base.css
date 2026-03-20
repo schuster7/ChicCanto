@@ -907,7 +907,8 @@ textarea {
 /* Optional: make placeholders less loud */
 input::placeholder,
 textarea::placeholder {
-  opacity: 0.55;
+  color: #8a8a96;
+  opacity: 1;
 }
 
 .input {
@@ -2030,9 +2031,6 @@ button.btn::-moz-focus-inner {
 
 [data-page="fulfill"] .fulfill-hero h1 {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.02;
-  letter-spacing: -0.02em;
 }
 
 [data-page="fulfill"] .fulfill-hero .lead {
@@ -2493,8 +2491,6 @@ button.btn::-moz-focus-inner {
 }
 
 [data-page="redeem"] #redeemBtn {
-  min-height: 56px;
-  border-radius: 18px;
   width: 100%;
 }
 
