@@ -986,6 +986,15 @@ button.btn::-moz-focus-inner {
   border: none;
 }
 
+.btn.outline {
+  background: #d4d4dd;
+  color: #67676d;
+  border: none;
+}
+.btn.outline:hover {
+  background: #ffffff;
+}
+
 .btn:disabled {
   background: #ffffff;
   color: #a7a5af;
@@ -1629,21 +1638,6 @@ button.btn::-moz-focus-inner {
   gap: var(--gap);
 }
 
-.sharebar__actions .btn {
-  padding: 10px 14px;
-  border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, .14);
-  background: rgba(255, 255, 255, .06);
-  color: inherit;
-  font-weight: 650;
-  cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
-}
-
-.sharebar__actions .btn:hover {
-  background: rgba(255, 255, 255, .10);
-  border-color: rgba(255, 255, 255, .22);
-}
 
 .sharebar__lock {
   display: flex;
