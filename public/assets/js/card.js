@@ -1336,8 +1336,12 @@ function _ensureCancelModal(){
 
     // Lock setup after first configuration so the outcome can't be changed accidentally.
     setChoiceButtonsEnabled(false);
-    // Mark the selected prize button (but not for random/surprise picks — keep it secret)
-    if (displayChoice !== RANDOM_KEY) {
+    // Mark the selected button
+    if (displayChoice === RANDOM_KEY) {
+      // Mark the Surprise me button itself
+      const surpriseBtn = root.querySelector(`button[data-choice="${RANDOM_KEY}"]`);
+      if (surpriseBtn) surpriseBtn.classList.add('is-selected');
+    } else {
       const selectedBtn = root.querySelector(`button[data-choice="${choice}"]`);
       if (selectedBtn) selectedBtn.classList.add('is-selected');
     }
