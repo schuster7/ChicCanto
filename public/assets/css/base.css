@@ -991,8 +991,13 @@ button.btn::-moz-focus-inner {
   color: #67676d;
   border: none;
 }
-.btn.outline:hover {
+.btn.outline:hover:not(:disabled) {
   background: #ffffff;
+}
+.btn.outline:disabled {
+  background: #d4d4dd;
+  color: #a7a5af;
+  cursor: not-allowed;
 }
 
 .btn:disabled {
