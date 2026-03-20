@@ -1404,9 +1404,10 @@ function _ensureCancelModal(){
           try{ clearInterval(pending.interval); }catch{}
           const finalChoice = pending.choice;
           const finalChosen = pending.chosen;
+          const finalDisplayChoice = pending.displayChoice;
           pending = null;
           try{ if (_cancelModal) _cancelModal.close(); }catch{}
-          await lockChoice(finalChoice, finalChosen, pending.displayChoice);
+          await lockChoice(finalChoice, finalChosen, finalDisplayChoice);
           return;
         }
 
