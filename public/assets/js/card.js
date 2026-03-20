@@ -1301,7 +1301,7 @@ function _ensureCancelModal(){
   }catch{}
 }
 
-  async function lockChoice(choice, chosen){
+  async function lockChoice(choice, chosen, displayChoice){
     const nextCard = {
       ...card,
       configured: true,
@@ -1336,9 +1336,11 @@ function _ensureCancelModal(){
 
     // Lock setup after first configuration so the outcome can't be changed accidentally.
     setChoiceButtonsEnabled(false);
-    // Mark the selected prize button
-    const selectedBtn = root.querySelector(`button[data-choice="${choice}"]`);
-    if (selectedBtn) selectedBtn.classList.add('is-selected');
+    // Mark the selected prize button (but not for random/surprise picks — keep it secret)
+    if (displayChoice !== RANDOM_KEY) {
+      const selectedBtn = root.querySelector(`button[data-choice="${choice}"]`);
+      if (selectedBtn) selectedBtn.classList.add('is-selected');
+    }
   }
 
   changeBtn.addEventListener('click', cancelPending);
@@ -1354,11 +1356,7 @@ function _ensureCancelModal(){
     shareUrl = makeAbsoluteCardLink(card.token);
     enableShare();
     setChoiceButtonsEnabled(false);
-    // Mark the configured choice
-    if (card.choice) {
-      const selBtn = root.querySelector(`button[data-choice="${card.choice}"]`);
-      if (selBtn) selBtn.classList.add('is-selected');
-    }
+    // Don't mark any button on return visits — we can't distinguish random from direct picks
   }
 
   qsa('button[data-choice]', root).forEach(btn => {
@@ -1404,7 +1402,7 @@ function _ensureCancelModal(){
           const finalChosen = pending.chosen;
           pending = null;
           try{ if (_cancelModal) _cancelModal.close(); }catch{}
-          await lockChoice(finalChoice, finalChosen);
+          await lockChoice(finalChoice, finalChosen, pending.displayChoice);
           return;
         }
 
