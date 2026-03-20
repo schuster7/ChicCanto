@@ -120,8 +120,8 @@
   --link-underline: rgba(0, 0, 0, .15);
   --link-focus: rgba(0, 0, 0, .10);
 
-  --glass: rgba(255, 255, 255, .50);
-  --glass2: rgba(255, 255, 255, .50);
+  --glass: rgba(255, 255, 255, .60);
+  --glass2: rgba(255, 255, 255, .60);
   --stroke: rgba(0, 0, 0, .06);
   --stroke2: rgba(0, 0, 0, .04);
   --shadow: 0 3px 5px rgba(0, 0, 0, .10);
@@ -424,7 +424,7 @@ a.btn {
   display: flex;
   align-items: center;
   width: 100%;
-  background: rgba(255, 255, 255, .50);
+  background: rgba(255, 255, 255, .60);
 }
 
 .site-header__inner {
@@ -526,7 +526,7 @@ a.btn {
 .glass {
   border-radius: var(--radius);
   border: none;
-  background: rgba(255, 255, 255, .50);
+  background: rgba(255, 255, 255, .60);
   box-shadow: 0 3px 5px rgba(0, 0, 0, .10);
   overflow: hidden;
 }
@@ -549,7 +549,7 @@ a.btn {
 
 /* Slightly stronger glass */
 .panel--glass-strong {
-  background: rgba(255, 255, 255, .50);
+  background: rgba(255, 255, 255, .60);
   border: none;
   box-shadow: 0 3px 5px rgba(0, 0, 0, .10);
 }
@@ -987,9 +987,10 @@ button.btn::-moz-focus-inner {
 }
 
 .btn:disabled {
-  background: #d4d4dd;
+  background: #ffffff;
   color: #a7a5af;
   cursor: not-allowed;
+  opacity: 1;
 }
 
 /* Utilities */
@@ -1596,6 +1597,14 @@ button.btn::-moz-focus-inner {
 .choice-grid .btn[disabled] {
   cursor: not-allowed;
   color: #a7a5af;
+  background: #d4d4dd;
+  opacity: 1;
+}
+
+.choice-grid .btn.is-selected {
+  background: #ffffff;
+  color: #67676d;
+  opacity: 1;
 }
 
 /* Share bar */
@@ -2038,7 +2047,7 @@ button.btn::-moz-focus-inner {
 [data-page="fulfill"] .flow-panel.fulfill-panel {
   border-radius: 12px;
   border: none;
-  background: rgba(255, 255, 255, .50);
+  background: rgba(255, 255, 255, .60);
   box-shadow: 0 3px 5px rgba(0, 0, 0, .10);
   padding: 18px;
 }
@@ -2463,7 +2472,7 @@ button.btn::-moz-focus-inner {
 [data-page="redeem"] .flow-panel--combined.panel--glass {
   border-radius: 12px;
   border: none;
-  background: rgba(255, 255, 255, .50);
+  background: rgba(255, 255, 255, .60);
   box-shadow: 0 3px 5px rgba(0, 0, 0, .10);
   padding: 18px;
 }
@@ -2495,7 +2504,7 @@ button.btn::-moz-focus-inner {
 [data-page="card"] .card-setup-panel {
   border-radius: 12px;
   border: none;
-  background: rgba(255, 255, 255, .50);
+  background: rgba(255, 255, 255, .60);
   box-shadow: 0 3px 5px rgba(0, 0, 0, .10);
 }
 
@@ -2525,7 +2534,7 @@ button.btn::-moz-focus-inner {
 [data-page="card"] .setup-unified {
   border-radius: 12px;
   border: none;
-  background: rgba(255, 255, 255, .50);
+  background: rgba(255, 255, 255, .60);
   box-shadow: 0 3px 5px rgba(0, 0, 0, .10);
 }
 
@@ -2581,7 +2590,7 @@ button.btn::-moz-focus-inner {
 [data-page="card"] .mini-panel {
   border-radius: 12px;
   border: none;
-  background: rgba(255, 255, 255, .50);
+  background: rgba(255, 255, 255, .60);
   padding: 16px 16px;
 }
 

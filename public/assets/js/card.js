@@ -1211,7 +1211,6 @@ function _ensureCancelModal(){
     qsa('button[data-choice]', root).forEach(b => {
       b.disabled = !enabled;
       b.style.pointerEvents = enabled ? 'auto' : 'none';
-      b.style.opacity = enabled ? '1' : '0.6';
     });
   }
 
@@ -1220,18 +1219,12 @@ function _ensureCancelModal(){
     shareUrlEl.textContent = 'Pick a prize to generate the link.';
     // Disable actions until a prize is selected
     copyBtn.disabled = true;
-    copyBtn.style.opacity = '.5';
-    copyBtn.style.pointerEvents = 'none';
 
     if (shareBtn){
       shareBtn.disabled = true;
-      shareBtn.style.opacity = '.5';
-      shareBtn.style.pointerEvents = 'none';
     }
 
     openBtn.disabled = true;
-    openBtn.style.opacity = '.5';
-    openBtn.style.pointerEvents = 'none';
 
     changeRow.style.display = 'none';
     lockHintEl.textContent = '';
@@ -1241,18 +1234,12 @@ function _ensureCancelModal(){
     shareUrlEl.textContent = shareUrl;
 
     copyBtn.disabled = false;
-    copyBtn.style.opacity = '1';
-    copyBtn.style.pointerEvents = 'auto';
 
     if (shareBtn){
       shareBtn.disabled = false;
-      shareBtn.style.opacity = '1';
-      shareBtn.style.pointerEvents = 'auto';
     }
 
     openBtn.disabled = false;
-    openBtn.style.opacity = '1';
-    openBtn.style.pointerEvents = 'auto';
 
     changeRow.style.display = 'none';
     lockHintEl.textContent = '';
@@ -1267,18 +1254,12 @@ function _ensureCancelModal(){
 
   // Disable share actions while the cancel window is active.
   copyBtn.disabled = true;
-  copyBtn.style.opacity = '.5';
-  copyBtn.style.pointerEvents = 'none';
 
   if (shareBtn){
     shareBtn.disabled = true;
-    shareBtn.style.opacity = '.5';
-    shareBtn.style.pointerEvents = 'none';
   }
 
   openBtn.disabled = true;
-  openBtn.style.opacity = '.5';
-  openBtn.style.pointerEvents = 'none';
 
   // Hide the old bottom-row cancel UI during the pending state.
   changeRow.style.display = 'none';
@@ -1311,6 +1292,8 @@ function _ensureCancelModal(){
   try{ clearInterval(pending.interval); }catch{}
   pending = null;
   setChoiceButtonsEnabled(true);
+  // Clear any selected state
+  qsa('.is-selected', root).forEach(b => b.classList.remove('is-selected'));
   resetShareUI();
 
   try{
@@ -1353,6 +1336,9 @@ function _ensureCancelModal(){
 
     // Lock setup after first configuration so the outcome can't be changed accidentally.
     setChoiceButtonsEnabled(false);
+    // Mark the selected prize button
+    const selectedBtn = root.querySelector(`button[data-choice="${choice}"]`);
+    if (selectedBtn) selectedBtn.classList.add('is-selected');
   }
 
   changeBtn.addEventListener('click', cancelPending);
@@ -1368,6 +1354,11 @@ function _ensureCancelModal(){
     shareUrl = makeAbsoluteCardLink(card.token);
     enableShare();
     setChoiceButtonsEnabled(false);
+    // Mark the configured choice
+    if (card.choice) {
+      const selBtn = root.querySelector(`button[data-choice="${card.choice}"]`);
+      if (selBtn) selBtn.classList.add('is-selected');
+    }
   }
 
   qsa('button[data-choice]', root).forEach(btn => {
