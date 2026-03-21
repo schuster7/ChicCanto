@@ -627,9 +627,17 @@ border-radius: var(--scratch-tile-radius);
   margin: 0 auto;
 }
 
-/* Fullscreen: remove black borders, keep animated glow */
+/* Fullscreen: remove drop-shadow filter and all box-shadows */
 .msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx {
   filter: none;
+}
+
+.msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx::before {
+  box-shadow: none;
+}
+
+.msg-card-wrapper[data-presentation="fullscreen"] .scratch-stage {
+  box-shadow: none;
 }
 
 .msg-stage[data-presentation="fullscreen"] {
