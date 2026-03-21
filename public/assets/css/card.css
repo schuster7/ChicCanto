@@ -115,8 +115,8 @@
   border-radius: var(--scratch-fx-radius);
   overflow: visible;
 
-  /* Card table shadow */
-  filter: drop-shadow(0 22px 55px rgba(0,0,0,.55)) drop-shadow(0 6px 18px rgba(0,0,0,.35));
+  /* Card table shadow (light/dark via --card-drop-shadow) */
+  filter: var(--card-drop-shadow, drop-shadow(0 22px 55px rgba(0,0,0,.55)) drop-shadow(0 6px 18px rgba(0,0,0,.35)));
 
   /* Avoid flex centering fighting the real card sizing */
   display: block;
@@ -131,7 +131,7 @@
   width: calc(100% + var(--border-width));
   height: calc(100% + var(--border-width));
   border-radius: inherit;
-  box-shadow: 0 0 20px rgba(0,0,0,.85);
+  box-shadow: var(--card-frame-shadow, 0 0 20px rgba(0,0,0,.85));
   mix-blend-mode: color-burn;
   z-index: 0;
   background:
@@ -152,6 +152,19 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
+}
+
+/* Light-mode: soften the animated glow border */
+[data-color-mode="light"] .scratch-fx::before{
+  mix-blend-mode: normal;
+  background:
+    rgba(255,255,255,.6) radial-gradient(
+      30% 30% at calc(var(--bg-x) * 1%) calc(var(--bg-y) * 1%),
+      hsl(calc(calc(var(--hue) * var(--hue-speed)) * 1deg), 60%, 85%) calc(0% * var(--bg-size)),
+      hsl(calc(calc(var(--hue) * var(--hue-speed)) * 1deg), 50%, 78%) calc(20% * var(--bg-size)),
+      hsl(calc(calc(var(--hue) * var(--hue-speed)) * 1deg), 40%, 70%) calc(40% * var(--bg-size)),
+      transparent 100%
+    );
 }
 
 /* Win sequence: smooth border acceleration + flash.
