@@ -950,7 +950,7 @@ function buildMatch3Board(totalTiles, winTier, tiers, seedKey){
 function render(container, token, card){
   // Card is expected to already exist in storage (redeem/setup creates it).
   applyTheme(card.theme_id);
-  applyPageTheme(card.card_key, card.card_style);
+  applyPageTheme(card.card_key, card.card_style, { allowDarkMode: false });
 
   const contentId = 'content';
 
@@ -992,6 +992,7 @@ const previewCta = PREVIEW_MODE ? `
   const _gameType = (_theme && _theme.gameType) || 'match3';
 
   if (card.revealed){
+    applyPageTheme(card.card_key, card.card_style, { allowDarkMode: true });
     if (_gameType === 'message'){
       renderMessageRevealed(content, card);
     } else {
@@ -1036,6 +1037,7 @@ const previewCta = PREVIEW_MODE ? `
     return;
   }
 
+  applyPageTheme(card.card_key, card.card_style, { allowDarkMode: true });
   if (_gameType === 'message'){
     renderMessageScratch(content, card);
   } else {
@@ -2283,7 +2285,7 @@ function applyTheme(themeId){
 // Per-card page background: sets CSS custom properties on <body> so the
 // background gradient and animated glow layers adapt to the card's mood.
 // If the theme doesn't define page values, the CSS defaults (dark theme) remain.
-function applyPageTheme(cardKey, cardStyle){
+function applyPageTheme(cardKey, cardStyle, { allowDarkMode = false } = {}){
   try{
     // For custom cards with sub-styles, resolve the full theme including style-specific page colors.
     const theme = getResolvedMsgTheme(cardKey, cardStyle) || getCardTheme(cardKey);
@@ -2311,7 +2313,7 @@ function applyPageTheme(cardKey, cardStyle){
     if (theme.pageGlowBOpacity != null) root.style.setProperty('--page-glow-b-opacity', String(theme.pageGlowBOpacity));
 
     // Dark mode: restore dark body background and override CSS variables
-    if (colorMode === 'dark') {
+    if (allowDarkMode && colorMode === 'dark') {
       document.body.style.background = '';
       document.body.style.backgroundImage = 'url("/assets/img/noise.png"), radial-gradient(1100px 800px at 18% 22%, var(--page-glow-a1), transparent 62%), radial-gradient(1000px 760px at 82% 18%, var(--page-glow-a2), transparent 60%), radial-gradient(900px 700px at 55% 80%, var(--page-glow-a3), transparent 62%), linear-gradient(180deg, var(--page-bg1), var(--page-bg))';
       document.body.style.backgroundRepeat = 'repeat, no-repeat, no-repeat, no-repeat, no-repeat';
