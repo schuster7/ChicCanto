@@ -627,23 +627,28 @@ border-radius: var(--scratch-tile-radius);
   margin: 0 auto;
 }
 
-/* Fullscreen: remove drop-shadow filter and all box-shadows */
+/* Fullscreen: hide animated fx border, use subtle static border */
 .msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx {
   filter: none;
+  border-radius: 12px;
 }
 
 .msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx::before {
-  background-color: transparent;
-  box-shadow: none;
+  display: none;
+}
+
+.msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx::after {
+  display: none;
 }
 
 .msg-card-wrapper[data-presentation="fullscreen"] .scratch-stage {
   box-shadow: none;
+  border-radius: 12px;
 }
 
 .msg-stage[data-presentation="fullscreen"] {
-  border-radius: var(--scratch-fx-radius);
-  border: none;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, .08);
 }
 
 /* Mobile fullscreen: edge to edge, more vertical space */
@@ -652,8 +657,13 @@ border-radius: var(--scratch-tile-radius);
     max-width: 100%;
     margin: 0;
   }
-  .msg-card-wrapper[data-presentation="fullscreen"] .msg-stage {
+  .msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx,
+  .msg-card-wrapper[data-presentation="fullscreen"] .scratch-stage,
+  .msg-stage[data-presentation="fullscreen"] {
     border-radius: 0;
+    border: none;
+  }
+  .msg-card-wrapper[data-presentation="fullscreen"] .msg-stage {
     min-height: 85vh;
   }
   .msg-card-wrapper[data-presentation="fullscreen"] .msg-card__content {
