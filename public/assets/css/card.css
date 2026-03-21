@@ -627,28 +627,22 @@ border-radius: var(--scratch-tile-radius);
   margin: 0 auto;
 }
 
-/* Fullscreen presentation: no card frame, no shadow */
-.msg-stage[data-presentation="fullscreen"] {
-  border-radius: 0;
+/* Fullscreen: remove black borders, keep animated glow */
+.msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx {
+  filter: none;
 }
 
-/* Desktop: contained with subtle border */
+.msg-stage[data-presentation="fullscreen"] {
+  border-radius: 0;
+  border: none;
+}
+
+/* Desktop: subtle shadow only, no border */
 @media (min-width: 700px) {
   .msg-stage[data-presentation="fullscreen"] {
     border-radius: 8px;
-    border: 1px solid rgba(0, 0, 0, .06);
-  }
-}
-
-/* Fullscreen wrapper: no drop shadow */
-.msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx {
-  filter: none;
-  border-radius: 0;
-}
-
-@media (min-width: 700px) {
-  .msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx {
-    border-radius: 8px;
+    border: none;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, .10);
   }
 }
 
