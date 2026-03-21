@@ -627,6 +627,46 @@ border-radius: var(--scratch-tile-radius);
   margin: 0 auto;
 }
 
+/* Fullscreen presentation: no card frame, no shadow */
+.msg-stage[data-presentation="fullscreen"] {
+  border-radius: 0;
+}
+
+/* Desktop: contained with subtle border */
+@media (min-width: 700px) {
+  .msg-stage[data-presentation="fullscreen"] {
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, .06);
+  }
+}
+
+/* Fullscreen wrapper: no drop shadow */
+.msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx {
+  filter: none;
+  border-radius: 0;
+}
+
+@media (min-width: 700px) {
+  .msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx {
+    border-radius: 8px;
+  }
+}
+
+/* Mobile fullscreen: edge to edge, more vertical space */
+@media (max-width: 699px) {
+  .msg-card-wrapper[data-presentation="fullscreen"] {
+    max-width: 100%;
+    margin: 0;
+  }
+  .msg-card-wrapper[data-presentation="fullscreen"] .msg-stage {
+    border-radius: 0;
+    min-height: 85vh;
+  }
+  .msg-card-wrapper[data-presentation="fullscreen"] .msg-card__content {
+    min-height: 85vh;
+  }
+}
+
 .msg-stage{
   position: relative;
   overflow: hidden;

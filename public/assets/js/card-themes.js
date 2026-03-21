@@ -5,6 +5,7 @@ export const CARD_THEMES = {
   'men-novice1': {
     key: 'men-novice1',
     colorMode: 'dark',
+    presentation: 'card',
     legendPanelBg: 'rgba(18, 22, 32, .42)',
     legendPanelBorder: 'rgba(255, 255, 255, .14)',
     legendPanelBlur: '6px',
@@ -31,6 +32,7 @@ export const CARD_THEMES = {
   'women-novice1': {
     key: 'women-novice1',
     colorMode: 'dark',
+    presentation: 'card',
     legendPanelBg: 'rgba(86, 29, 63, 0.8)',
     legendPanelBorder: '#e676ac',
     legendPanelBlur: '1px',
@@ -59,6 +61,7 @@ export const CARD_THEMES = {
   'women-novice-birthday1': {
     key: 'women-novice-birthday1',
     colorMode: 'light',
+    presentation: 'card',
     legendPanelBg: 'rgba(244, 237, 221, 0.8)',
     legendPanelBorder: '#987732',
     legendPanelBlur: '1px',
@@ -87,6 +90,7 @@ export const CARD_THEMES = {
   'men-novice-birthday1': {
     key: 'men-novice-birthday1',
     colorMode: 'dark',
+    presentation: 'card',
     legendPanelBg: 'rgba(10, 10, 11, 0.8)',
     legendPanelBorder: '#846e3e',
     legendPanelBlur: '1px',
@@ -116,6 +120,7 @@ export const CARD_THEMES = {
   'men-advanced1': {
     key: 'men-advanced1',
     colorMode: 'dark',
+    presentation: 'card',
     legendPanelBg: 'rgba(2, 3, 3, 0.8)',
     legendPanelBorder: '#a53185',
     legendPanelBlur: '1px',
@@ -143,6 +148,7 @@ export const CARD_THEMES = {
   'women-advanced1': {
     key: 'women-advanced1',
     colorMode: 'dark',
+    presentation: 'card',
     legendPanelBg: 'rgba(59, 30, 75, 0.8)',
     legendPanelBorder: '#6c4394',
     legendPanelBlur: '1px',
@@ -187,6 +193,7 @@ export const CARD_THEMES = {
     defaultStyle: 'stardust',
     defaultShape: 'heart',
     defaultColorMode: 'light',
+    defaultPresentation: 'fullscreen',
 
     // Available shapes for the picker. label = display, key = stored value,
     // mask = CSS mask-image path, aspect = CSS aspect-ratio for the scratch area.
@@ -200,6 +207,7 @@ export const CARD_THEMES = {
     styles: {
       'stardust': {
         colorMode: 'light',
+        presentation: 'fullscreen',
         label: 'Stardust',
         thumbSrc: '/assets/cards/custom/stardust/thumb.jpg',
         bgDesktopSrc: '/assets/cards/custom/stardust/bg-desktop.jpg',
@@ -229,6 +237,7 @@ export const CARD_THEMES = {
 
       'blush': {
         colorMode: 'light',
+        presentation: 'fullscreen',
         label: 'Blush',
         thumbSrc: '/assets/cards/custom/blush/thumb.jpg',
         bgDesktopSrc: '/assets/cards/custom/blush/bg-desktop.jpg',
@@ -263,6 +272,7 @@ export const CARD_THEMES = {
 
       'dusk': {
         colorMode: 'light',
+        presentation: 'fullscreen',
         label: 'Dusk',
         thumbSrc: '/assets/cards/custom/dusk/thumb.jpg',
         bgDesktopSrc: '/assets/cards/custom/dusk/bg-desktop.jpg',
@@ -297,6 +307,7 @@ export const CARD_THEMES = {
 
       'dark-luxury': {
         colorMode: 'dark',
+        presentation: 'fullscreen',
         label: 'Dark Luxury',
         thumbSrc: '/assets/cards/custom/dark-luxury/thumb.jpg',
         bgDesktopSrc: '/assets/cards/custom/dark-luxury/bg-desktop.jpg',
