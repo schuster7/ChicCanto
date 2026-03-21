@@ -2495,7 +2495,7 @@ button.btn::-moz-focus-inner {
 }
 
 [data-page="redeem"] .sharebar__actions {
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 [data-page="redeem"] #redeemBtn {
