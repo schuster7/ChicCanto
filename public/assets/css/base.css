@@ -2563,10 +2563,6 @@ button.btn::-moz-focus-inner {
   [data-page="card"] .setup-grid {
     grid-template-columns: 1fr;
   }
-  [data-page="card"] .setup-thumb {
-    flex-direction: column;
-    align-items: flex-start;
-  }
   [data-page="card"] .setup-unified,
   [data-page="card"] .flow-panel--combined {
     max-width: 100%;
@@ -2582,8 +2578,9 @@ button.btn::-moz-focus-inner {
 
 [data-page="card"] .setup-thumb {
   display: flex;
-  gap: 14px;
+  flex-direction: row;
   align-items: center;
+  gap: 14px;
   padding-right: 8px;
   border-radius: 4px;
   border: 1px solid rgba(255,255,255,.10);
@@ -2691,9 +2688,16 @@ button.btn::-moz-focus-inner {
   overflow: hidden;
 }
 
-@media (max-width: 560px){
-  [data-page="card"] .setup-thumb__media{
-    width: clamp(140px, 58vw, 320px);
+@media (max-width: 560px) {
+  [data-page="card"] .setup-thumb {
+    flex-direction: column;
+    align-items: center;
+  }
+  [data-page="card"] .setup-thumb__info {
+    text-align: center;
+  }
+  [data-page="card"] .setup-thumb__media {
+    width: 100%;
   }
 }
 

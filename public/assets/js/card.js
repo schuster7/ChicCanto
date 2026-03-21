@@ -1084,7 +1084,7 @@ function renderSetup(root, card, container){
     </div>
     <div class="setup-thumb__info">
       <div class="mini-panel__kicker">Selected card</div>
-      <div class="h3">${cardName}</div>
+      <div class="small muted">${cardName}</div>
     </div>
   </div>
 
