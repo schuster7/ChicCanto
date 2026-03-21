@@ -633,17 +633,8 @@ border-radius: var(--scratch-tile-radius);
 }
 
 .msg-stage[data-presentation="fullscreen"] {
-  border-radius: 0;
+  border-radius: var(--scratch-fx-radius);
   border: none;
-}
-
-/* Desktop: subtle shadow only, no border */
-@media (min-width: 700px) {
-  .msg-stage[data-presentation="fullscreen"] {
-    border-radius: 8px;
-    border: none;
-    box-shadow: 0 3px 5px rgba(0, 0, 0, .10);
-  }
 }
 
 /* Mobile fullscreen: edge to edge, more vertical space */
