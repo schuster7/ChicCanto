@@ -2312,14 +2312,6 @@ function applyPageTheme(cardKey, cardStyle, { allowDarkMode = false } = {}){
     if (theme.pageGlowAOpacity != null) root.style.setProperty('--page-glow-a-opacity', String(theme.pageGlowAOpacity));
     if (theme.pageGlowBOpacity != null) root.style.setProperty('--page-glow-b-opacity', String(theme.pageGlowBOpacity));
 
-    // For light mode cards in scratch/revealed view, set a solid page background
-    // matching the card's edge color so there's no jarring contrast on desktop.
-    if (colorMode !== 'dark' && allowDarkMode) {
-      document.body.style.backgroundColor = theme.pageBg || '#f0eeeb';
-      document.body.style.backgroundImage = 'none';
-      document.body.style.animation = 'none';
-    }
-
     // Dark mode: restore dark body background and override CSS variables
     if (allowDarkMode && colorMode === 'dark') {
       document.body.style.background = '';
