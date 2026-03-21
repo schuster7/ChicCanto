@@ -1869,16 +1869,17 @@ button.btn::-moz-focus-inner {
 }
 
 .activate-tile {
-  border: 1px solid var(--stroke2);
-  background: rgba(0, 0, 0, .18);
-  border-radius: var(--radius);
-  padding: 10px 12px;
+  background: rgba(255, 255, 255, .60);
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
   min-width: 220px;
 }
 
 .activate-tile__label {
   font-size: var(--fs-xs);
-  color: var(--muted2);
+  color: #a7a5af;
   letter-spacing: .06em;
   text-transform: uppercase;
   margin-bottom: 4px;
@@ -1886,27 +1887,27 @@ button.btn::-moz-focus-inner {
 
 .activate-tile__value {
   font-size: var(--fs-md);
-  color: var(--text);
+  color: #67676d;
 }
 
 .activate-chip {
-  border: 1px solid var(--stroke2);
-  background: rgba(255, 255, 255, .06);
-  border-radius: 999px;
-  padding: 6px 10px;
+  background: #d4d4dd;
+  color: #67676d;
+  border: none;
+  border-radius: 16px;
+  padding: 6px 14px;
   font-size: var(--fs-sm);
+  font-weight: 500;
   line-height: 1;
   white-space: nowrap;
 }
 
 .activate-chip.is-ok {
-  border-color: rgba(141, 214, 255, .35);
-  background: rgba(141, 214, 255, .10);
+  background: #d4d4dd;
 }
 
 .activate-chip.is-warn {
-  border-color: rgba(255, 255, 255, .22);
-  background: rgba(255, 255, 255, .08);
+  background: #d4d4dd;
 }
 
 .inline-hint {
@@ -2292,6 +2293,11 @@ button.btn::-moz-focus-inner {
   margin-bottom: 14px;
 }
 
+.flow-lead.panel-meta {
+  color: #a7a5af;
+  max-width: none;
+}
+
 .btn.full {
   width: 100%;
 }
@@ -2470,8 +2476,6 @@ button.btn::-moz-focus-inner {
 
 [data-page="redeem"] .flow-intro .flow-lead.panel-meta {
   margin: 0;
-  color: #a7a5af;
-  max-width: 60ch;
 }
 
 [data-page="redeem"] .flow-panel--combined.panel--glass {
@@ -2490,8 +2494,15 @@ button.btn::-moz-focus-inner {
   margin-bottom: 14px;
 }
 
+[data-page="redeem"] .sharebar__actions {
+  justify-content: center;
+}
+
 [data-page="redeem"] #redeemBtn {
-  width: 100%;
+  min-height: auto;
+  width: auto;
+  padding: 12px 32px;
+  border-radius: 16px;
 }
 
 @media (max-width: 860px) {
