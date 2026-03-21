@@ -167,6 +167,15 @@
     );
 }
 
+/* Light-mode: remove stacking shadows, keep only the soft ::before frame shadow */
+[data-color-mode="light"] .scratch-fx{
+  filter: none;
+}
+[data-color-mode="light"] .scratch-stage{
+  background: transparent;
+  box-shadow: none;
+}
+
 /* Win sequence: smooth border acceleration + flash.
    Triggered by JS adding .cc-win-turbo to .scratch-fx.
    The border ramps up smoothly via CSS transitions on registered properties,
