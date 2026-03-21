@@ -48,6 +48,9 @@
   --ui-surface-alt: #f5f3f0;
   --ui-placeholder: #a0a0b0;
   --ui-border: rgba(0, 0, 0, .08);
+  /* Card shadow: soft for light backgrounds */
+  --card-drop-shadow: drop-shadow(0 12px 32px rgba(0,0,0,.12)) drop-shadow(0 4px 10px rgba(0,0,0,.08));
+  --card-frame-shadow: 0 0 12px rgba(0,0,0,.10);
 }
 
 [data-color-mode="dark"] {
@@ -82,6 +85,9 @@
   --ui-surface-alt: rgba(0, 0, 0, .18);
   --ui-placeholder: rgba(255, 255, 255, .42);
   --ui-border: rgba(255, 255, 255, .08);
+  /* Card shadow: cinematic for dark backgrounds */
+  --card-drop-shadow: drop-shadow(0 22px 55px rgba(0,0,0,.55)) drop-shadow(0 6px 18px rgba(0,0,0,.35));
+  --card-frame-shadow: 0 0 20px rgba(0,0,0,.85);
 }
 
 :root {
