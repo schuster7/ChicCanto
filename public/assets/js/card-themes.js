@@ -71,14 +71,14 @@ export const CARD_THEMES = {
     thumbSrc: '/assets/cards/naughty/women-novice-birthday1/thumb.jpg',
     bgDesktopSrc: '/assets/cards/naughty/women-novice-birthday1/bg-desktop.jpg',
     bgMobileSrc: '/assets/cards/naughty/women-novice-birthday1/bg-mobile.jpg',
-    // Page background: warm ivory/cream with gold warmth
-    pageBg: '#14100a',
-    pageBg1: '#1c1610',
-    pageGlowA1: 'rgba(210, 180, 100, .16)',
-    pageGlowA2: 'rgba(240, 210, 150, .12)',
-    pageGlowA3: 'rgba(255, 230, 180, .08)',
-    pageGlowB1: 'rgba(230, 200, 130, .06)',
-    pageGlowB2: 'rgba(200, 170, 100, .07)',
+    // Page background: warm ivory/cream with gold warmth (light mode)
+    pageBg: '#f0ebe0',
+    pageBg1: '#f5f0e6',
+    pageGlowA1: 'rgba(180, 150, 80, .10)',
+    pageGlowA2: 'rgba(200, 170, 100, .08)',
+    pageGlowA3: 'rgba(220, 190, 130, .05)',
+    pageGlowB1: 'rgba(190, 160, 90, .04)',
+    pageGlowB2: 'rgba(170, 140, 70, .05)',
     prizeOptions: [
       { tier: 't1', label: 'Massage', icon: 'massage' },
       { tier: 't2', label: 'Oral', icon: 'oral' },
