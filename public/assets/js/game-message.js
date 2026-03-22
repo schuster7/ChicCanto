@@ -187,7 +187,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
           </div>
         ` : `
           <div class="msg-setup__actions">
-            <button class="btn outline" type="button" data-action="confirm" disabled>Confirm &amp; create link</button>
+            <button class="btn" type="button" data-action="confirm" disabled>Confirm &amp; create link</button>
           </div>
           <p class="msg-setup__hint muted">You can preview your card above. Once confirmed, the message cannot be changed.</p>
         `}
