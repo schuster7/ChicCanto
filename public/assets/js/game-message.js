@@ -166,7 +166,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
             <label for="msgText">Text for under the scratch field:</label>
             <span class="msg-setup__counter"><span id="msgCount">${maxMsg - existingMsg.length}</span> characters available</span>
           </div>
-          <textarea id="msgText" class="textarea" maxlength="${maxMsg}" placeholder="${msgPlaceholder}" rows="3" ${isConfigured ? 'disabled' : ''}>${_escHtml(existingMsg)}</textarea>
+          <textarea id="msgText" class="input" style="white-space:pre-wrap;overflow:auto;" maxlength="${maxMsg}" placeholder="${msgPlaceholder}" rows="3" ${isConfigured ? 'disabled' : ''}>${_escHtml(existingMsg)}</textarea>
         </div>
 
         <div class="msg-setup__field">
