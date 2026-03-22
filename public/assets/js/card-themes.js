@@ -215,19 +215,16 @@ export const CARD_THEMES = {
         bgDesktopSrc: '/assets/cards/custom/stardust/bg-desktop.jpg',
         bgMobileSrc: '/assets/cards/custom/stardust/bg-mobile.jpg',
         foil: 'gold',
-        // Title styling
         titleFont: "'Dancing Script', cursive",
         titleWeight: '500',
-        titleColor: '#2a3a50',
-        // From line styling
+        titleColor: '#304556',
+        titleTransform: 'none',
         fromFont: "'Dancing Script', cursive",
         fromWeight: '500',
-        fromColor: '#2a3a50',
-        fromStyle: 'italic',
-        // Message under scratch
-        messageColor: '#2a2a2a',
+        fromColor: '#304556',
+        fromStyle: 'normal',
+        messageColor: '#304556',
         messageBg: '#f8f4ee',
-        // Page background
         pageBg: '#d8d4ce',
         pageBg1: '#e2ddd6',
         pageGlowA1: 'rgba(180, 160, 120, .08)',
@@ -250,19 +247,16 @@ export const CARD_THEMES = {
         foilMid: '#f0c8d8',
         foilDark: '#c48aa0',
         foilText: 'rgba(255,255,255,0.6)',
-        // Title styling
         titleFont: "'Dancing Script', cursive",
         titleWeight: '500',
-        titleColor: '#6a3050',
-        // From line styling
+        titleColor: '#875c7a',
+        titleTransform: 'none',
         fromFont: "'Dancing Script', cursive",
         fromWeight: '500',
-        fromColor: '#8a5070',
-        fromStyle: 'italic',
-        // Message under scratch
-        messageColor: '#4a2040',
+        fromColor: '#875c7a',
+        fromStyle: 'normal',
+        messageColor: '#875c7a',
         messageBg: '#fdf0f4',
-        // Page background
         pageBg: '#f0e8ec',
         pageBg1: '#f5f0f2',
         pageGlowA1: 'rgba(220, 140, 180, .10)',
@@ -285,19 +279,16 @@ export const CARD_THEMES = {
         foilMid: '#a8c8e0',
         foilDark: '#6090b0',
         foilText: 'rgba(255,255,255,0.6)',
-        // Title styling
         titleFont: "'Dancing Script', cursive",
         titleWeight: '500',
-        titleColor: '#2a4060',
-        // From line styling
+        titleColor: '#528db5',
+        titleTransform: 'none',
         fromFont: "'Dancing Script', cursive",
         fromWeight: '500',
-        fromColor: '#3a5878',
-        fromStyle: 'italic',
-        // Message under scratch
-        messageColor: '#1a3050',
+        fromColor: '#528db5',
+        fromStyle: 'normal',
+        messageColor: '#528db5',
         messageBg: '#eef4fa',
-        // Page background
         pageBg: '#e0e8f0',
         pageBg1: '#eaeff5',
         pageGlowA1: 'rgba(120, 160, 220, .10)',
@@ -315,22 +306,24 @@ export const CARD_THEMES = {
         bgDesktopSrc: '/assets/cards/custom/dark-luxury/bg-desktop.jpg',
         bgMobileSrc: '/assets/cards/custom/dark-luxury/bg-mobile.jpg',
         foil: 'gold',
-        // Title styling
+        foilBase: '#0d1215',
+        foilHi: '#191f22',
+        foilMid: '#101518',
+        foilDark: '#000000',
+        foilText: 'rgba(183,149,83,0.7)',
         titleFont: "'Cormorant Garamond', serif",
         titleWeight: '500',
-        titleColor: '#c9a84c',
-        // From line styling
+        titleColor: '#b79553',
+        titleTransform: 'uppercase',
         fromFont: "'Cormorant Garamond', serif",
         fromWeight: '500',
-        fromColor: '#c9a84c',
+        fromColor: '#b79553',
         fromStyle: 'normal',
-        // Message under scratch
-        messageColor: '#c9a84c',
-        messageBg: '#0a0a0a',
-        // Gold border ring overlay (outside-stroke SVG, slightly larger than mask)
+        fromTransform: 'uppercase',
+        messageColor: '#191f22',
+        messageBg: '#b79553',
         borderRing: true,
-        borderBasePath: '/assets/img/masks/',  // + {shape}_dark-luxury-border.svg
-        // Page background
+        borderBasePath: '/assets/img/masks/',
         pageBg: '#060604',
         pageBg1: '#0a0a06',
         pageGlowA1: 'rgba(200, 160, 60, .10)',
