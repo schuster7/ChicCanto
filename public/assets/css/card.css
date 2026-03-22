@@ -1024,9 +1024,10 @@ border-radius: var(--scratch-tile-radius);
 .msg-style-picker__item img{
   display: block;
   width: 100%;
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
+  aspect-ratio: 3 / 5;
+  object-fit: contain;
   border-radius: calc(var(--radius-sm, 8px) - 2px);
+  max-height: 180px;
 }
 .msg-style-picker__item.is-active{
   opacity: 1;
