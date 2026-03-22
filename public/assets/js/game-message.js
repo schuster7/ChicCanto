@@ -218,12 +218,18 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
   const setupEl = root.querySelector('.msg-setup');
   const previewFab = root.querySelector('.msg-setup__preview-fab');
   const previewClose = root.querySelector('.msg-setup__preview-close');
+  const previewCardWrap = root.querySelector('.msg-setup__card');
 
   function _openPreviewModal(){ setupEl && setupEl.classList.add('msg-setup--preview-open'); }
   function _closePreviewModal(){ setupEl && setupEl.classList.remove('msg-setup--preview-open'); }
 
   if (previewFab) previewFab.addEventListener('click', _openPreviewModal);
   if (previewClose) previewClose.addEventListener('click', _closePreviewModal);
+  if (previewCardWrap){
+    previewCardWrap.addEventListener('click', _closePreviewModal);
+    const cardInner = previewCardWrap.querySelector('.msg-card');
+    if (cardInner) cardInner.addEventListener('click', (e) => e.stopPropagation());
+  }
 
   // --- State ---
   let activeStyle = existingStyle;
