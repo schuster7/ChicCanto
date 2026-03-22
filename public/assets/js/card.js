@@ -956,7 +956,7 @@ function render(container, token, card){
 
   const params = new URLSearchParams(window.location.search);
   const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
-  const hasSetupAccess = PREVIEW_MODE ? false : !!(setupParam && card.setup_key && setupParam === card.setup_key);
+  const hasSetupAccess = PREVIEW_MODE ? true : !!(setupParam && card.setup_key && setupParam === card.setup_key);
 
   // If a setup param is present, cache it for this token so we can recover sender setup
   // even if the backend redacts setup_key in intermediate responses (KV propagation, etc.).
