@@ -836,13 +836,13 @@ border-radius: var(--scratch-tile-radius);
 .msg-setup__card .msg-card__content{
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   align-items: center;
-  justify-content: center;
+  justify-items: center;
   padding: 8% 6%;
   gap: 4%;
-  min-height: 0;
+  min-height: 280px;
 }
 
 /* FAB and close button no longer needed */
@@ -1025,8 +1025,6 @@ border-radius: var(--scratch-tile-radius);
   display: block;
   width: 100%;
   aspect-ratio: 3 / 5;
-  max-height: 160px;
-  width: 100%;
   object-fit: cover;
   border-radius: calc(var(--radius-sm, 8px) - 2px);
 }
