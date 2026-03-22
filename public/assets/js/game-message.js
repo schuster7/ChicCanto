@@ -158,7 +158,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
             <label for="msgTitle">Your Title:</label>
             <span class="msg-setup__counter"><span id="titleCount">${maxTitle - existingTitle.length}</span> characters available</span>
           </div>
-          <input type="text" id="msgTitle" class="msg-setup__input" maxlength="${maxTitle}" placeholder="${titlePlaceholder}" value="${_escHtml(existingTitle)}" ${isConfigured ? 'disabled' : ''}>
+          <input type="text" id="msgTitle" class="input" maxlength="${maxTitle}" placeholder="${titlePlaceholder}" value="${_escHtml(existingTitle)}" ${isConfigured ? 'disabled' : ''}>
         </div>
 
         <div class="msg-setup__field">
@@ -166,7 +166,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
             <label for="msgText">Text for under the scratch field:</label>
             <span class="msg-setup__counter"><span id="msgCount">${maxMsg - existingMsg.length}</span> characters available</span>
           </div>
-          <textarea id="msgText" class="msg-setup__textarea" maxlength="${maxMsg}" placeholder="${msgPlaceholder}" rows="3" ${isConfigured ? 'disabled' : ''}>${_escHtml(existingMsg)}</textarea>
+          <textarea id="msgText" class="textarea" maxlength="${maxMsg}" placeholder="${msgPlaceholder}" rows="3" ${isConfigured ? 'disabled' : ''}>${_escHtml(existingMsg)}</textarea>
         </div>
 
         <div class="msg-setup__field">
@@ -174,7 +174,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
             <label for="msgFrom">Sign-off (hidden if left empty):</label>
             <span class="msg-setup__counter"><span id="fromCount">${maxFrom - existingFrom.length}</span> characters available</span>
           </div>
-          <input type="text" id="msgFrom" class="msg-setup__input" maxlength="${maxFrom}" placeholder="${fromPlaceholder}" value="${_escHtml(existingFrom)}" ${isConfigured ? 'disabled' : ''}>
+          <input type="text" id="msgFrom" class="input" maxlength="${maxFrom}" placeholder="${fromPlaceholder}" value="${_escHtml(existingFrom)}" ${isConfigured ? 'disabled' : ''}>
         </div>
 
         ${isConfigured ? `
@@ -187,7 +187,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
           </div>
         ` : `
           <div class="msg-setup__actions">
-            <button class="btn primary" type="button" data-action="confirm" disabled>Confirm &amp; create link</button>
+            <button class="btn outline" type="button" data-action="confirm" disabled>Confirm &amp; create link</button>
           </div>
           <p class="msg-setup__hint muted">You can preview your card above. Once confirmed, the message cannot be changed.</p>
         `}
