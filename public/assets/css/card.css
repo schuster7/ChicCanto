@@ -845,12 +845,92 @@ border-radius: var(--scratch-tile-radius);
   min-height: 280px;
 }
 
-/* FAB and close button no longer needed */
 .msg-setup__preview-fab{
   display: none;
 }
 .msg-setup__preview-close{
   display: none;
+}
+
+@media (max-width: 699px){
+  .msg-setup__card{
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 220ms ease, visibility 220ms ease;
+    padding: 24px 16px;
+    overflow-y: auto;
+    margin: 0;
+    max-width: none;
+  }
+  .msg-setup__card .msg-card{
+    max-width: 420px;
+    width: 100%;
+    margin: auto;
+  }
+  .msg-setup--preview-open .msg-setup__card{
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .msg-setup__preview-fab{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 8000;
+    padding: 10px 22px;
+    border-radius: 40px;
+    border: 1px solid var(--stroke, rgba(0,0,0,.12));
+    background: var(--glass-solid, rgba(255,255,255,.92));
+    color: var(--text, #333);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .msg-setup__preview-fab:active{
+    transform: translateX(-50%) scale(0.96);
+  }
+  .msg-setup__preview-fab svg{
+    width: 18px; height: 18px;
+    flex-shrink: 0;
+  }
+  .msg-setup__preview-close{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 9001;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,.85);
+    color: #333;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+  .msg-setup{
+    padding-bottom: 72px;
+  }
 }
 
 .msg-card__title-preview{

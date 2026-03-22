@@ -133,6 +133,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
     <section class="flow-screen msg-setup" data-card-style="${existingStyle}">
       <div class="msg-setup__controls panel panel--glass panel--padded">
         <div class="msg-setup__card">
+          <button class="msg-setup__preview-close" type="button" aria-label="Close preview">&times;</button>
           <div class="msg-card" data-card-key="${card.card_key || ''}" data-card-style="${existingStyle}">
             <picture class="card-bg" aria-hidden="true">
               <source media="(min-width: 700px)" srcset="${resolved.bgDesktopSrc || ''}">
@@ -192,6 +193,10 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
           <p class="msg-setup__hint muted">You can preview your card above. Once confirmed, the message cannot be changed.</p>
         `}
       </div>
+      <button class="msg-setup__preview-fab" type="button" aria-label="Preview card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Preview
+      </button>
     </section>
   `;
 
@@ -210,6 +215,15 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
   const scratchArea = root.querySelector('.msg-card__scratch-preview');
   const cardEl = root.querySelector('.msg-card');
   const bgPicture = root.querySelector('.msg-card .card-bg');
+  const setupEl = root.querySelector('.msg-setup');
+  const previewFab = root.querySelector('.msg-setup__preview-fab');
+  const previewClose = root.querySelector('.msg-setup__preview-close');
+
+  function _openPreviewModal(){ setupEl && setupEl.classList.add('msg-setup--preview-open'); }
+  function _closePreviewModal(){ setupEl && setupEl.classList.remove('msg-setup--preview-open'); }
+
+  if (previewFab) previewFab.addEventListener('click', _openPreviewModal);
+  if (previewClose) previewClose.addEventListener('click', _closePreviewModal);
 
   // --- State ---
   let activeStyle = existingStyle;
