@@ -44,6 +44,7 @@ function _styleTitleEl(el, resolved){
   if (resolved.titleFont)  el.style.fontFamily = resolved.titleFont;
   if (resolved.titleWeight) el.style.fontWeight = resolved.titleWeight;
   if (resolved.titleColor) el.style.color = resolved.titleColor;
+  el.style.fontStyle = 'normal';
 }
 
 /** Apply inline from-line styling from resolved theme. */
@@ -52,7 +53,7 @@ function _styleFromEl(el, resolved){
   if (resolved.fromFont)   el.style.fontFamily = resolved.fromFont;
   if (resolved.fromWeight) el.style.fontWeight = resolved.fromWeight;
   if (resolved.fromColor)  el.style.color = resolved.fromColor;
-  if (resolved.fromStyle)  el.style.fontStyle = resolved.fromStyle;
+  el.style.fontStyle = resolved.fromStyle || 'normal';
 }
 
 /** Apply mask shape to an element. */
