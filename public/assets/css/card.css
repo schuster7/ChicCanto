@@ -863,10 +863,6 @@ border-radius: var(--scratch-tile-radius);
 }
 .msg-card__title-preview.is-empty::after{
   content: attr(data-empty-label);
-  color: rgba(0,0,0,.25);
-}
-[data-color-mode="dark"] .msg-card__title-preview.is-empty::after{
-  color: rgba(255,255,255,.25);
 }
 
 /* Heart foil preview in setup → generic scratch preview */
@@ -906,10 +902,6 @@ border-radius: var(--scratch-tile-radius);
 }
 .msg-card__message-preview.is-empty::after{
   content: attr(data-empty-label);
-  color: rgba(0,0,0,.25);
-}
-[data-color-mode="dark"] .msg-card__message-preview.is-empty::after{
-  color: rgba(255,255,255,.25);
 }
 
 /* Setup controls */
