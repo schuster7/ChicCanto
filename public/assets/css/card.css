@@ -842,7 +842,7 @@ border-radius: var(--scratch-tile-radius);
   justify-items: center;
   padding: 8% 6%;
   gap: 4%;
-  min-height: 280px;
+  min-height: 140px;
 }
 
 /* FAB and close button no longer needed */
