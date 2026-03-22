@@ -200,6 +200,8 @@ export const CARD_THEMES = {
     availableShapes: [
       { key: 'heart',  label: 'Heart',  mask: '/assets/img/masks/heart.svg',  aspect: '400 / 350' },
       { key: 'circle', label: 'Circle', mask: '/assets/img/masks/circle.svg', aspect: '1 / 1' },
+      { key: 'square', label: 'Square', mask: '/assets/img/masks/square.svg', aspect: '1 / 1' },
+      { key: 'star',   label: 'Star',   mask: '/assets/img/masks/star.svg',   aspect: '1 / 1' },
     ],
 
     // Available styles for the picker.
