@@ -314,6 +314,7 @@ export const CARD_THEMES = {
         foilMid: '#101518',
         foilDark: '#000000',
         foilText: 'rgba(183,149,83,0.7)',
+        foilGradient: true,
         titleFont: "'Cormorant Garamond', serif",
         titleWeight: '500',
         titleColor: '#b79553',

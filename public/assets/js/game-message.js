@@ -223,10 +223,10 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
     if (foilEl && r.scratchMask){
       _applyMask(foilEl, r.scratchMask);
       // Set foil color from style
-      if (r.foilDark && r.foilHi && r.titleColor === '#b79553'){
+      if (r.foilGradient && r.foilDark && r.foilHi){
         foilEl.style.background = `linear-gradient(to right, ${r.foilDark}, ${r.foilHi})`;
       } else {
-        foilEl.style.background = r.foil === 'gold' ? '#c9a84c' : (r.foilBase || '#aeb3bd');
+        foilEl.style.background = r.foilBase || (r.foil === 'gold' ? '#c9a84c' : '#aeb3bd');
       }
     }
     // Message preview mask
