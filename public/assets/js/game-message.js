@@ -224,10 +224,6 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
       _applyMask(foilEl, r.scratchMask);
       // Set foil color from style
       foilEl.style.background = r.foil === 'gold' ? '#c9a84c' : (r.foilBase || '#aeb3bd');
-      // Apply foil overrides for dark-luxury (dark gradient instead of gold)
-      if (r.foilBase && r.foilHi && r.foilDark){
-        foilEl.style.background = `linear-gradient(to right, ${r.foilDark}, ${r.foilHi})`;
-      }
     }
     // Message preview mask
     if (msgPreview && r.scratchMask){
