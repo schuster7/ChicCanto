@@ -201,7 +201,7 @@ export const CARD_THEMES = {
       { key: 'heart',  label: 'Heart',  mask: '/assets/img/masks/heart.svg',  aspect: '400 / 350' },
       { key: 'circle', label: 'Circle', mask: '/assets/img/masks/circle.svg', aspect: '1 / 1' },
       { key: 'square', label: 'Square', mask: '/assets/img/masks/square.svg', aspect: '1 / 1' },
-      { key: 'hexagon', label: 'Hexagon', mask: '/assets/img/masks/hexagon.svg', aspect: '1 / 1' },
+      { key: 'hexagon', label: 'Hexagon', mask: '/assets/img/masks/hexagon.svg', aspect: '350 / 400' },
     ],
 
     // Available styles for the picker.
