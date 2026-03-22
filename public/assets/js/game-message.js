@@ -45,6 +45,7 @@ function _styleTitleEl(el, resolved){
   if (resolved.titleWeight) el.style.fontWeight = resolved.titleWeight;
   if (resolved.titleColor) el.style.color = resolved.titleColor;
   el.style.fontStyle = 'normal';
+  if (resolved.titleTransform) el.style.textTransform = resolved.titleTransform;
 }
 
 /** Apply inline from-line styling from resolved theme. */
@@ -54,6 +55,7 @@ function _styleFromEl(el, resolved){
   if (resolved.fromWeight) el.style.fontWeight = resolved.fromWeight;
   if (resolved.fromColor)  el.style.color = resolved.fromColor;
   el.style.fontStyle = resolved.fromStyle || 'normal';
+  if (resolved.fromTransform) el.style.textTransform = resolved.fromTransform;
 }
 
 /** Apply mask shape to an element. */
@@ -222,6 +224,10 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
       _applyMask(foilEl, r.scratchMask);
       // Set foil color from style
       foilEl.style.background = r.foil === 'gold' ? '#c9a84c' : (r.foilBase || '#aeb3bd');
+      // Apply foil overrides for dark-luxury (dark gradient instead of gold)
+      if (r.foilBase && r.foilHi && r.foilDark){
+        foilEl.style.background = `linear-gradient(to right, ${r.foilDark}, ${r.foilHi})`;
+      }
     }
     // Message preview mask
     if (msgPreview && r.scratchMask){
