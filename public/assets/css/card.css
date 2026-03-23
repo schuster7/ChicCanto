@@ -1176,7 +1176,7 @@ border-radius: var(--scratch-tile-radius);
   opacity: 1;
 }
 .msg-shape-picker__item.is-active img{
-  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  filter: brightness(0) invert(1);
 }
 .msg-shape-picker__item:not(:disabled):hover{
   opacity: 0.85;
