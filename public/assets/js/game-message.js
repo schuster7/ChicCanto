@@ -90,7 +90,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
   function _maxMsgForShape(shape){
     return (shape === 'heart' || shape === 'hexagon') ? 120 : 160;
   }
-  let maxMsg = _maxMsgForShape(existingShape);
+
   const maxTitle = baseTheme.titleMaxLength || 92;
   const maxFrom = baseTheme.fromMaxLength || 60;
   const msgPlaceholder = baseTheme.messagePlaceholder || 'Type your hidden message...';
@@ -102,7 +102,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
   const existingMsg = card.message || '';
   const existingFrom = card.from_line || '';
   const existingStyle = card.card_style || baseTheme.defaultStyle || 'stardust';
-  const existingShape = card.scratch_shape || baseTheme.defaultShape || 'heart';
+  const existingShape = card.scratch_shape || baseTheme.defaultShape || 'heart'; let maxMsg = _maxMsgForShape(existingShape);
   const isConfigured = !!card.configured;
 
   const styles = baseTheme.styles || {};
