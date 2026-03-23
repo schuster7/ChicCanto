@@ -1256,3 +1256,49 @@ border-radius: var(--scratch-tile-radius);
 .msg-card__scratch-preview .msg-card__scratch-word{
   z-index: 5;
 }
+
+/* --- Try scratch modal --- */
+.cc-try-scratch-modal{
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.cc-try-scratch-modal__close{
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 8px;
+  opacity: .7;
+  transition: opacity 150ms;
+}
+.cc-try-scratch-modal__close:hover{
+  opacity: 1;
+}
+.cc-try-scratch-modal__card{
+  width: 100%;
+  max-width: 480px;
+  position: relative;
+}
+.cc-try-scratch-modal__back{
+  display: none;
+  margin-top: 1.5rem;
+  color: #fff;
+  border-color: rgba(255,255,255,.4);
+}
+.cc-try-scratch-modal__back.is-visible{
+  display: inline-flex;
+}

@@ -202,6 +202,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
           </div>
         ` : `
           <div class="msg-setup__actions">
+            <button class="btn outline" type="button" data-action="try-scratch" disabled>Try scratch yourself</button>
             <button class="btn" type="button" data-action="confirm" disabled>Confirm &amp; create link</button>
           </div>
           <p class="msg-setup__hint muted">You can preview your card above. Once confirmed, the message cannot be changed.</p>
@@ -225,6 +226,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
   const msgCounter = root.querySelector('#msgCount');
   const fromCounter = root.querySelector('#fromCount');
   const confirmBtn = root.querySelector('[data-action="confirm"]');
+  const tryScratchBtn = root.querySelector('[data-action="try-scratch"]');
   const foilEl = root.querySelector('.msg-card__foil-preview');
   const scratchArea = root.querySelector('.msg-card__scratch-preview');
   const cardEl = root.querySelector('.msg-card');
@@ -364,16 +366,29 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
     if (msgCounter) msgCounter.textContent = String(maxMsg - msg.length);
     if (fromCounter) fromCounter.textContent = String(maxFrom - from.length);
 
-    // Enable confirm only when message is filled
-    if (confirmBtn){
-      confirmBtn.disabled = !msg.trim();
-    }
+    // Enable confirm + try-scratch only when message is filled
+    const hasMsg = !!msg.trim();
+    if (confirmBtn) confirmBtn.disabled = !hasMsg;
+    if (tryScratchBtn) tryScratchBtn.disabled = !hasMsg;
   }
 
   if (titleInput) titleInput.addEventListener('input', updatePreview);
   if (msgInput) msgInput.addEventListener('input', updatePreview);
   if (fromInput) fromInput.addEventListener('input', updatePreview);
   updatePreview();
+
+  // --- Try scratch yourself ---
+  if (tryScratchBtn){
+    tryScratchBtn.addEventListener('click', () => {
+      _openTryScratch(container, card, {
+        title: (titleInput ? titleInput.value : '').trim(),
+        message: (msgInput ? msgInput.value : '').trim(),
+        from: (fromInput ? fromInput.value : '').trim(),
+        style: activeStyle,
+        shape: activeShape
+      });
+    });
+  }
 
   // --- Confirm ---
   if (confirmBtn){
@@ -587,6 +602,96 @@ async function _onScratchComplete(root, card, resolved){
     const msgEl = root.querySelector('.msg-card__under-message');
     if (msgEl) msgEl.classList.add('is-revealed');
   }, 650);
+}
+
+
+// ─── Try scratch modal (sender preview) ──────────────────────────────
+
+function _openTryScratch(container, card, { title, message, from, style, shape }){
+  // Remove any existing modal
+  const existing = document.querySelector('.cc-try-scratch-modal');
+  if (existing) existing.remove();
+
+  const resolved = getResolvedMsgTheme(card.card_key, style, shape) || {};
+
+  const modal = document.createElement('div');
+  modal.className = 'cc-try-scratch-modal';
+  modal.innerHTML = `
+    <button class="cc-try-scratch-modal__close" type="button" aria-label="Close">&times;</button>
+    <div class="cc-try-scratch-modal__card">
+      <div class="scratch-stage msg-stage" data-card-style="${style || ''}">
+        <picture class="card-bg" aria-hidden="true">
+          <source media="(min-width: 700px)" srcset="${resolved.bgDesktopSrc || ''}">
+          <img src="${resolved.bgMobileSrc || resolved.bgDesktopSrc || ''}" alt="" draggable="false" loading="eager">
+        </picture>
+        <div class="msg-card__content">
+          ${title ? `<div class="msg-card__visible-title">${_escHtml(title)}</div>` : ''}
+          <div class="msg-card__scratch-area" style="aspect-ratio: ${resolved.scratchAspect || '400 / 350'}">
+            ${_borderRingHtml(resolved)}
+            <div class="msg-card__under-message">${_escHtml(message)}</div>
+            <div class="msg-card__scratch-tile" id="tryScratchTile">
+              <canvas id="tryScratchCanvas"></canvas>
+            </div>
+          </div>
+          ${from ? `<div class="msg-card__from-line">${_escHtml(from)}</div>` : ''}
+        </div>
+      </div>
+    </div>
+    <button class="btn outline cc-try-scratch-modal__back" type="button">Looks good? Go back</button>
+  `;
+
+  container.appendChild(modal);
+
+  // Apply theme styling
+  const titleEl = modal.querySelector('.msg-card__visible-title');
+  _styleTitleEl(titleEl, resolved);
+
+  const fromEl = modal.querySelector('.msg-card__from-line');
+  _styleFromEl(fromEl, resolved);
+
+  const tileEl = modal.querySelector('#tryScratchTile');
+  const canvas = modal.querySelector('#tryScratchCanvas');
+  const underMsg = modal.querySelector('.msg-card__under-message');
+
+  if (resolved.scratchMask){
+    if (tileEl) _applyMask(tileEl, resolved.scratchMask);
+    if (underMsg){
+      _applyMask(underMsg, resolved.scratchMask);
+      if (resolved.messageColor) underMsg.style.color = resolved.messageColor;
+      if (resolved.messageBg) underMsg.style.background = resolved.messageBg;
+      if (resolved.messageFont) underMsg.style.fontFamily = resolved.messageFont;
+      if (resolved.messageWeight) underMsg.style.fontWeight = resolved.messageWeight;
+      if (resolved.messageTransform) underMsg.style.textTransform = resolved.messageTransform;
+      underMsg.style.fontSize = _messageFontSize(message, resolved.scratchShape);
+    }
+  }
+
+  // Attach scratch interaction — no persistence
+  if (canvas){
+    const backBtn = modal.querySelector('.cc-try-scratch-modal__back');
+    attachScratchTile(canvas, {
+      onScratched: () => {
+        if (tileEl){
+          tileEl.style.transition = 'opacity 600ms ease';
+          tileEl.style.opacity = '0';
+        }
+        setTimeout(() => {
+          if (tileEl) tileEl.style.display = 'none';
+          if (underMsg) underMsg.classList.add('is-revealed');
+        }, 650);
+        if (backBtn) backBtn.classList.add('is-visible');
+      },
+      hintStyle: 'thin'
+    });
+  }
+
+  // Close handlers
+  function closeModal(){ modal.remove(); }
+  modal.querySelector('.cc-try-scratch-modal__close').addEventListener('click', closeModal);
+  modal.querySelector('.cc-try-scratch-modal__back').addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
 }
 
 
