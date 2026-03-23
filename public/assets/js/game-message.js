@@ -238,8 +238,6 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
   if (previewClose) previewClose.addEventListener('click', _closePreviewModal);
   if (previewCardWrap){
     previewCardWrap.addEventListener('click', _closePreviewModal);
-    const cardInner = previewCardWrap.querySelector('.msg-card');
-    if (cardInner) cardInner.addEventListener('click', (e) => e.stopPropagation());
   }
 
   // --- State ---
