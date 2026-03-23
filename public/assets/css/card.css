@@ -1285,23 +1285,6 @@ border-radius: var(--scratch-tile-radius);
   overflow-y: auto;
   background: linear-gradient(180deg, var(--page-bg1, #0c0e14), var(--page-bg, #0c0e14));
 }
-.cc-try-scratch-modal .msg-card-wrapper{
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.cc-try-scratch-modal .scratch-fx{
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.cc-try-scratch-modal .scratch-stage{
-  flex: 1;
-}
-.cc-try-scratch-modal .msg-card__content{
-  flex: 1;
-  justify-content: space-evenly;
-}
 .cc-try-scratch-modal__close{
   position: fixed;
   top: 12px;
@@ -1322,7 +1305,7 @@ border-radius: var(--scratch-tile-radius);
 }
 .cc-try-scratch-modal__back{
   display: none;
-  position: fixed;
+  position: sticky;
   bottom: 0;
   left: 0;
   right: 0;
@@ -1355,17 +1338,24 @@ border-radius: var(--scratch-tile-radius);
   }
   .cc-try-scratch-modal .msg-card-wrapper{
     margin: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
   .cc-try-scratch-modal .scratch-fx{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     filter: none;
+  }
+  .cc-try-scratch-modal .scratch-stage{
+    flex: 1;
+    background: transparent;
+    box-shadow: none;
   }
   .cc-try-scratch-modal .scratch-fx::before,
   .cc-try-scratch-modal .scratch-fx::after{
     display: none;
-  }
-  .cc-try-scratch-modal .scratch-stage{
-    background: transparent;
-    box-shadow: none;
   }
   .cc-try-scratch-modal .msg-card__content{
     min-height: 100vh;
