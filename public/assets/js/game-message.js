@@ -33,9 +33,8 @@ function _applyFoilOverrides(style){
 function _messageFontSize(text, shape){
   const len = Math.max(1, (text || '').length);
   const tight = (shape === 'heart' || shape === 'hexagon');
-  const max = tight ? 32 : 36;
-  const min = tight ? 13 : 14;
-  // Smooth decay: large text for short messages, gradually smaller
+  const max = tight ? 38 : 42;
+  const min = tight ? 15 : 16;
   const size = Math.max(min, Math.round(max - (max - min) * Math.sqrt(len / 200)));
   return size + 'px';
 }
