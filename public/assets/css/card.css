@@ -1324,6 +1324,7 @@ border-radius: var(--scratch-tile-radius);
   border-radius: 40px;
   padding: 10px 22px;
   font-weight: 600;
+  white-space: nowrap;
 }
 .cc-try-scratch-modal__back .btn:hover{
   background: #333;
