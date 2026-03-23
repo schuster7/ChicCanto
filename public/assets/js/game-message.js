@@ -33,8 +33,8 @@ function _applyFoilOverrides(style){
 function _messageFontSize(text, shape){
   const len = Math.max(1, (text || '').length);
   const tight = (shape === 'heart' || shape === 'hexagon');
-  const max = tight ? 42 : 46;
-  const min = tight ? 22 : 24;
+  const max = tight ? 38 : 42;
+  const min = tight ? 14 : 15;
   const size = Math.max(min, Math.round(max - (max - min) * Math.sqrt(len / 200)));
   return size + 'px';
 }
