@@ -182,7 +182,7 @@ export const CARD_THEMES = {
     key: 'custom-card',
     gameType: 'message',
     messageMode: 'freetext',
-    messageMaxLength: 200,
+    messageMaxLength: 160,
     messagePlaceholder: 'Type your hidden message...',
     titlePlaceholder: 'Your title here...',
     titleMaxLength: 92,

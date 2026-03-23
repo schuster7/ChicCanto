@@ -86,7 +86,11 @@ function _borderRingHtml(resolved){
 
 export function renderMessageSetup(root, card, container, { previewMode = false } = {}){
   const baseTheme = getCardTheme(card.card_key) || {};
-  const maxMsg = baseTheme.messageMaxLength || 200;
+  const maxMsgDefault = baseTheme.messageMaxLength || 200;
+  function _maxMsgForShape(shape){
+    return (shape === 'heart' || shape === 'hexagon') ? 120 : 160;
+  }
+  let maxMsg = _maxMsgForShape(existingShape);
   const maxTitle = baseTheme.titleMaxLength || 92;
   const maxFrom = baseTheme.fromMaxLength || 60;
   const msgPlaceholder = baseTheme.messagePlaceholder || 'Type your hidden message...';
@@ -336,6 +340,17 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
         for (const b of shapeBtns) b.classList.remove('is-active');
         btn.classList.add('is-active');
         activeShape = btn.dataset.shape;
+
+        // Update max message length for new shape
+        maxMsg = _maxMsgForShape(activeShape);
+        if (msgInput){
+          msgInput.maxLength = maxMsg;
+          // Truncate if current text exceeds new limit
+          if (msgInput.value.length > maxMsg){
+            msgInput.value = msgInput.value.slice(0, maxMsg);
+          }
+        }
+        updatePreview();
 
         const r = getResolvedMsgTheme(card.card_key, activeStyle, activeShape) || {};
         _applyPreviewStyle(r);
