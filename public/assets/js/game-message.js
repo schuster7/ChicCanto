@@ -359,6 +359,20 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
 
   // --- Confirm ---
   if (confirmBtn){
+    let confirmPending = false;
+    let confirmTimer = null;
+
+    function resetConfirm(){
+      confirmPending = false;
+      if (confirmTimer) clearTimeout(confirmTimer);
+      confirmTimer = null;
+      confirmBtn.textContent = 'Confirm & create link';
+      confirmBtn.classList.remove('is-confirming');
+      // Re-check if should be disabled (no message = disabled)
+      const msg = (msgInput ? msgInput.value : '').trim();
+      confirmBtn.disabled = !msg;
+    }
+
     confirmBtn.addEventListener('click', async () => {
       const title = (titleInput ? titleInput.value : '').trim();
       const msg = (msgInput ? msgInput.value : '').trim();
@@ -369,7 +383,20 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
         return;
       }
 
+      // First click: ask for confirmation
+      if (!confirmPending){
+        confirmPending = true;
+        confirmBtn.textContent = 'Are you sure? Tap again to lock';
+        confirmBtn.classList.add('is-confirming');
+        confirmTimer = setTimeout(resetConfirm, 4000);
+        return;
+      }
+
+      // Second click: actually lock the card
+      if (confirmTimer) clearTimeout(confirmTimer);
+      confirmPending = false;
       confirmBtn.disabled = true;
+      confirmBtn.classList.remove('is-confirming');
       confirmBtn.textContent = 'Saving...';
 
       try{
@@ -393,11 +420,9 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
           });
         }
 
-        // Re-render to show share state
         renderMessageSetup(root, card, container, { previewMode });
       } catch(e){
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Confirm & create link';
+        resetConfirm();
         console.error('Failed to save message card:', e);
       }
     });
