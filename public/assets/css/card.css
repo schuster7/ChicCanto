@@ -1304,25 +1304,31 @@ border-radius: var(--scratch-tile-radius);
   box-shadow: 0 2px 8px rgba(0,0,0,.15);
 }
 .cc-try-scratch-modal__back{
-  display: none;
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 9502;
-  padding: 14px 20px;
-  text-align: center;
-  background: rgba(255,255,255,.95);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(0,0,0,.08);
-  box-shadow: 0 -2px 12px rgba(0,0,0,.06);
+  display: none;
 }
 .cc-try-scratch-modal__back.is-visible{
   display: block;
 }
 .cc-try-scratch-modal__back .btn{
+  background: rgba(255,255,255,.92);
   color: #333;
+  border: 1px solid rgba(0,0,0,.12);
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 40px;
+  padding: 10px 22px;
+  font-weight: 600;
+}
+.cc-try-scratch-modal__back .btn:hover{
+  background: #333;
+  color: #fff;
+  border-color: #333;
 }
 @media (max-width: 699px){
   .cc-try-scratch-modal{
