@@ -613,31 +613,69 @@ function _openTryScratch(container, card, { title, message, from, style, shape }
   if (existing) existing.remove();
 
   const resolved = getResolvedMsgTheme(card.card_key, style, shape) || {};
+  const presentation = resolved.presentation || 'fullscreen';
 
+  // Save current foil state so we can restore on close
+  const rootEl = document.documentElement;
+  const savedFoil = rootEl.dataset.foil || null;
+  const foilProps = ['--scratch-foil-base','--scratch-foil-hi','--scratch-foil-mid','--scratch-foil-dark','--scratch-foil-text'];
+  const savedFoilVars = {};
+  for (const p of foilProps) savedFoilVars[p] = rootEl.style.getPropertyValue(p) || null;
+
+  // Save current page theme CSS variables
+  const pageProps = ['--page-bg','--page-bg1','--page-glow-a1','--page-glow-a2','--page-glow-a3','--page-glow-b1','--page-glow-b2','--page-glow-a-opacity','--page-glow-b-opacity'];
+  const savedPageVars = {};
+  for (const p of pageProps) savedPageVars[p] = rootEl.style.getPropertyValue(p) || null;
+  const savedColorMode = rootEl.dataset.colorMode || null;
+  const savedBodyBg = document.body.style.background || null;
+  const savedBodyBgImage = document.body.style.backgroundImage || null;
+
+  // Apply foil overrides for this style
+  _clearFoilOverrides();
+  _applyFoilOverrides(resolved);
+
+  // Apply page theme (background colors) — same as applyPageTheme in card.js
+  const colorMode = resolved.colorMode || 'dark';
+  rootEl.dataset.colorMode = colorMode;
+  if (resolved.pageBg){
+    rootEl.style.setProperty('--page-bg', resolved.pageBg);
+    rootEl.style.setProperty('--page-bg1', resolved.pageBg1 || resolved.pageBg);
+  }
+  if (resolved.pageGlowA1) rootEl.style.setProperty('--page-glow-a1', resolved.pageGlowA1);
+  if (resolved.pageGlowA2) rootEl.style.setProperty('--page-glow-a2', resolved.pageGlowA2);
+  if (resolved.pageGlowA3) rootEl.style.setProperty('--page-glow-a3', resolved.pageGlowA3);
+  if (resolved.pageGlowB1) rootEl.style.setProperty('--page-glow-b1', resolved.pageGlowB1);
+  if (resolved.pageGlowB2) rootEl.style.setProperty('--page-glow-b2', resolved.pageGlowB2);
+  if (resolved.pageGlowAOpacity != null) rootEl.style.setProperty('--page-glow-a-opacity', String(resolved.pageGlowAOpacity));
+  if (resolved.pageGlowBOpacity != null) rootEl.style.setProperty('--page-glow-b-opacity', String(resolved.pageGlowBOpacity));
+
+  // Build modal with identical HTML structure to renderMessageScratch
   const modal = document.createElement('div');
   modal.className = 'cc-try-scratch-modal';
   modal.innerHTML = `
     <button class="cc-try-scratch-modal__close" type="button" aria-label="Close">&times;</button>
-    <div class="cc-try-scratch-modal__card">
-      <div class="scratch-stage msg-stage" data-card-style="${style || ''}">
-        <picture class="card-bg" aria-hidden="true">
-          <source media="(min-width: 700px)" srcset="${resolved.bgDesktopSrc || ''}">
-          <img src="${resolved.bgMobileSrc || resolved.bgDesktopSrc || ''}" alt="" draggable="false" loading="eager">
-        </picture>
-        <div class="msg-card__content">
-          ${title ? `<div class="msg-card__visible-title">${_escHtml(title)}</div>` : ''}
-          <div class="msg-card__scratch-area" style="aspect-ratio: ${resolved.scratchAspect || '400 / 350'}">
-            ${_borderRingHtml(resolved)}
-            <div class="msg-card__under-message">${_escHtml(message)}</div>
-            <div class="msg-card__scratch-tile" id="tryScratchTile">
-              <canvas id="tryScratchCanvas"></canvas>
+    <div class="msg-card-wrapper" data-presentation="${presentation}">
+      <div class="scratch-fx">
+        <div class="scratch-stage msg-stage" data-card-style="${style || ''}" data-presentation="${presentation}">
+          <picture class="card-bg" aria-hidden="true">
+            <source media="(min-width: 700px)" srcset="${resolved.bgDesktopSrc || ''}">
+            <img src="${resolved.bgMobileSrc || resolved.bgDesktopSrc || ''}" alt="" draggable="false" loading="eager">
+          </picture>
+          <div class="msg-card__content">
+            ${title ? `<div class="msg-card__visible-title">${_escHtml(title)}</div>` : ''}
+            <div class="msg-card__scratch-area" style="aspect-ratio: ${resolved.scratchAspect || '400 / 350'}">
+              ${_borderRingHtml(resolved)}
+              <div class="msg-card__under-message">${_escHtml(message)}</div>
+              <div class="msg-card__scratch-tile" id="tryScratchTile">
+                <canvas id="tryScratchCanvas"></canvas>
+              </div>
             </div>
+            ${from ? `<div class="msg-card__from-line">${_escHtml(from)}</div>` : ''}
           </div>
-          ${from ? `<div class="msg-card__from-line">${_escHtml(from)}</div>` : ''}
         </div>
       </div>
     </div>
-    <button class="btn outline cc-try-scratch-modal__back" type="button">Looks good? Go back</button>
+    <button class="btn outline cc-try-scratch-modal__back" type="button">Looks good? Go back to setup</button>
   `;
 
   container.appendChild(modal);
@@ -685,8 +723,25 @@ function _openTryScratch(container, card, { title, message, from, style, shape }
     });
   }
 
-  // Close handlers
-  function closeModal(){ modal.remove(); }
+  // Close: remove modal and restore previous foil + page theme state
+  function closeModal(){
+    modal.remove();
+    // Restore foil
+    _clearFoilOverrides();
+    if (savedFoil) rootEl.dataset.foil = savedFoil;
+    for (const p of foilProps){
+      if (savedFoilVars[p]) rootEl.style.setProperty(p, savedFoilVars[p]);
+    }
+    // Restore page theme
+    for (const p of pageProps){
+      if (savedPageVars[p]) rootEl.style.setProperty(p, savedPageVars[p]);
+      else rootEl.style.removeProperty(p);
+    }
+    if (savedColorMode) rootEl.dataset.colorMode = savedColorMode;
+    else delete rootEl.dataset.colorMode;
+    if (savedBodyBgImage) document.body.style.backgroundImage = savedBodyBgImage;
+    else if (savedBodyBg) document.body.style.background = savedBodyBg;
+  }
   modal.querySelector('.cc-try-scratch-modal__close').addEventListener('click', closeModal);
   modal.querySelector('.cc-try-scratch-modal__back').addEventListener('click', closeModal);
   modal.addEventListener('click', (e) => {

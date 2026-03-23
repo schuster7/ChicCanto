@@ -1265,37 +1265,31 @@ border-radius: var(--scratch-tile-radius);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,.92);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  overflow-y: auto;
+  background: linear-gradient(180deg, var(--page-bg1, #0c0e14), var(--page-bg, #0c0e14));
 }
 .cc-try-scratch-modal__close{
-  position: absolute;
+  position: fixed;
   top: 12px;
   right: 12px;
-  z-index: 2;
-  background: none;
+  z-index: 9600;
+  background: rgba(0,0,0,.35);
   border: none;
   color: #fff;
   font-size: 2rem;
   line-height: 1;
   cursor: pointer;
-  padding: 8px;
-  opacity: .7;
+  padding: 6px 10px;
+  border-radius: 6px;
+  opacity: .8;
   transition: opacity 150ms;
 }
 .cc-try-scratch-modal__close:hover{
   opacity: 1;
 }
-.cc-try-scratch-modal__card{
-  width: 100%;
-  max-width: 480px;
-  position: relative;
-}
 .cc-try-scratch-modal__back{
   display: none;
-  margin-top: 1.5rem;
+  margin: 1.5rem auto;
   color: #fff;
   border-color: rgba(255,255,255,.4);
 }
