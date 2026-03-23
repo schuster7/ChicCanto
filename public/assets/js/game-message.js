@@ -675,7 +675,7 @@ function _openTryScratch(container, card, { title, message, from, style, shape }
         </div>
       </div>
     </div>
-    <button class="btn outline cc-try-scratch-modal__back" type="button">Looks good? Go back to setup</button>
+    <div class="cc-try-scratch-modal__back"><button class="btn" type="button">Looks good? Go back to setup</button></div>
   `;
 
   container.appendChild(modal);
@@ -743,7 +743,7 @@ function _openTryScratch(container, card, { title, message, from, style, shape }
     else if (savedBodyBg) document.body.style.background = savedBodyBg;
   }
   modal.querySelector('.cc-try-scratch-modal__close').addEventListener('click', closeModal);
-  modal.querySelector('.cc-try-scratch-modal__back').addEventListener('click', closeModal);
+  modal.querySelector('.cc-try-scratch-modal__back .btn').addEventListener('click', closeModal);
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeModal();
   });
