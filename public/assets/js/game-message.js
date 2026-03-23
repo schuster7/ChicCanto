@@ -33,8 +33,8 @@ function _applyFoilOverrides(style){
 function _messageFontSize(text, shape){
   const len = Math.max(1, (text || '').length);
   const tight = (shape === 'heart' || shape === 'hexagon');
-  const max = tight ? 38 : 42;
-  const min = tight ? 15 : 16;
+  const max = tight ? 42 : 46;
+  const min = tight ? 22 : 24;
   const size = Math.max(min, Math.round(max - (max - min) * Math.sqrt(len / 200)));
   return size + 'px';
 }
@@ -288,7 +288,6 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
       const previewText = msgPreview.textContent || '';
       const shape = r.scratchShape || 'heart';
       msgPreview.style.fontSize = _messageFontSize(previewText, shape);
-      msgPreview.style.padding = (shape === 'heart' || shape === 'hexagon') ? '22% 18%' : '12% 10%';
     }
   }
 
@@ -352,7 +351,6 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
       msgPreview.textContent = msg || '';
       msgPreview.classList.toggle('is-empty', !msg);
       msgPreview.style.fontSize = _messageFontSize(msg, activeShape);
-      msgPreview.style.padding = (activeShape === 'heart' || activeShape === 'hexagon') ? '22% 18%' : '12% 10%';
     }
     if (fromPreview){
       fromPreview.textContent = from ? `${from}` : '';
@@ -536,7 +534,6 @@ export function renderMessageScratch(root, card){
       if (resolved.messageWeight) underMsg.style.fontWeight = resolved.messageWeight;
       if (resolved.messageTransform) underMsg.style.textTransform = resolved.messageTransform;
       underMsg.style.fontSize = _messageFontSize(message, resolved.scratchShape);
-      underMsg.style.padding = (resolved.scratchShape === 'heart' || resolved.scratchShape === 'hexagon') ? '22% 18%' : '12% 10%';
     }
   }
 
@@ -639,6 +636,5 @@ export function renderMessageRevealed(root, card){
     if (resolved.messageWeight) msgEl.style.fontWeight = resolved.messageWeight;
     if (resolved.messageTransform) msgEl.style.textTransform = resolved.messageTransform;
     msgEl.style.fontSize = _messageFontSize(message, resolved.scratchShape);
-    msgEl.style.padding = (resolved.scratchShape === 'heart' || resolved.scratchShape === 'hexagon') ? '22% 18%' : '12% 10%';
   }
 }
