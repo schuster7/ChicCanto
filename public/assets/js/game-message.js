@@ -141,6 +141,10 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
 
   root.innerHTML = `
     <section class="flow-screen msg-setup" data-card-style="${existingStyle}">
+      <div class="flow-intro">
+        <h1 class="flow-title">Create your card</h1>
+        <p class="flow-lead muted">Choose a style, write your message, then send the recipient link.</p>
+      </div>
       <div class="msg-setup__controls panel panel--glass panel--padded">
         <div class="msg-setup__card">
           <button class="msg-setup__preview-close" type="button" aria-label="Close preview">&times;</button>
