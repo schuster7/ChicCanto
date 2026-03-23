@@ -867,15 +867,20 @@ border-radius: var(--scratch-tile-radius);
     visibility: hidden;
     pointer-events: none;
     transition: opacity 220ms ease, visibility 220ms ease;
-    padding: 24px 16px;
+    padding: 0;
+    align-items: stretch;
     overflow-y: auto;
     margin: 0;
     max-width: none;
   }
   .msg-setup__card .msg-card{
-    max-width: 420px;
+    max-width: none;
     width: 100%;
-    margin: auto;
+    margin: 0;
+    border-radius: 0;
+  }
+  .msg-setup__card .msg-card__content{
+    min-height: 85vh;
   }
   .msg-setup--preview-open .msg-setup__card{
     opacity: 1;
