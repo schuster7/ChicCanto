@@ -32,16 +32,13 @@ function _applyFoilOverrides(style){
 /** Calculate a responsive font size for the hidden message based on length and shape. */
 function _messageFontSize(text, shape){
   const len = (text || '').length;
-  // Hearts and hexagons have less usable area than circles/squares
   const tight = (shape === 'heart' || shape === 'hexagon');
-  const base = tight ? 18 : 20;
-  const min = tight ? 10 : 11;
 
-  if (len <= 30) return base + 'px';
-  if (len <= 60) return Math.max(base - 2, min) + 'px';
-  if (len <= 100) return Math.max(base - 4, min) + 'px';
-  if (len <= 150) return Math.max(base - 6, min) + 'px';
-  return min + 'px';
+  if (len <= 30) return tight ? '20px' : '22px';
+  if (len <= 60) return tight ? '18px' : '20px';
+  if (len <= 100) return tight ? '16px' : '18px';
+  if (len <= 150) return tight ? '14px' : '16px';
+  return tight ? '13px' : '14px';
 }
 
 /** Clear any foil CSS overrides so switching styles starts clean. */
