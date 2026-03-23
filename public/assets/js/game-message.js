@@ -516,6 +516,9 @@ export function renderMessageScratch(root, card){
       if (resolved.messageColor) underMsg.style.color = resolved.messageColor;
       if (resolved.messageBg) underMsg.style.background = resolved.messageBg;
       if (resolved.messageFontSize) underMsg.style.fontSize = resolved.messageFontSize;
+      if (resolved.messageFont) underMsg.style.fontFamily = resolved.messageFont;
+      if (resolved.messageWeight) underMsg.style.fontWeight = resolved.messageWeight;
+      if (resolved.messageTransform) underMsg.style.textTransform = resolved.messageTransform;
     }
   }
 
@@ -614,5 +617,8 @@ export function renderMessageRevealed(root, card){
     if (resolved.messageColor) msgEl.style.color = resolved.messageColor;
     if (resolved.messageBg) msgEl.style.background = resolved.messageBg;
     if (resolved.messageFontSize) msgEl.style.fontSize = resolved.messageFontSize;
+    if (resolved.messageFont) msgEl.style.fontFamily = resolved.messageFont;
+    if (resolved.messageWeight) msgEl.style.fontWeight = resolved.messageWeight;
+    if (resolved.messageTransform) msgEl.style.textTransform = resolved.messageTransform;
   }
 }
