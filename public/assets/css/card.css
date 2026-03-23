@@ -1306,13 +1306,24 @@ border-radius: var(--scratch-tile-radius);
 @media (max-width: 699px){
   .cc-try-scratch-modal{
     padding: 0;
-    align-items: stretch;
-    justify-content: stretch;
+    display: flex;
+    flex-direction: column;
   }
   .cc-try-scratch-modal .msg-card-wrapper{
     width: 100%;
     max-width: 100%;
     margin: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .cc-try-scratch-modal .msg-card-wrapper .scratch-fx{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .cc-try-scratch-modal .msg-card-wrapper .scratch-stage{
+    flex: 1;
   }
   .cc-try-scratch-modal .msg-card-wrapper,
   .cc-try-scratch-modal .scratch-fx,
