@@ -29,6 +29,21 @@ function _applyFoilOverrides(style){
   if (style.foilText) root.style.setProperty('--scratch-foil-text', style.foilText);
 }
 
+/** Calculate a responsive font size for the hidden message based on length and shape. */
+function _messageFontSize(text, shape){
+  const len = (text || '').length;
+  // Hearts and hexagons have less usable area than circles/squares
+  const tight = (shape === 'heart' || shape === 'hexagon');
+  const base = tight ? 18 : 20;
+  const min = tight ? 10 : 11;
+
+  if (len <= 30) return base + 'px';
+  if (len <= 60) return Math.max(base - 2, min) + 'px';
+  if (len <= 100) return Math.max(base - 4, min) + 'px';
+  if (len <= 150) return Math.max(base - 6, min) + 'px';
+  return min + 'px';
+}
+
 /** Clear any foil CSS overrides so switching styles starts clean. */
 function _clearFoilOverrides(){
   const root = document.documentElement;
@@ -276,6 +291,12 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
     // Message text color
     if (msgPreview && r.messageColor) msgPreview.style.color = r.messageColor;
     if (msgPreview && r.messageBg) msgPreview.style.background = r.messageBg;
+    if (msgPreview){
+      const previewText = msgPreview.textContent || '';
+      const shape = r.scratchShape || 'heart';
+      msgPreview.style.fontSize = _messageFontSize(previewText, shape);
+      msgPreview.style.padding = (shape === 'heart' || shape === 'hexagon') ? '22% 18%' : '12% 10%';
+    }
   }
 
   function _updateBackgrounds(r){
@@ -337,6 +358,8 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
     if (msgPreview){
       msgPreview.textContent = msg || '';
       msgPreview.classList.toggle('is-empty', !msg);
+      msgPreview.style.fontSize = _messageFontSize(msg, activeShape);
+      msgPreview.style.padding = (activeShape === 'heart' || activeShape === 'hexagon') ? '22% 18%' : '12% 10%';
     }
     if (fromPreview){
       fromPreview.textContent = from ? `${from}` : '';
@@ -519,6 +542,8 @@ export function renderMessageScratch(root, card){
       if (resolved.messageFont) underMsg.style.fontFamily = resolved.messageFont;
       if (resolved.messageWeight) underMsg.style.fontWeight = resolved.messageWeight;
       if (resolved.messageTransform) underMsg.style.textTransform = resolved.messageTransform;
+      underMsg.style.fontSize = _messageFontSize(message, resolved.scratchShape);
+      underMsg.style.padding = (resolved.scratchShape === 'heart' || resolved.scratchShape === 'hexagon') ? '22% 18%' : '12% 10%';
     }
   }
 
@@ -620,5 +645,7 @@ export function renderMessageRevealed(root, card){
     if (resolved.messageFont) msgEl.style.fontFamily = resolved.messageFont;
     if (resolved.messageWeight) msgEl.style.fontWeight = resolved.messageWeight;
     if (resolved.messageTransform) msgEl.style.textTransform = resolved.messageTransform;
+    msgEl.style.fontSize = _messageFontSize(message, resolved.scratchShape);
+    msgEl.style.padding = (resolved.scratchShape === 'heart' || resolved.scratchShape === 'hexagon') ? '22% 18%' : '12% 10%';
   }
 }
