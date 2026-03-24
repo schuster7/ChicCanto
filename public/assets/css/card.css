@@ -1254,6 +1254,9 @@ border-radius: var(--scratch-tile-radius);
   [data-card-style="dark-luxury"] .msg-card__from-line{
     font-size: clamp(1.3rem, 5vw, 2rem);
   }
+  .msg-card__under-message{
+    padding: 20% 16%;
+  }
   .msg-card__content{
     padding: clamp(2rem, 8vw, 4rem) clamp(1rem, 4vw, 2rem);
     justify-content: space-evenly;
