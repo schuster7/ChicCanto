@@ -1229,6 +1229,14 @@ border-radius: var(--scratch-tile-radius);
   margin-top: clamp(0.5rem, 1.5vw, 1rem);
 }
 
+/* Dark-luxury: Garamond uppercase renders visually larger, scale down */
+[data-card-style="dark-luxury"] .msg-card__visible-title{
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+}
+[data-card-style="dark-luxury"] .msg-card__from-line{
+  font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+}
+
 @media (max-width: 699px){
   .msg-card__visible-title{
     font-size: clamp(2.4rem, 9vw, 3.8rem);
@@ -1239,6 +1247,12 @@ border-radius: var(--scratch-tile-radius);
   }
   .msg-card__from-line{
     font-size: clamp(1.8rem, 6.5vw, 2.6rem);
+  }
+  [data-card-style="dark-luxury"] .msg-card__visible-title{
+    font-size: clamp(1.8rem, 7vw, 2.8rem);
+  }
+  [data-card-style="dark-luxury"] .msg-card__from-line{
+    font-size: clamp(1.3rem, 5vw, 2rem);
   }
   .msg-card__content{
     padding: clamp(2rem, 8vw, 4rem) clamp(1rem, 4vw, 2rem);
