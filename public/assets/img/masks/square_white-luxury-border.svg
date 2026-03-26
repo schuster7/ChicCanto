@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+viewBox="0 0 427.5 427.5"
+preserveAspectRatio="xMidYMid meet">
+<g>
+	
+		<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="11.7499" y1="216.25" x2="415.7499" y2="216.25" gradientTransform="matrix(1 0 0 -1 0 430)">
+		<stop  offset="0" style="stop-color:#D7AA2D"/>
+		<stop  offset="0.2127" style="stop-color:#D7AA2D"/>
+		<stop  offset="0.3867" style="stop-color:#F2E278"/>
+		<stop  offset="0.4771" style="stop-color:#FFFB9A"/>
+		<stop  offset="0.499" style="stop-color:#F9EE89"/>
+		<stop  offset="0.6172" style="stop-color:#D7AA2D"/>
+		<stop  offset="0.7125" style="stop-color:#C39729"/>
+		<stop  offset="0.9061" style="stop-color:#916720"/>
+		<stop  offset="1" style="stop-color:#764E1B"/>
+	</linearGradient>
+	<path fill="url(#SVGID_1_)" d="M413.75,13.75v400h-400v-400H413.75 M415.75,11.75h-2h-400h-2v2v400v2h2h400h2v-2v-400V11.75
+		L415.75,11.75z"/>
+	
+		<linearGradient id="SVGID_00000138545739371350525580000007265989457164429219_" gradientUnits="userSpaceOnUse" x1="0" y1="213.75" x2="427.5" y2="213.75">
+		<stop  offset="0" style="stop-color:#D7AA2D"/>
+		<stop  offset="0.2127" style="stop-color:#D7AA2D"/>
+		<stop  offset="0.3867" style="stop-color:#F2E278"/>
+		<stop  offset="0.4771" style="stop-color:#FFFB9A"/>
+		<stop  offset="0.499" style="stop-color:#F9EE89"/>
+		<stop  offset="0.6172" style="stop-color:#D7AA2D"/>
+		<stop  offset="0.7125" style="stop-color:#C39729"/>
+		<stop  offset="0.9061" style="stop-color:#916720"/>
+		<stop  offset="1" style="stop-color:#764E1B"/>
+	</linearGradient>
+	<path fill="url(#SVGID_00000138545739371350525580000007265989457164429219_)" d="M426.75,0.75v426h-426v-426H426.75 M427.5,0
+		h-0.75h-426H0v0.75v426v0.75h0.75h426h0.75v-0.75v-426V0L427.5,0z"/>
+	<g opacity="0.1">
+		<g>
+			<rect x="0.75" y="0.75" width="426" height="426"/>
+		</g>
+		<g>
+			<rect x="1.073" y="1.073" fill="#080808" width="425.355" height="425.355"/>
+		</g>
+		<g>
+			<rect x="1.395" y="1.395" fill="#101010" width="424.709" height="424.709"/>
+		</g>
+		<g>
+			<rect x="1.718" y="1.718" fill="#191919" width="424.064" height="424.064"/>
+		</g>
+		<g>
+			<rect x="2.041" y="2.041" fill="#212121" width="423.419" height="423.419"/>
+		</g>
+		<g>
+			<rect x="2.363" y="2.363" fill="#292929" width="422.774" height="422.774"/>
+		</g>
+		<g>
+			<rect x="2.686" y="2.686" fill="#313131" width="422.129" height="422.129"/>
+		</g>
+		<g>
+			<rect x="3.008" y="3.008" fill="#3A3A3A" width="421.484" height="421.484"/>
+		</g>
+		<g>
+			<rect x="3.331" y="3.331" fill="#424242" width="420.838" height="420.838"/>
+		</g>
+		<g>
+			<rect x="3.653" y="3.653" fill="#4A4A4A" width="420.193" height="420.193"/>
+		</g>
+		<g>
+			<rect x="3.976" y="3.976" fill="#525252" width="419.548" height="419.548"/>
+		</g>
+		<g>
+			<rect x="4.298" y="4.298" fill="#5A5A5A" width="418.903" height="418.903"/>
+		</g>
+		<g>
+			<rect x="4.621" y="4.621" fill="#636363" width="418.258" height="418.258"/>
+		</g>
+		<g>
+			<rect x="4.943" y="4.943" fill="#6B6B6B" width="417.613" height="417.613"/>
+		</g>
+		<g>
+			<rect x="5.266" y="5.266" fill="#737373" width="416.968" height="416.968"/>
+		</g>
+		<g>
+			<rect x="5.589" y="5.589" fill="#7B7B7B" width="416.322" height="416.322"/>
+		</g>
+		<g>
+			<rect x="5.911" y="5.911" fill="#848484" width="415.678" height="415.678"/>
+		</g>
+		<g>
+			<rect x="6.234" y="6.234" fill="#8C8C8C" width="415.032" height="415.032"/>
+		</g>
+		<g>
+			<rect x="6.557" y="6.557" fill="#949494" width="414.387" height="414.387"/>
+		</g>
+		<g>
+			<rect x="6.879" y="6.879" fill="#9C9C9C" width="413.742" height="413.742"/>
+		</g>
+		<g>
+			<rect x="7.202" y="7.202" fill="#A5A5A5" width="413.097" height="413.097"/>
+		</g>
+		<g>
+			<rect x="7.524" y="7.524" fill="#ADADAD" width="412.451" height="412.451"/>
+		</g>
+		<g>
+			<rect x="7.847" y="7.847" fill="#B5B5B5" width="411.807" height="411.807"/>
+		</g>
+		<g>
+			<rect x="8.169" y="8.169" fill="#BDBDBD" width="411.162" height="411.162"/>
+		</g>
+		<g>
+			<rect x="8.492" y="8.492" fill="#C5C5C5" width="410.516" height="410.516"/>
+		</g>
+		<g>
+			<rect x="8.814" y="8.814" fill="#CECECE" width="409.871" height="409.871"/>
+		</g>
+		<g>
+			<rect x="9.137" y="9.137" fill="#D6D6D6" width="409.226" height="409.226"/>
+		</g>
+		<g>
+			<rect x="9.459" y="9.459" fill="#DEDEDE" width="408.581" height="408.581"/>
+		</g>
+		<g>
+			<rect x="9.782" y="9.782" fill="#E6E6E6" width="407.936" height="407.936"/>
+		</g>
+		<g>
+			<rect x="10.105" y="10.105" fill="#EFEFEF" width="407.291" height="407.291"/>
+		</g>
+		<g>
+			<rect x="10.427" y="10.427" fill="#F7F7F7" width="406.645" height="406.645"/>
+		</g>
+		<rect x="10.75" y="10.75" fill="#FFFFFF" width="406" height="406"/>
+	</g>
+</g>
+</svg>
