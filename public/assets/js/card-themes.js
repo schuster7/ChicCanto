@@ -342,6 +342,39 @@ export const CARD_THEMES = {
         pageGlowB1: 'rgba(200, 170, 70, .03)',
         pageGlowB2: 'rgba(160, 130, 40, .04)',
       },
+
+      'white-luxury': {
+        colorMode: 'light',
+        presentation: 'fullscreen',
+        label: 'White Luxury',
+        thumbSrc: '/assets/cards/custom/white-luxury/thumb.jpg',
+        bgDesktopSrc: '/assets/cards/custom/white-luxury/bg-desktop.jpg',
+        bgMobileSrc: '/assets/cards/custom/white-luxury/bg-mobile.jpg',
+        foil: 'gold',
+        titleFont: "'Cormorant Garamond', serif",
+        titleWeight: '500',
+        titleColor: '#b8945f',
+        titleTransform: 'none',
+        fromFont: "'Cormorant Garamond', serif",
+        fromWeight: '500',
+        fromColor: '#b8945f',
+        fromStyle: 'normal',
+        fromTransform: 'none',
+        messageColor: '#b8945f',
+        messageFont: "'Cormorant Garamond', serif",
+        messageWeight: '500',
+        messageTransform: 'none',
+        messageBg: '#f5f0e8',
+        borderRing: true,
+        borderBasePath: '/assets/img/masks/',
+        pageBg: '#e8e3da',
+        pageBg1: '#f0ebe2',
+        pageGlowA1: 'rgba(200, 170, 110, .08)',
+        pageGlowA2: 'rgba(220, 190, 130, .06)',
+        pageGlowA3: 'rgba(240, 210, 150, .04)',
+        pageGlowB1: 'rgba(200, 170, 110, .03)',
+        pageGlowB2: 'rgba(180, 150, 90, .04)',
+      },
     },
   },
 };
@@ -375,10 +408,10 @@ export function getResolvedMsgTheme(card_key, card_style, scratch_shape){
   // Build the scratch mask path
   const scratchMask = shape.mask || '/assets/img/masks/heart.svg';
 
-  // Build the border ring path for dark-luxury
+  // Build the border ring path (dark-luxury, white-luxury, etc)
   let borderRingSrc = null;
   if (style.borderRing && style.borderBasePath && shapeKey){
-    borderRingSrc = `${style.borderBasePath}${shapeKey}_dark-luxury-border.svg`;
+    borderRingSrc = `${style.borderBasePath}${shapeKey}_${styleKey}-border.svg`;
   }
 
   // Merge: base theme + style overrides + computed shape values
