@@ -1115,7 +1115,7 @@ border-radius: var(--scratch-tile-radius);
 /* --- Style picker (thumbnail grid) --- */
 .msg-style-picker{
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
 }
 @media (max-width: 560px){
