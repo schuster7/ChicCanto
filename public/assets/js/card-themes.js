@@ -511,15 +511,14 @@ export const CARD_THEMES = {
     pageBg1: '#f5f2ee',
   },
 
-/**
- * Resolve visual config + text for one step of a sequential card.
- * Returns { text, visual } where visual is a flat config object.
- *
- * @param {string} card_key
- * @param {number} stepIndex   0, 1, or 2
- * @param {string} language    'en' | 'de'
- * @param {string} gender      'boy' | 'girl'
- */
+};  // closes CARD_THEMES
+
+
+export function getCardTheme(card_key){
+  const k = String(card_key || '').trim();
+  return CARD_THEMES[k] || null;
+}
+
 export function getSeqStepConfig(card_key, stepIndex, language, gender){
   const theme = getCardTheme(card_key);
   if (!theme || theme.messageMode !== 'sequential') return null;
@@ -531,7 +530,6 @@ export function getSeqStepConfig(card_key, stepIndex, language, gender){
   const msgEntry = msgs[stepIndex] || {};
   const visEntry = visuals[stepIndex] || {};
 
-  // Resolve text
   let text;
   if (stepIndex === 2){
     text = gender === 'girl' ? (msgEntry.girl || 'GIRL!') : (msgEntry.boy || 'BOY!');
@@ -539,7 +537,6 @@ export function getSeqStepConfig(card_key, stepIndex, language, gender){
     text = msgEntry.text || '';
   }
 
-  // Resolve visual (step 2 is gender-keyed)
   let visual;
   if (stepIndex === 2 && visEntry.boy && visEntry.girl){
     visual = gender === 'girl' ? visEntry.girl : visEntry.boy;
@@ -549,22 +546,11 @@ export function getSeqStepConfig(card_key, stepIndex, language, gender){
 
   return { text, visual: { ...visual } };
 }
-  const k = String(card_key || '').trim();
-  return CARD_THEMES[k] || null;
-}
 
-/**
- * Resolve the full visual config for a custom message card.
- * Merges the active style into the base theme so callers get
- * a flat object with bgDesktopSrc, pageBg, foil, etc.
- *
- * For non-custom cards (match-3), returns the theme as-is.
- */
 export function getResolvedMsgTheme(card_key, card_style, scratch_shape){
   const theme = getCardTheme(card_key);
   if (!theme) return null;
 
-  // Non-custom cards: return as-is
   if (!theme.styles) return theme;
 
   const styleKey = card_style || theme.defaultStyle || 'stardust';
@@ -574,16 +560,13 @@ export function getResolvedMsgTheme(card_key, card_style, scratch_shape){
   const shapes = theme.availableShapes || [];
   const shape = shapes.find(s => s.key === shapeKey) || shapes[0] || {};
 
-  // Build the scratch mask path
   const scratchMask = shape.mask || '/assets/img/masks/heart.svg';
 
-  // Build the border ring path (dark-luxury, white-luxury, etc)
   let borderRingSrc = null;
   if (style.borderRing && style.borderBasePath && shapeKey){
     borderRingSrc = `${style.borderBasePath}${shapeKey}_${styleKey}-border.svg`;
   }
 
-  // Merge: base theme + style overrides + computed shape values
   return {
     ...theme,
     ...style,
@@ -591,7 +574,6 @@ export function getResolvedMsgTheme(card_key, card_style, scratch_shape){
     scratchShape: shapeKey,
     scratchAspect: shape.aspect || '400 / 350',
     borderRingSrc,
-    // Keep styles map available for the setup picker
     styles: theme.styles,
     availableShapes: theme.availableShapes,
   };
