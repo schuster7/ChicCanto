@@ -1140,14 +1140,11 @@ border-radius: var(--scratch-tile-radius);
   aspect-ratio: 3 / 5;
   object-fit: contain;
   border-radius: calc(var(--radius-sm, 8px) - 2px);
-  max-height: 180px;
 }
 .msg-style-picker__item.is-active{
   opacity: 1;
-}
-.msg-style-picker__item.is-active img{
-  border: 2px solid #b8945f;
-  border-radius: calc(var(--radius-sm, 8px) - 2px);
+  border: 2px solid rgba(184, 148, 95, 0.4);
+  border-radius: var(--radius-sm, 8px);
 }
 .msg-style-picker__item:not(:disabled):hover{
   opacity: 0.9;
