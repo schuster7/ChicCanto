@@ -2406,7 +2406,8 @@ button.btn::-moz-focus-inner {
   padding: 8px;
   border-radius: 16px;
   border: none;
-  background: rgba(255, 255, 255, .92);
+  background: #ffffff;
+  opacity: 1;
   box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
   display: none;
 }

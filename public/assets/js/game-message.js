@@ -521,9 +521,9 @@ export function renderMessageScratch(root, card){
   _applyFoilOverrides(resolved);
 
   root.innerHTML = `
-    <div class="msg-card-wrapper" data-presentation="${resolved.presentation || 'fullscreen'}">
+    <div class="msg-card-wrapper" data-presentation="fullscreen">
       <div class="scratch-fx">
-        <div class="scratch-stage msg-stage" data-export-root="1" data-card-style="${card.card_style || ''}" data-presentation="${resolved.presentation || 'fullscreen'}">
+        <div class="scratch-stage msg-stage" data-export-root="1" data-card-style="${card.card_style || ''}" data-presentation="fullscreen">
           <picture class="card-bg" aria-hidden="true">
             <source media="(min-width: 700px)" srcset="${resolved.bgDesktopSrc || ''}">
             <img src="${resolved.bgMobileSrc || resolved.bgDesktopSrc || ''}" alt="" draggable="false" loading="eager">
@@ -778,9 +778,9 @@ export function renderMessageRevealed(root, card){
   _applyFoilOverrides(resolved);
 
   root.innerHTML = `
-    <div class="msg-card-wrapper" data-presentation="${resolved.presentation || 'fullscreen'}">
+    <div class="msg-card-wrapper" data-presentation="fullscreen">
       <div class="scratch-fx">
-        <div class="scratch-stage msg-stage" data-export-root="1" data-card-style="${card.card_style || ''}" data-presentation="${resolved.presentation || 'fullscreen'}">
+        <div class="scratch-stage msg-stage" data-export-root="1" data-card-style="${card.card_style || ''}" data-presentation="fullscreen">
           <picture class="card-bg" aria-hidden="true">
             <source media="(min-width: 700px)" srcset="${resolved.bgDesktopSrc || ''}">
             <img src="${resolved.bgMobileSrc || resolved.bgDesktopSrc || ''}" alt="" draggable="false" loading="eager">
