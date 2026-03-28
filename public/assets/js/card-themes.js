@@ -382,9 +382,173 @@ export const CARD_THEMES = {
       },
     },
   },
-};
 
-export function getCardTheme(card_key){
+  // ─── Gender Reveal — sequential themed card ─────────────────────────
+  // Locked design. Sender picks language, boy/girl, and optional custom message.
+  // Recipient scratches 3 hearts in sequence: news → it's a → BOY!/GIRL!
+
+  'gender-reveal': {
+    key: 'gender-reveal',
+    gameType: 'message',
+    messageMode: 'sequential',
+    colorMode: 'light',
+    presentation: 'fullscreen',
+    availableLanguages: ['en', 'de'],
+    defaultLanguage: 'en',
+
+    thumbSrc: '/assets/cards/gender-reveal/thumb.jpg',
+
+    // Locked to heart shape, all 3 steps.
+    scratchMask: '/assets/img/masks/heart.svg',
+    scratchAspect: '400 / 350',
+
+    // Fonts shared across all steps.
+    titleFont: "'Playfair Display', serif",
+    titleWeight: '700',
+    messageFont: "'Playfair Display', serif",
+    messageWeight: '700',
+    foil: 'gold',
+
+    // Step messages keyed by language. Index 0-1 have `text`; index 2 has `boy`/`girl`.
+    stepMessages: {
+      en: [
+        { text: 'We have exciting news\u2026' },
+        { text: "It\u2019s a\u2026" },
+        { boy: 'BOY!', girl: 'GIRL!' },
+      ],
+      de: [
+        { text: 'Wir haben aufregende Neuigkeiten\u2026' },
+        { text: 'Es wird ein\u2026' },
+        { boy: 'JUNGE!', girl: 'M\u00c4DCHEN!' },
+      ],
+    },
+
+    // Per-step visual overrides. stepVisuals[2] uses boy/girl sub-keys.
+    stepVisuals: [
+      {
+        // Step 0 — neutral warm
+        bgDesktopSrc: '/assets/cards/gender-reveal/step0/bg-desktop.jpg',
+        bgMobileSrc:  '/assets/cards/gender-reveal/step0/bg-mobile.jpg',
+        foilBase: '#e8dfd4',
+        foilHi:   '#f0e8dc',
+        foilMid:  '#e0d8cc',
+        foilDark: '#d8d0c4',
+        foilText: 'rgba(120,100,80,0.5)',
+        pageBg:  '#f0ede8',
+        pageBg1: '#f5f2ee',
+        pageGlowA1: 'rgba(200,180,140,.10)',
+        pageGlowA2: 'rgba(210,190,150,.07)',
+        pageGlowA3: 'rgba(220,200,160,.04)',
+        pageGlowB1: 'rgba(190,170,130,.03)',
+        pageGlowB2: 'rgba(180,160,120,.04)',
+        textColor:  '#3d3228',
+        messageBg:  '#f0ede8',
+      },
+      {
+        // Step 1 — same palette, slightly deeper
+        bgDesktopSrc: '/assets/cards/gender-reveal/step1/bg-desktop.jpg',
+        bgMobileSrc:  '/assets/cards/gender-reveal/step1/bg-mobile.jpg',
+        foilBase: '#e0d7cc',
+        foilHi:   '#e8e0d4',
+        foilMid:  '#d8d0c4',
+        foilDark: '#d0c8bc',
+        foilText: 'rgba(120,100,80,0.5)',
+        pageBg:  '#ece8e2',
+        pageBg1: '#f2eee8',
+        pageGlowA1: 'rgba(200,180,140,.12)',
+        pageGlowA2: 'rgba(210,190,150,.09)',
+        pageGlowA3: 'rgba(220,200,160,.05)',
+        pageGlowB1: 'rgba(190,170,130,.04)',
+        pageGlowB2: 'rgba(180,160,120,.05)',
+        textColor:  '#3d3228',
+        messageBg:  '#ece8e2',
+      },
+      {
+        // Step 2 — gender-specific sub-keys
+        boy: {
+          bgDesktopSrc: '/assets/cards/gender-reveal/step2-boy/bg-desktop.jpg',
+          bgMobileSrc:  '/assets/cards/gender-reveal/step2-boy/bg-mobile.jpg',
+          foilBase: '#9ec9e8',
+          foilHi:   '#b8d8f0',
+          foilMid:  '#8abcd8',
+          foilDark: '#70aac8',
+          foilText: 'rgba(255,255,255,0.6)',
+          pageBg:  '#c8e4f8',
+          pageBg1: '#d8eeff',
+          pageGlowA1: 'rgba(80,160,220,.18)',
+          pageGlowA2: 'rgba(100,180,240,.12)',
+          pageGlowA3: 'rgba(120,200,255,.07)',
+          pageGlowB1: 'rgba(60,140,200,.05)',
+          pageGlowB2: 'rgba(40,120,180,.07)',
+          textColor:  '#1a5c8c',
+          messageBg:  '#c8e4f8',
+          floodColor: '#4da8da',
+        },
+        girl: {
+          bgDesktopSrc: '/assets/cards/gender-reveal/step2-girl/bg-desktop.jpg',
+          bgMobileSrc:  '/assets/cards/gender-reveal/step2-girl/bg-mobile.jpg',
+          foilBase: '#f0b0c8',
+          foilHi:   '#f8c8d8',
+          foilMid:  '#e8a0b8',
+          foilDark: '#e090a8',
+          foilText: 'rgba(255,255,255,0.6)',
+          pageBg:  '#f8d8e8',
+          pageBg1: '#ffebf3',
+          pageGlowA1: 'rgba(220,80,150,.18)',
+          pageGlowA2: 'rgba(240,110,175,.12)',
+          pageGlowA3: 'rgba(255,140,200,.07)',
+          pageGlowB1: 'rgba(200,60,130,.05)',
+          pageGlowB2: 'rgba(180,40,110,.07)',
+          textColor:  '#8c1a50',
+          messageBg:  '#f8d8e8',
+          floodColor: '#e87ab0',
+        },
+      },
+    ],
+
+    // Base page background (applied before step theme overrides)
+    pageBg:  '#f0ede8',
+    pageBg1: '#f5f2ee',
+  },
+
+/**
+ * Resolve visual config + text for one step of a sequential card.
+ * Returns { text, visual } where visual is a flat config object.
+ *
+ * @param {string} card_key
+ * @param {number} stepIndex   0, 1, or 2
+ * @param {string} language    'en' | 'de'
+ * @param {string} gender      'boy' | 'girl'
+ */
+export function getSeqStepConfig(card_key, stepIndex, language, gender){
+  const theme = getCardTheme(card_key);
+  if (!theme || theme.messageMode !== 'sequential') return null;
+
+  const lang = language || theme.defaultLanguage || 'en';
+  const msgs = (theme.stepMessages && (theme.stepMessages[lang] || theme.stepMessages['en'])) || [];
+  const visuals = theme.stepVisuals || [];
+
+  const msgEntry = msgs[stepIndex] || {};
+  const visEntry = visuals[stepIndex] || {};
+
+  // Resolve text
+  let text;
+  if (stepIndex === 2){
+    text = gender === 'girl' ? (msgEntry.girl || 'GIRL!') : (msgEntry.boy || 'BOY!');
+  } else {
+    text = msgEntry.text || '';
+  }
+
+  // Resolve visual (step 2 is gender-keyed)
+  let visual;
+  if (stepIndex === 2 && visEntry.boy && visEntry.girl){
+    visual = gender === 'girl' ? visEntry.girl : visEntry.boy;
+  } else {
+    visual = visEntry;
+  }
+
+  return { text, visual: { ...visual } };
+}
   const k = String(card_key || '').trim();
   return CARD_THEMES[k] || null;
 }

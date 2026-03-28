@@ -4,7 +4,7 @@
 // v2: style picker, shape picker, "From" sign-off, dark-luxury border ring.
 
 import { attachScratchTile } from './scratch.js';
-import { getCardTheme, getResolvedMsgTheme } from './card-themes.js';
+import { getCardTheme, getResolvedMsgTheme, getSeqStepConfig } from './card-themes.js';
 import { getCard, saveCard, setConfiguredAndWait, setRevealedAndWait } from './store.js';
 import { copyText } from './utils.js';
 
@@ -86,6 +86,9 @@ function _borderRingHtml(resolved){
 
 export function renderMessageSetup(root, card, container, { previewMode = false } = {}){
   const baseTheme = getCardTheme(card.card_key) || {};
+  if (baseTheme.messageMode === 'sequential'){
+    return _renderSeqSetup(root, card, container, { previewMode });
+  }
   const maxMsgDefault = baseTheme.messageMaxLength || 200;
   function _maxMsgForShape(shape){
     return (shape === 'heart' || shape === 'hexagon') ? 120 : 160;
@@ -511,6 +514,10 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
 // ─── Scratch (recipient view) ────────────────────────────────────────
 
 export function renderMessageScratch(root, card){
+  const theme = getCardTheme(card.card_key) || {};
+  if (theme.messageMode === 'sequential'){
+    return _renderSeqScratch(root, card);
+  }
   const resolved = getResolvedMsgTheme(card.card_key, card.card_style, card.scratch_shape) || {};
   const message = card.message || '';
   const visibleTitle = card.visible_title || '';
@@ -768,6 +775,10 @@ function _openTryScratch(container, card, { title, message, from, style, shape }
 // ─── Revealed (returning visitor) ────────────────────────────────────
 
 export function renderMessageRevealed(root, card){
+  const theme = getCardTheme(card.card_key) || {};
+  if (theme.messageMode === 'sequential'){
+    return _renderSeqRevealed(root, card);
+  }
   const resolved = getResolvedMsgTheme(card.card_key, card.card_style, card.scratch_shape) || {};
   const message = card.message || '';
   const visibleTitle = card.visible_title || '';
@@ -815,5 +826,628 @@ export function renderMessageRevealed(root, card){
     if (resolved.messageWeight) msgEl.style.fontWeight = resolved.messageWeight;
     if (resolved.messageTransform) msgEl.style.textTransform = resolved.messageTransform;
     msgEl.style.fontSize = _messageFontSize(message, resolved.scratchShape);
+  }
+}
+
+
+// ─── Sequential mode (gender reveal + future themed products) ────────────────
+//
+// Activated when theme.messageMode === 'sequential'.
+// All three exported render functions branch here.
+// Card fields used: language, gender, custom_message, current_step, revealed_steps.
+
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Apply page theme CSS vars for a given step's visual config. */
+function _applySeqStepPageTheme(theme, visual){
+  const root = document.documentElement;
+  root.dataset.colorMode = theme.colorMode || 'light';
+
+  const set = (prop, val) => { if (val) root.style.setProperty(prop, val); };
+  set('--page-bg',          visual.pageBg  || theme.pageBg);
+  set('--page-bg1',         visual.pageBg1 || theme.pageBg1);
+  set('--page-glow-a1',     visual.pageGlowA1);
+  set('--page-glow-a2',     visual.pageGlowA2);
+  set('--page-glow-a3',     visual.pageGlowA3);
+  set('--page-glow-b1',     visual.pageGlowB1);
+  set('--page-glow-b2',     visual.pageGlowB2);
+
+  _clearFoilOverrides();
+  _applyFoilOverrides({
+    foil:     theme.foil,
+    foilBase: visual.foilBase,
+    foilHi:   visual.foilHi,
+    foilMid:  visual.foilMid,
+    foilDark: visual.foilDark,
+    foilText: visual.foilText,
+  });
+}
+
+/** Render step progress dots. */
+function _seqProgressHtml(currentStep, totalSteps){
+  return `<div class="seq-progress" role="progressbar" aria-label="Step ${currentStep + 1} of ${totalSteps}">
+    ${Array.from({ length: totalSteps }, (_, i) => {
+      const cls = i < currentStep ? 'is-done' : i === currentStep ? 'is-active' : '';
+      return `<div class="seq-progress__dot ${cls}"></div>`;
+    }).join('')}
+  </div>`;
+}
+
+/** Persist step completion to card record (recipient-side). */
+async function _persistSeqStep(card, completedStep, nextStep){
+  const revealedSteps = Array.isArray(card.revealed_steps) ? [...card.revealed_steps] : [];
+  if (!revealedSteps.includes(completedStep)) revealedSteps.push(completedStep);
+
+  card.revealed_steps = revealedSteps;
+  card.current_step   = nextStep;
+
+  // Fire-and-forget: local mirror + async API
+  saveCard(card);
+}
+
+
+// ── Setup (sender) ────────────────────────────────────────────────────────────
+
+function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
+  const theme = getCardTheme(card.card_key) || {};
+  const isConfigured = !!card.configured;
+
+  // ── Configured: show share UI ──
+  if (isConfigured){
+    const lang   = card.language || theme.defaultLanguage || 'en';
+    const gender = card.gender || 'boy';
+    const msgs   = (theme.stepMessages && (theme.stepMessages[lang] || theme.stepMessages['en'])) || [];
+    const step2  = msgs[2] || {};
+    const revealText = gender === 'girl' ? (step2.girl || 'GIRL!') : (step2.boy || 'BOY!');
+
+    root.innerHTML = `
+      <section class="flow-screen seq-setup">
+        <div class="flow-intro">
+          <h1 class="flow-title">Your Gender Reveal is ready!</h1>
+          <p class="flow-lead muted">Revealing <strong>${_escHtml(revealText)}</strong> in ${_escHtml(lang === 'de' ? 'Deutsch' : 'English')}. Share the link with your recipient.</p>
+        </div>
+        <div class="seq-setup__form panel panel--glass panel--padded">
+          ${card.custom_message ? `<p class="seq-setup__summary muted">Personal message: <em>${_escHtml(card.custom_message)}</em></p>` : ''}
+          <div class="msg-setup__actions">
+            <button class="btn primary" type="button" data-action="copy-link">Copy recipient link</button>
+            <button class="btn" type="button" data-action="share-link">Share</button>
+          </div>
+        </div>
+      </section>
+    `;
+
+    const recipientUrl = `${window.location.origin}/open/?token=${card.token}`;
+
+    root.querySelector('[data-action="copy-link"]')?.addEventListener('click', async function(){
+      try{
+        await copyText(recipientUrl);
+        this.textContent = 'Copied!';
+        this.disabled = true;
+        setTimeout(() => { this.textContent = 'Copy recipient link'; this.disabled = false; }, 1200);
+      }catch(_){}
+    });
+
+    root.querySelector('[data-action="share-link"]')?.addEventListener('click', async function(){
+      try{
+        if (navigator.share){
+          await navigator.share({ url: recipientUrl, text: 'I have a surprise for you!' });
+        } else {
+          await copyText(recipientUrl);
+          this.textContent = 'Link copied!';
+          setTimeout(() => { this.textContent = 'Share'; }, 1200);
+        }
+      }catch(_){}
+    });
+
+    return;
+  }
+
+  // ── Not configured: show setup form ──
+  const langs   = theme.availableLanguages || ['en'];
+  const activeLang = card.language || theme.defaultLanguage || 'en';
+
+  root.innerHTML = `
+    <section class="flow-screen seq-setup">
+      <div class="flow-intro">
+        <h1 class="flow-title">Set up your Gender Reveal</h1>
+        <p class="flow-lead muted">Choose language, pick the reveal, and add an optional personal message.</p>
+      </div>
+      <div class="seq-setup__form panel panel--glass panel--padded">
+
+        ${langs.length > 1 ? `
+        <div class="msg-setup__field">
+          <label class="msg-setup__field-label">Language / Sprache:</label>
+          <div class="seq-btn-group" id="seqLangBtns">
+            ${langs.map(l => `
+              <button type="button" class="btn seq-lang-btn${l === activeLang ? ' is-active' : ''}" data-lang="${l}">
+                ${l === 'de' ? 'Deutsch' : 'English'}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="msg-setup__field">
+          <label class="msg-setup__field-label">It&#8217;s a&hellip;</label>
+          <div class="seq-btn-group seq-gender-group" id="seqGenderBtns">
+            <button type="button" class="btn seq-gender-btn" data-gender="boy">
+              <span class="seq-gender-btn__emoji">👦</span>
+              <span class="seq-gender-btn__label">BOY</span>
+            </button>
+            <button type="button" class="btn seq-gender-btn" data-gender="girl">
+              <span class="seq-gender-btn__emoji">👧</span>
+              <span class="seq-gender-btn__label">GIRL</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="msg-setup__field">
+          <div class="msg-setup__field-header">
+            <label for="seqCustomMsg">Personal message <span class="muted">(optional):</span></label>
+            <span class="msg-setup__counter"><span id="seqMsgCount">60</span> left</span>
+          </div>
+          <input type="text" id="seqCustomMsg" class="input" maxlength="60"
+            placeholder="e.g. We can&#8217;t wait to meet you!">
+          <p class="msg-setup__hint muted" style="margin-top:0.25rem">Shown below the BOY! / GIRL! reveal.</p>
+        </div>
+
+        <div class="msg-setup__actions">
+          <button type="button" class="btn" data-action="confirm" disabled>Confirm &amp; create link</button>
+        </div>
+        <p class="msg-setup__hint muted">Once confirmed, the reveal cannot be changed.</p>
+      </div>
+    </section>
+  `;
+
+  // ── State ──
+  let selectedLang   = activeLang;
+  let selectedGender = null;
+
+  const confirmBtn   = root.querySelector('[data-action="confirm"]');
+  const customInput  = root.querySelector('#seqCustomMsg');
+  const msgCounter   = root.querySelector('#seqMsgCount');
+
+  function _updateConfirmState(){
+    if (confirmBtn) confirmBtn.disabled = !selectedGender;
+  }
+
+  // ── Language picker ──
+  for (const btn of root.querySelectorAll('.seq-lang-btn')){
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.seq-lang-btn').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      selectedLang = btn.dataset.lang;
+    });
+  }
+
+  // ── Gender picker ──
+  for (const btn of root.querySelectorAll('.seq-gender-btn')){
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.seq-gender-btn').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      selectedGender = btn.dataset.gender;
+      _updateConfirmState();
+    });
+  }
+
+  // ── Custom message counter ──
+  if (customInput){
+    customInput.addEventListener('input', () => {
+      if (msgCounter) msgCounter.textContent = String(60 - customInput.value.length);
+    });
+  }
+
+  // ── Confirm (double-click) ──
+  if (confirmBtn){
+    let confirmPending = false;
+    let confirmTimer   = null;
+
+    function _resetConfirm(){
+      confirmPending = false;
+      if (confirmTimer) clearTimeout(confirmTimer);
+      confirmTimer = null;
+      confirmBtn.textContent = 'Confirm & create link';
+      confirmBtn.classList.remove('is-confirming');
+      confirmBtn.disabled = !selectedGender;
+    }
+
+    confirmBtn.addEventListener('click', async () => {
+      if (!selectedGender) return;
+
+      if (!confirmPending){
+        confirmPending = true;
+        confirmBtn.textContent = 'Are you sure? Tap again to lock';
+        confirmBtn.classList.add('is-confirming');
+        confirmTimer = setTimeout(_resetConfirm, 4000);
+        return;
+      }
+
+      if (confirmTimer) clearTimeout(confirmTimer);
+      confirmPending = false;
+      confirmBtn.disabled = true;
+      confirmBtn.classList.remove('is-confirming');
+      confirmBtn.textContent = 'Saving\u2026';
+
+      const customMsg = customInput ? customInput.value.trim() : '';
+
+      try{
+        card.language       = selectedLang;
+        card.gender         = selectedGender;
+        card.custom_message = customMsg || null;
+        card.configured     = true;
+        card.current_step   = 0;
+        card.revealed_steps = [];
+
+        if (previewMode){
+          await saveCard(card);
+        } else {
+          await setConfiguredAndWait(card.token, {
+            language:       selectedLang,
+            gender:         selectedGender,
+            custom_message: customMsg || null,
+            configured:     true,
+          });
+        }
+
+        _renderSeqSetup(root, card, container, { previewMode });
+      }catch(e){
+        _resetConfirm();
+        console.error('Failed to save gender reveal card:', e);
+      }
+    });
+  }
+}
+
+
+// ── Scratch (recipient) ───────────────────────────────────────────────────────
+
+function _renderSeqScratch(root, card){
+  const theme     = getCardTheme(card.card_key) || {};
+  const stepIndex = typeof card.current_step === 'number' ? card.current_step : 0;
+  const TOTAL     = 3;
+
+  if (stepIndex >= TOTAL){
+    // All steps done but revealed flag not set — shouldn't normally happen.
+    return _renderSeqRevealed(root, card);
+  }
+
+  const lang   = card.language || theme.defaultLanguage || 'en';
+  const gender = card.gender || 'boy';
+  const { text: stepText, visual } = getSeqStepConfig(card.card_key, stepIndex, lang, gender);
+
+  // Apply page theme for this step
+  _applySeqStepPageTheme(theme, visual);
+
+  const bgDesktop = visual.bgDesktopSrc || '';
+  const bgMobile  = visual.bgMobileSrc || bgDesktop;
+  const textColor = visual.textColor || '#3d3228';
+  const messageBg = visual.messageBg || 'transparent';
+  const msgFont   = theme.messageFont || "'Playfair Display', serif";
+  const msgWeight = theme.messageWeight || '700';
+
+  root.innerHTML = `
+    <div class="msg-card-wrapper seq-card-wrapper" data-presentation="fullscreen">
+      <div class="scratch-fx">
+        <div class="scratch-stage msg-stage" data-export-root="1" data-card-style="gender-reveal" data-presentation="fullscreen">
+          <picture class="card-bg" aria-hidden="true">
+            <source media="(min-width: 700px)" srcset="${bgDesktop}">
+            <img src="${bgMobile}" alt="" draggable="false" loading="eager">
+          </picture>
+          <div class="msg-card__content">
+            ${_seqProgressHtml(stepIndex, TOTAL)}
+            <div class="msg-card__scratch-area seq-scratch-area" style="aspect-ratio: 400 / 350;">
+              <div class="msg-card__under-message seq-step-text"
+                style="color:${textColor};background:${messageBg};font-family:${msgFont};font-weight:${msgWeight};"
+                id="seqStepText">${_escHtml(stepText)}</div>
+              <div class="msg-card__scratch-tile" id="seqScratchTile">
+                <canvas id="seqScratchCanvas"></canvas>
+              </div>
+            </div>
+            <div class="seq-continue-wrap" id="seqContinueWrap">
+              ${stepIndex < TOTAL - 1
+                ? `<button class="btn primary seq-continue-btn" type="button" id="seqContinueBtn">Continue &rarr;</button>`
+                : `<div class="seq-finish-actions">
+                     <button class="btn primary" type="button" id="seqSaveBtn">Save as image</button>
+                     <button class="btn" type="button" id="seqShareBtn">Share</button>
+                   </div>`
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    ${stepIndex === TOTAL - 1
+      ? `<div class="seq-flood" id="seqFlood" style="background:${visual.floodColor || '#fff'};"></div>`
+      : ''}
+  `;
+
+  // Apply scratch mask
+  const tileEl    = root.querySelector('#seqScratchTile');
+  const canvas    = root.querySelector('#seqScratchCanvas');
+  const underMsg  = root.querySelector('#seqStepText');
+  const continueWrap = root.querySelector('#seqContinueWrap');
+  const mask = theme.scratchMask || '/assets/img/masks/heart.svg';
+
+  if (tileEl)  _applyMask(tileEl, mask);
+  if (underMsg) _applyMask(underMsg, mask);
+
+  if (!canvas) return;
+
+  // ── Attach scratch ──
+  attachScratchTile(canvas, {
+    onScratched: () => _onSeqStepScratched(root, card, stepIndex, theme, visual, tileEl, underMsg, continueWrap),
+    hintStyle: 'thin',
+  });
+}
+
+
+async function _onSeqStepScratched(root, card, stepIndex, theme, visual, tileEl, underMsg, continueWrap){
+  const TOTAL  = 3;
+  const isFinal = stepIndex === TOTAL - 1;
+
+  // Fade foil tile
+  if (tileEl){
+    tileEl.style.transition = 'opacity 600ms ease';
+    tileEl.style.opacity    = '0';
+  }
+  setTimeout(() => {
+    if (tileEl) tileEl.style.display = 'none';
+    if (underMsg) underMsg.classList.add('is-revealed');
+  }, 650);
+
+  if (isFinal){
+    // ── Step 2 (final): color flood + winner animation ──
+    const floodEl = root.querySelector('#seqFlood');
+    if (floodEl){
+      // Small delay so foil fades first
+      setTimeout(() => { floodEl.classList.add('is-active'); }, 400);
+    }
+
+    // Win animation on revealed text
+    setTimeout(() => {
+      if (underMsg){
+        underMsg.classList.add('cc-seq-winner');
+      }
+
+      // Show custom message below if present
+      const customMsg = card.custom_message;
+      if (customMsg && underMsg){
+        const cmEl = document.createElement('div');
+        cmEl.className = 'seq-custom-msg';
+        cmEl.style.cssText = `color:${visual.textColor || '#3d3228'};font-family:${theme.messageFont || 'inherit'};`;
+        cmEl.textContent = customMsg;
+        underMsg.closest('.seq-scratch-area').appendChild(cmEl);
+      }
+    }, 800);
+
+    // Show save/share buttons
+    setTimeout(() => {
+      if (continueWrap) continueWrap.classList.add('is-visible');
+    }, 1000);
+
+    // Persist full reveal
+    try{
+      await _persistSeqStep(card, stepIndex, stepIndex + 1);
+      await setRevealedAndWait(card.token, {});
+      card.revealed = true;
+    }catch(e){
+      console.error('Failed to persist final seq step:', e);
+    }
+
+    // Wire up save/share
+    const saveBtn  = root.querySelector('#seqSaveBtn');
+    const shareBtn = root.querySelector('#seqShareBtn');
+    if (saveBtn)  saveBtn.addEventListener('click', () => _exportSeqStacked(card));
+    if (shareBtn) shareBtn.addEventListener('click', () => _seqShare(card));
+
+  } else {
+    // ── Steps 0-1: show Continue button ──
+    setTimeout(() => {
+      if (continueWrap) continueWrap.classList.add('is-visible');
+    }, 800);
+
+    const continueBtn = root.querySelector('#seqContinueBtn');
+    if (continueBtn){
+      continueBtn.addEventListener('click', async () => {
+        continueBtn.disabled = true;
+
+        await _persistSeqStep(card, stepIndex, stepIndex + 1);
+
+        // Fade out current step, re-render next
+        const wrapper = root.querySelector('.seq-card-wrapper');
+        if (wrapper){
+          wrapper.style.transition = 'opacity 300ms ease';
+          wrapper.style.opacity    = '0';
+        }
+        setTimeout(() => {
+          _renderSeqScratch(root, card);
+        }, 300);
+      });
+    }
+  }
+}
+
+
+// ── Revealed (returning visitor) ──────────────────────────────────────────────
+
+function _renderSeqRevealed(root, card){
+  const theme  = getCardTheme(card.card_key) || {};
+  const lang   = card.language || theme.defaultLanguage || 'en';
+  const gender = card.gender || 'boy';
+
+  // Apply final step page theme
+  const { visual: finalVisual } = getSeqStepConfig(card.card_key, 2, lang, gender);
+  _applySeqStepPageTheme(theme, finalVisual);
+
+  // Build revealed panels for all 3 steps
+  const panels = [0, 1, 2].map(i => {
+    const { text, visual } = getSeqStepConfig(card.card_key, i, lang, gender);
+    const isFinal = i === 2;
+    const txtColor = visual.textColor || '#3d3228';
+    const bg       = visual.messageBg || 'transparent';
+    const font     = theme.messageFont || "'Playfair Display', serif";
+    const weight   = theme.messageWeight || '700';
+    return `
+      <div class="seq-revealed__panel${isFinal ? ' seq-revealed__panel--final' : ''}"
+           style="background:${bg};">
+        <div class="seq-revealed__text"
+             style="color:${txtColor};font-family:${font};font-weight:${weight};">
+          ${_escHtml(text)}
+        </div>
+        ${isFinal && card.custom_message
+          ? `<div class="seq-custom-msg" style="color:${txtColor};font-family:${font};">${_escHtml(card.custom_message)}</div>`
+          : ''}
+      </div>
+    `;
+  }).join('<div class="seq-revealed__divider"></div>');
+
+  root.innerHTML = `
+    <div class="msg-card-wrapper" data-presentation="fullscreen">
+      <div class="scratch-fx">
+        <div class="scratch-stage msg-stage" data-export-root="1" data-card-style="gender-reveal" data-presentation="fullscreen">
+          <picture class="card-bg" aria-hidden="true">
+            <source media="(min-width: 700px)" srcset="${finalVisual.bgDesktopSrc || ''}">
+            <img src="${finalVisual.bgMobileSrc || finalVisual.bgDesktopSrc || ''}" alt="" draggable="false" loading="eager">
+          </picture>
+          <div class="msg-card__content">
+            <div class="seq-revealed">
+              ${panels}
+            </div>
+            <div class="seq-finish-actions seq-finish-actions--revealed">
+              <button class="btn primary" type="button" id="seqSaveBtn">Save as image</button>
+              <button class="btn" type="button" id="seqShareBtn">Share</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  root.querySelector('#seqSaveBtn')?.addEventListener('click', () => _exportSeqStacked(card));
+  root.querySelector('#seqShareBtn')?.addEventListener('click', () => _seqShare(card));
+}
+
+
+// ── Share helper ──────────────────────────────────────────────────────────────
+
+async function _seqShare(card){
+  const url = `${window.location.origin}/open/?token=${card.token}`;
+  try{
+    if (navigator.share){
+      await navigator.share({ url, text: 'Watch our gender reveal! 🎉' });
+    } else {
+      await copyText(url);
+    }
+  }catch(_){}
+}
+
+
+// ── Stacked JPEG export (1080×1920, Instagram Story) ─────────────────────────
+//
+// Produces a clean stacked image with solid-color panels.
+// When step background images are available, the canvas drawImage calls below
+// can be activated to composite them over the solid fills.
+
+async function _exportSeqStacked(card){
+  const theme  = getCardTheme(card.card_key) || {};
+  const lang   = card.language || theme.defaultLanguage || 'en';
+  const gender = card.gender || 'boy';
+
+  const W = 1080, H = 1920;
+  const canvas = document.createElement('canvas');
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Wait for fonts to be ready
+  try{ await document.fonts.ready; }catch(_){}
+
+  // Layout constants
+  const PAD        = 80;
+  const DIVIDER_H  = 2;
+  const BRANDING_H = 100;
+  const USABLE_H   = H - PAD * 2 - BRANDING_H;
+  const STEP0_H    = Math.round(USABLE_H * 0.26);
+  const STEP1_H    = Math.round(USABLE_H * 0.26);
+  const STEP2_H    = USABLE_H - STEP0_H - STEP1_H - DIVIDER_H * 2;
+
+  // Resolve configs
+  const steps = [0, 1, 2].map(i => {
+    const { text, visual } = getSeqStepConfig(card.card_key, i, lang, gender);
+    return { text, visual };
+  });
+
+  // ── Draw panels ──
+  let y = PAD;
+
+  function _drawPanel(panelY, panelH, visual, text, isFinal, customMsg){
+    const bg = visual.messageBg || visual.pageBg || '#f0ede8';
+    const tc = visual.textColor || '#3d3228';
+    const font = theme.messageFont ? theme.messageFont.replace(/'/g, '') : 'Playfair Display, serif';
+
+    // Background
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, panelY, W, panelH);
+
+    // Main text
+    const fontSize = isFinal ? Math.round(panelH * 0.30) : Math.round(panelH * 0.28);
+    ctx.fillStyle   = tc;
+    ctx.font        = `${theme.messageWeight || 700} ${fontSize}px ${font}`;
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, W / 2, panelY + panelH / 2 - (customMsg ? fontSize * 0.6 : 0));
+
+    // Custom message (final step only)
+    if (customMsg){
+      const cmSize = Math.round(panelH * 0.12);
+      ctx.font     = `400 ${cmSize}px ${font}`;
+      ctx.fillText(customMsg, W / 2, panelY + panelH / 2 + fontSize * 0.6 + cmSize * 0.2);
+    }
+  }
+
+  // Step 0
+  _drawPanel(y, STEP0_H, steps[0].visual, steps[0].text, false, null);
+  y += STEP0_H;
+
+  // Divider
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  ctx.fillRect(PAD, y, W - PAD * 2, DIVIDER_H);
+  y += DIVIDER_H;
+
+  // Step 1
+  _drawPanel(y, STEP1_H, steps[1].visual, steps[1].text, false, null);
+  y += STEP1_H;
+
+  // Divider
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  ctx.fillRect(PAD, y, W - PAD * 2, DIVIDER_H);
+  y += DIVIDER_H;
+
+  // Step 2 (final, emphasized)
+  _drawPanel(y, STEP2_H, steps[2].visual, steps[2].text, true, card.custom_message || null);
+  y += STEP2_H;
+
+  // Branding bar
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, H - BRANDING_H, W, BRANDING_H);
+  ctx.fillStyle   = '#888';
+  ctx.font        = '400 28px Inter, system-ui, sans-serif';
+  ctx.textAlign   = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('chiccanto.pages.dev', W / 2, H - BRANDING_H / 2);
+
+  // Download
+  try{
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    const a = document.createElement('a');
+    a.href     = dataUrl;
+    a.download = 'gender-reveal.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }catch(e){
+    console.error('Export failed:', e);
+    alert('Export failed. Please try again.');
   }
 }

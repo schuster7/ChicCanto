@@ -116,6 +116,18 @@ function applyAllowedUpdates(existing, body, { allowSender = false } = {}){
       const sh = String(body.scratch_shape || '').toLowerCase().slice(0, 32);
       if (VALID_SHAPES.includes(sh)) next.scratch_shape = sh;
     }
+
+    // Sequential message card fields (sender-only).
+    if ('language' in body){
+      next.language = (body.language == null) ? null : String(body.language).slice(0, 8);
+    }
+    if ('gender' in body){
+      const g = String(body.gender || '').toLowerCase().trim();
+      if (g === 'boy' || g === 'girl') next.gender = g;
+    }
+    if ('custom_message' in body){
+      next.custom_message = (body.custom_message == null) ? null : String(body.custom_message).slice(0, 60);
+    }
   }
 
   // Recipient-writable fields.
@@ -134,6 +146,19 @@ function applyAllowedUpdates(existing, body, { allowSender = false } = {}){
   if ('scratched_fields' in body){
     // Kept permissive for forward compatibility.
     next.scratched_fields = (body.scratched_fields == null) ? null : body.scratched_fields;
+  }
+
+  // Sequential scratch progress (recipient-writable).
+  if ('current_step' in body){
+    const s = Number(body.current_step);
+    if (Number.isInteger(s) && s >= 0 && s <= 10) next.current_step = s;
+  }
+  if ('revealed_steps' in body){
+    if (Array.isArray(body.revealed_steps)){
+      next.revealed_steps = body.revealed_steps.filter(v => Number.isInteger(v) && v >= 0 && v <= 10).slice(0, 10);
+    } else if (body.revealed_steps == null){
+      next.revealed_steps = null;
+    }
   }
 
   return next;
