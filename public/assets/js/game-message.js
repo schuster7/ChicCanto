@@ -1123,8 +1123,8 @@ function _renderSeqScratch(root, card){
           </picture>
 
           ${!isFinal && cloudsImageSrc
-            ? `<img class="seq-clouds-img seq-clouds-left"  src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false" style="opacity:0;">
-               <img class="seq-clouds-img seq-clouds-right" src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false" style="opacity:0;">`
+            ? `<img class="seq-clouds-img seq-clouds-left"  src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">
+               <img class="seq-clouds-img seq-clouds-right" src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">`
             : ''}
 
           <div class="msg-card__content">
