@@ -839,39 +839,22 @@ export function renderMessageRevealed(root, card){
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Apply page theme CSS vars for a given step's visual config. */
-function _applySeqStepPageTheme(theme, visual){
+/** Apply page theme CSS vars for the sequential card (theme-level, no per-step overrides). */
+function _applySeqStepPageTheme(theme){
   const root = document.documentElement;
   root.dataset.colorMode = theme.colorMode || 'light';
 
   const set = (prop, val) => { if (val) root.style.setProperty(prop, val); };
-  set('--page-bg',          visual.pageBg  || theme.pageBg);
-  set('--page-bg1',         visual.pageBg1 || theme.pageBg1);
-  set('--page-glow-a1',     visual.pageGlowA1);
-  set('--page-glow-a2',     visual.pageGlowA2);
-  set('--page-glow-a3',     visual.pageGlowA3);
-  set('--page-glow-b1',     visual.pageGlowB1);
-  set('--page-glow-b2',     visual.pageGlowB2);
+  set('--page-bg',      theme.pageBg);
+  set('--page-bg1',     theme.pageBg1);
+  set('--page-glow-a1', theme.pageGlowA1);
+  set('--page-glow-a2', theme.pageGlowA2);
+  set('--page-glow-a3', theme.pageGlowA3);
+  set('--page-glow-b1', theme.pageGlowB1);
+  set('--page-glow-b2', theme.pageGlowB2);
 
   _clearFoilOverrides();
-  _applyFoilOverrides({
-    foil:     theme.foil,
-    foilBase: visual.foilBase,
-    foilHi:   visual.foilHi,
-    foilMid:  visual.foilMid,
-    foilDark: visual.foilDark,
-    foilText: visual.foilText,
-  });
-}
-
-/** Render step progress dots. */
-function _seqProgressHtml(currentStep, totalSteps){
-  return `<div class="seq-progress" role="progressbar" aria-label="Step ${currentStep + 1} of ${totalSteps}">
-    ${Array.from({ length: totalSteps }, (_, i) => {
-      const cls = i < currentStep ? 'is-done' : i === currentStep ? 'is-active' : '';
-      return `<div class="seq-progress__dot ${cls}"></div>`;
-    }).join('')}
-  </div>`;
+  _applyFoilOverrides(theme);
 }
 
 /** Persist step completion to card record (recipient-side). */
@@ -895,11 +878,9 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
 
   // ── Configured: show share UI ──
   if (isConfigured){
-    const lang   = card.language || theme.defaultLanguage || 'en';
-    const gender = card.gender || 'boy';
-    const msgs   = (theme.stepMessages && (theme.stepMessages[lang] || theme.stepMessages['en'])) || [];
-    const step2  = msgs[2] || {};
-    const revealText = gender === 'girl' ? (step2.girl || 'GIRL!') : (step2.boy || 'BOY!');
+    const lang       = card.language || theme.defaultLanguage || 'en';
+    const gender     = card.gender || 'boy';
+    const revealText = gender === 'girl' ? 'GIRL!' : 'BOY!';
 
     root.innerHTML = `
       <section class="flow-screen seq-setup">
@@ -1103,130 +1084,205 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
 // ── Scratch (recipient) ───────────────────────────────────────────────────────
 
 function _renderSeqScratch(root, card){
-  const theme     = getCardTheme(card.card_key) || {};
-  const stepIndex = typeof card.current_step === 'number' ? card.current_step : 0;
-  const TOTAL     = 3;
+  const theme      = getCardTheme(card.card_key) || {};
+  const totalSteps = (theme.steps || []).length || 2;
+  const stepIndex  = typeof card.current_step === 'number' ? card.current_step : 0;
 
-  if (stepIndex >= TOTAL){
-    // All steps done but revealed flag not set — shouldn't normally happen.
+  if (stepIndex >= totalSteps){
     return _renderSeqRevealed(root, card);
   }
 
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
-  const { text: stepText, visual } = getSeqStepConfig(card.card_key, stepIndex, lang, gender);
+  const cfg    = getSeqStepConfig(card.card_key, stepIndex, lang, gender);
 
-  // Apply page theme for this step
-  _applySeqStepPageTheme(theme, visual);
+  _applySeqStepPageTheme(theme);
 
-  const bgDesktop = visual.bgDesktopSrc || '';
-  const bgMobile  = visual.bgMobileSrc || bgDesktop;
-  const textColor = visual.textColor || '#3d3228';
-  const messageBg = visual.messageBg || 'transparent';
-  const msgFont   = theme.messageFont || "'Playfair Display', serif";
-  const msgWeight = theme.messageWeight || '700';
+  const isFinal = stepIndex === totalSteps - 1;
+  const { title, underText, bgDesktopSrc, bgMobileSrc, cloudsImageSrc,
+          underlayImageSrc, revealSvgSrc, showCustomMessage } = cfg;
 
   root.innerHTML = `
     <div class="msg-card-wrapper seq-card-wrapper" data-presentation="fullscreen">
       <div class="scratch-fx">
-        <div class="scratch-stage msg-stage" data-export-root="1" data-card-style="gender-reveal" data-presentation="fullscreen">
-          <picture class="card-bg" aria-hidden="true">
-            <source media="(min-width: 700px)" srcset="${bgDesktop}">
-            <img src="${bgMobile}" alt="" draggable="false" loading="eager">
+        <div class="scratch-stage msg-stage" data-export-root="1"
+             data-card-style="gender-reveal" data-presentation="fullscreen">
+
+          <picture class="card-bg seq-card-bg" aria-hidden="true">
+            <source media="(min-width: 700px)" srcset="${bgDesktopSrc}">
+            <img src="${bgMobileSrc || bgDesktopSrc}" alt="" draggable="false" loading="eager">
           </picture>
+
+          ${cloudsImageSrc
+            ? `<img class="seq-clouds-img" src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">`
+            : ''}
+
           <div class="msg-card__content">
-            ${_seqProgressHtml(stepIndex, TOTAL)}
-            <div class="msg-card__scratch-area seq-scratch-area" style="aspect-ratio: 400 / 350;">
-              <div class="msg-card__under-message seq-step-text"
-                style="color:${textColor};background:${messageBg};font-family:${msgFont};font-weight:${msgWeight};"
-                id="seqStepText">${_escHtml(stepText)}</div>
-              <div class="msg-card__scratch-tile" id="seqScratchTile">
+
+            <div class="seq-title"
+                 style="font-family:${theme.titleFont || 'inherit'};font-weight:${theme.titleWeight || '600'};color:${theme.titleColor || '#5a4a3a'};">
+              ${_escHtml(title)}
+            </div>
+
+            <div class="seq-heart-area" style="aspect-ratio: ${theme.scratchAspect || '400 / 350'};">
+
+              ${underlayImageSrc
+                ? `<img class="seq-underlay" src="${underlayImageSrc}" alt="" draggable="false">`
+                : ''}
+
+              ${revealSvgSrc
+                ? `<img class="seq-reveal-svg" src="${revealSvgSrc}" alt="" draggable="false">`
+                : ''}
+
+              <div class="seq-under-foil-text"
+                   style="font-family:${theme.messageFont || 'inherit'};font-weight:${theme.messageWeight || '600'};color:${theme.messageColor || '#5a4a3a'};">
+                ${_escHtml(underText)}
+              </div>
+
+              <div class="msg-card__scratch-tile seq-scratch-tile" id="seqScratchTile">
                 <canvas id="seqScratchCanvas"></canvas>
               </div>
+
             </div>
+
+            ${showCustomMessage && card.custom_message
+              ? `<div class="seq-custom-msg" id="seqCustomMsg"
+                      style="font-family:${theme.messageFont || 'inherit'};color:${theme.messageColor || '#5a4a3a'};">
+                   ${_escHtml(card.custom_message)}
+                 </div>`
+              : ''}
+
             <div class="seq-continue-wrap" id="seqContinueWrap">
-              ${stepIndex < TOTAL - 1
-                ? `<button class="btn primary seq-continue-btn" type="button" id="seqContinueBtn">Continue &rarr;</button>`
-                : `<div class="seq-finish-actions">
-                     <button class="btn primary" type="button" id="seqSaveBtn">Save as image</button>
-                     <button class="btn" type="button" id="seqShareBtn">Share</button>
-                   </div>`
-              }
+              ${!isFinal
+                ? `<button class="btn seq-continue-btn" type="button" id="seqContinueBtn">Continue</button>`
+                : `<button class="btn primary" type="button" id="seqSaveBtn">Save as image</button>
+                   <button class="btn" type="button" id="seqShareBtn">Share</button>`}
             </div>
+
           </div>
         </div>
       </div>
     </div>
-    ${stepIndex === TOTAL - 1
-      ? `<div class="seq-flood" id="seqFlood" style="background:${visual.floodColor || '#fff'};"></div>`
-      : ''}
   `;
 
-  // Apply scratch mask
-  const tileEl    = root.querySelector('#seqScratchTile');
-  const canvas    = root.querySelector('#seqScratchCanvas');
-  const underMsg  = root.querySelector('#seqStepText');
+  const mask         = theme.scratchMask || '/assets/img/masks/heart.svg';
+  const tileEl       = root.querySelector('#seqScratchTile');
+  const canvas       = root.querySelector('#seqScratchCanvas');
+  const underlayEl   = root.querySelector('.seq-underlay');
+  const underFoilEl  = root.querySelector('.seq-under-foil-text');
   const continueWrap = root.querySelector('#seqContinueWrap');
-  const mask = theme.scratchMask || '/assets/img/masks/heart.svg';
 
-  if (tileEl)  _applyMask(tileEl, mask);
-  if (underMsg) _applyMask(underMsg, mask);
+  if (tileEl)     _applyMask(tileEl, mask);
+  if (underlayEl) _applyMask(underlayEl, mask);
+  if (underFoilEl) _applyMask(underFoilEl, mask);
+
+  _applyFoilOverrides(theme);
 
   if (!canvas) return;
 
-  // ── Attach scratch ──
   attachScratchTile(canvas, {
-    onScratched: () => _onSeqStepScratched(root, card, stepIndex, theme, visual, tileEl, underMsg, continueWrap),
+    onScratched: () => _onSeqStepScratched(root, card, stepIndex, theme, cfg, tileEl, continueWrap),
     hintStyle: 'thin',
   });
 }
 
 
-async function _onSeqStepScratched(root, card, stepIndex, theme, visual, tileEl, underMsg, continueWrap){
-  const TOTAL  = 3;
-  const isFinal = stepIndex === TOTAL - 1;
+async function _onSeqStepScratched(root, card, stepIndex, theme, cfg, tileEl, continueWrap){
+  const isFinal = stepIndex === 1;
 
-  // Fade foil tile
+  // 1. Fade foil tile out
   if (tileEl){
     tileEl.style.transition = 'opacity 600ms ease';
     tileEl.style.opacity    = '0';
   }
   setTimeout(() => {
     if (tileEl) tileEl.style.display = 'none';
-    if (underMsg) underMsg.classList.add('is-revealed');
   }, 650);
 
-  if (isFinal){
-    // ── Step 2 (final): color flood + winner animation ──
-    const floodEl = root.querySelector('#seqFlood');
-    if (floodEl){
-      // Small delay so foil fades first
-      setTimeout(() => { floodEl.classList.add('is-active'); }, 400);
-    }
+  if (!isFinal){
+    // ── Step 1 (index 0) ──
 
-    // Win animation on revealed text
+    // 2. Fade in underlay
+    const underlayEl = root.querySelector('.seq-underlay');
+    if (underlayEl) underlayEl.classList.add('is-revealed');
+
+    // 3. After 400ms: show clouds
     setTimeout(() => {
-      if (underMsg){
-        underMsg.classList.add('cc-seq-winner');
-      }
+      const cloudsEl = root.querySelector('.seq-clouds-img');
+      if (cloudsEl) cloudsEl.classList.add('is-visible');
+    }, 400);
 
-      // Show custom message below if present
-      const customMsg = card.custom_message;
-      if (customMsg && underMsg){
-        const cmEl = document.createElement('div');
-        cmEl.className = 'seq-custom-msg';
-        cmEl.style.cssText = `color:${visual.textColor || '#3d3228'};font-family:${theme.messageFont || 'inherit'};`;
-        cmEl.textContent = customMsg;
-        underMsg.closest('.seq-scratch-area').appendChild(cmEl);
-      }
+    // 4. After 800ms: show continue button
+    setTimeout(() => {
+      if (continueWrap) continueWrap.classList.add('is-visible');
     }, 800);
 
-    // Show save/share buttons
+    // 5. Persist step
+    _persistSeqStep(card, 0, 1);
+
+    // Wire continue button
+    const continueBtn = root.querySelector('#seqContinueBtn');
+    if (continueBtn){
+      continueBtn.addEventListener('click', async () => {
+        continueBtn.disabled = true;
+        await _persistSeqStep(card, 0, 1);
+        const wrapper = root.querySelector('.seq-card-wrapper');
+        if (wrapper){
+          wrapper.style.transition = 'opacity 300ms ease';
+          wrapper.style.opacity    = '0';
+        }
+        setTimeout(() => { _renderSeqScratch(root, card); }, 300);
+      });
+    }
+
+  } else {
+    // ── Step 2 (index 1) ──
+
+    // 2. Fade out under-foil-text
+    const underFoilEl = root.querySelector('.seq-under-foil-text');
+    if (underFoilEl){
+      underFoilEl.style.transition = 'opacity 400ms ease';
+      underFoilEl.style.opacity    = '0';
+    }
+
+    // 3. After 400ms: swap BG and reveal elements
+    setTimeout(() => {
+      // 3a. Swap card background to gender flood image
+      const bgPic = root.querySelector('.seq-card-bg');
+      if (bgPic && cfg.bgFloodSrc){
+        bgPic.style.transition = 'none';
+        bgPic.style.opacity    = '0';
+        const source = bgPic.querySelector('source');
+        const img    = bgPic.querySelector('img');
+        if (source) source.srcset = cfg.bgFloodSrc.desktop || '';
+        if (img)    img.src       = cfg.bgFloodSrc.mobile  || cfg.bgFloodSrc.desktop || '';
+        bgPic.getBoundingClientRect(); // force reflow
+        bgPic.style.transition = 'opacity 600ms ease';
+        bgPic.style.opacity    = '1';
+      }
+
+      // 3c. Fade in underlay (heart-boy/girl)
+      const underlayEl = root.querySelector('.seq-underlay');
+      if (underlayEl) underlayEl.classList.add('is-revealed');
+
+      // 3d. Fade in reveal SVG (boy.svg / girl.svg) with 200ms delay
+      const revealSvg = root.querySelector('.seq-reveal-svg');
+      if (revealSvg){
+        revealSvg.style.transitionDelay = '200ms';
+        revealSvg.classList.add('is-revealed');
+      }
+
+      // 3e. Fade in custom message
+      const customMsgEl = root.querySelector('#seqCustomMsg');
+      if (customMsgEl) customMsgEl.classList.add('is-visible');
+    }, 400);
+
+    // 4. After 1000ms: show save/share buttons
     setTimeout(() => {
       if (continueWrap) continueWrap.classList.add('is-visible');
     }, 1000);
 
-    // Persist full reveal
+    // 5. Persist full reveal
     try{
       await _persistSeqStep(card, stepIndex, stepIndex + 1);
       await setRevealedAndWait(card.token, {});
@@ -1235,36 +1291,11 @@ async function _onSeqStepScratched(root, card, stepIndex, theme, visual, tileEl,
       console.error('Failed to persist final seq step:', e);
     }
 
-    // Wire up save/share
+    // Wire save/share
     const saveBtn  = root.querySelector('#seqSaveBtn');
     const shareBtn = root.querySelector('#seqShareBtn');
     if (saveBtn)  saveBtn.addEventListener('click', () => _exportSeqStacked(card));
     if (shareBtn) shareBtn.addEventListener('click', () => _seqShare(card));
-
-  } else {
-    // ── Steps 0-1: show Continue button ──
-    setTimeout(() => {
-      if (continueWrap) continueWrap.classList.add('is-visible');
-    }, 800);
-
-    const continueBtn = root.querySelector('#seqContinueBtn');
-    if (continueBtn){
-      continueBtn.addEventListener('click', async () => {
-        continueBtn.disabled = true;
-
-        await _persistSeqStep(card, stepIndex, stepIndex + 1);
-
-        // Fade out current step, re-render next
-        const wrapper = root.querySelector('.seq-card-wrapper');
-        if (wrapper){
-          wrapper.style.transition = 'opacity 300ms ease';
-          wrapper.style.opacity    = '0';
-        }
-        setTimeout(() => {
-          _renderSeqScratch(root, card);
-        }, 300);
-      });
-    }
   }
 }
 
@@ -1276,53 +1307,56 @@ function _renderSeqRevealed(root, card){
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
 
-  // Apply final step page theme
-  const { visual: finalVisual } = getSeqStepConfig(card.card_key, 2, lang, gender);
-  _applySeqStepPageTheme(theme, finalVisual);
+  _applySeqStepPageTheme(theme);
 
-  // Build revealed panels for all 3 steps
-  const panels = [0, 1, 2].map(i => {
-    const { text, visual } = getSeqStepConfig(card.card_key, i, lang, gender);
-    const isFinal = i === 2;
-    const txtColor = visual.textColor || '#3d3228';
-    const bg       = visual.messageBg || 'transparent';
-    const font     = theme.messageFont || "'Playfair Display', serif";
-    const weight   = theme.messageWeight || '700';
-    return `
-      <div class="seq-revealed__panel${isFinal ? ' seq-revealed__panel--final' : ''}"
-           style="background:${bg};">
-        <div class="seq-revealed__text"
-             style="color:${txtColor};font-family:${font};font-weight:${weight};">
-          ${_escHtml(text)}
-        </div>
-        ${isFinal && card.custom_message
-          ? `<div class="seq-custom-msg" style="color:${txtColor};font-family:${font};">${_escHtml(card.custom_message)}</div>`
-          : ''}
-      </div>
-    `;
-  }).join('<div class="seq-revealed__divider"></div>');
+  const cfg = getSeqStepConfig(card.card_key, 1, lang, gender);
+
+  const bgDesktop = cfg.bgFloodSrc ? (cfg.bgFloodSrc.desktop || cfg.bgDesktopSrc) : cfg.bgDesktopSrc;
+  const bgMobile  = cfg.bgFloodSrc ? (cfg.bgFloodSrc.mobile  || bgDesktop)        : (cfg.bgMobileSrc || bgDesktop);
 
   root.innerHTML = `
-    <div class="msg-card-wrapper" data-presentation="fullscreen">
+    <div class="msg-card-wrapper seq-card-wrapper" data-presentation="fullscreen">
       <div class="scratch-fx">
-        <div class="scratch-stage msg-stage" data-export-root="1" data-card-style="gender-reveal" data-presentation="fullscreen">
-          <picture class="card-bg" aria-hidden="true">
-            <source media="(min-width: 700px)" srcset="${finalVisual.bgDesktopSrc || ''}">
-            <img src="${finalVisual.bgMobileSrc || finalVisual.bgDesktopSrc || ''}" alt="" draggable="false" loading="eager">
+        <div class="scratch-stage msg-stage" data-export-root="1"
+             data-card-style="gender-reveal" data-presentation="fullscreen">
+
+          <picture class="card-bg seq-card-bg" aria-hidden="true">
+            <source media="(min-width: 700px)" srcset="${bgDesktop}">
+            <img src="${bgMobile}" alt="" draggable="false" loading="eager">
           </picture>
+
           <div class="msg-card__content">
-            <div class="seq-revealed">
-              ${panels}
+
+            <div class="seq-heart-area" style="aspect-ratio: ${theme.scratchAspect || '400 / 350'};">
+              ${cfg.underlayImageSrc
+                ? `<img class="seq-underlay is-revealed" src="${cfg.underlayImageSrc}" alt="" draggable="false">`
+                : ''}
+              ${cfg.revealSvgSrc
+                ? `<img class="seq-reveal-svg is-revealed" src="${cfg.revealSvgSrc}" alt="" draggable="false">`
+                : ''}
             </div>
-            <div class="seq-finish-actions seq-finish-actions--revealed">
+
+            ${card.custom_message
+              ? `<div class="seq-custom-msg is-visible"
+                      style="font-family:${theme.messageFont || 'inherit'};color:${theme.messageColor || '#5a4a3a'};">
+                   ${_escHtml(card.custom_message)}
+                 </div>`
+              : ''}
+
+            <div class="seq-continue-wrap is-visible">
               <button class="btn primary" type="button" id="seqSaveBtn">Save as image</button>
               <button class="btn" type="button" id="seqShareBtn">Share</button>
             </div>
+
           </div>
         </div>
       </div>
     </div>
   `;
+
+  const mask = theme.scratchMask || '/assets/img/masks/heart.svg';
+  const underlayEl = root.querySelector('.seq-underlay');
+  if (underlayEl) _applyMask(underlayEl, mask);
 
   root.querySelector('#seqSaveBtn')?.addEventListener('click', () => _exportSeqStacked(card));
   root.querySelector('#seqShareBtn')?.addEventListener('click', () => _seqShare(card));
@@ -1343,101 +1377,103 @@ async function _seqShare(card){
 }
 
 
-// ── Stacked JPEG export (1080×1920, Instagram Story) ─────────────────────────
+// ── Stacked JPEG export (1080×1920) ──────────────────────────────────────────
 //
-// Produces a clean stacked image with solid-color panels.
-// When step background images are available, the canvas drawImage calls below
-// can be activated to composite them over the solid fills.
+// 2-panel stacked canvas:
+// Panel 1 (~700px): neutral bg, stork image centred in heart area
+// Panel 2 (~1020px): gender flood bg, heart-boy/girl + reveal SVG, custom message
+// Branding bar (100px) at bottom.
+// All images loaded via Promise.all with per-image try/catch — missing = skip.
 
 async function _exportSeqStacked(card){
   const theme  = getCardTheme(card.card_key) || {};
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
 
-  const W = 1080, H = 1920;
+  const step1cfg = getSeqStepConfig(card.card_key, 0, lang, gender);
+  const step2cfg = getSeqStepConfig(card.card_key, 1, lang, gender);
+
+  const W          = 1080;
+  const H          = 1920;
+  const BRANDING_H = 100;
+  const PANEL1_H   = 700;
+  const PANEL2_H   = H - PANEL1_H - BRANDING_H; // 1120
+
   const canvas = document.createElement('canvas');
   canvas.width  = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
 
-  // Wait for fonts to be ready
   try{ await document.fonts.ready; }catch(_){}
 
-  // Layout constants
-  const PAD        = 80;
-  const DIVIDER_H  = 2;
-  const BRANDING_H = 100;
-  const USABLE_H   = H - PAD * 2 - BRANDING_H;
-  const STEP0_H    = Math.round(USABLE_H * 0.26);
-  const STEP1_H    = Math.round(USABLE_H * 0.26);
-  const STEP2_H    = USABLE_H - STEP0_H - STEP1_H - DIVIDER_H * 2;
-
-  // Resolve configs
-  const steps = [0, 1, 2].map(i => {
-    const { text, visual } = getSeqStepConfig(card.card_key, i, lang, gender);
-    return { text, visual };
-  });
-
-  // ── Draw panels ──
-  let y = PAD;
-
-  function _drawPanel(panelY, panelH, visual, text, isFinal, customMsg){
-    const bg = visual.messageBg || visual.pageBg || '#f0ede8';
-    const tc = visual.textColor || '#3d3228';
-    const font = theme.messageFont ? theme.messageFont.replace(/'/g, '') : 'Playfair Display, serif';
-
-    // Background
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, panelY, W, panelH);
-
-    // Main text
-    const fontSize = isFinal ? Math.round(panelH * 0.30) : Math.round(panelH * 0.28);
-    ctx.fillStyle   = tc;
-    ctx.font        = `${theme.messageWeight || 700} ${fontSize}px ${font}`;
-    ctx.textAlign   = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, W / 2, panelY + panelH / 2 - (customMsg ? fontSize * 0.6 : 0));
-
-    // Custom message (final step only)
-    if (customMsg){
-      const cmSize = Math.round(panelH * 0.12);
-      ctx.font     = `400 ${cmSize}px ${font}`;
-      ctx.fillText(customMsg, W / 2, panelY + panelH / 2 + fontSize * 0.6 + cmSize * 0.2);
-    }
+  function _loadImg(src){
+    return new Promise(resolve => {
+      if (!src){ resolve(null); return; }
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload  = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
   }
 
-  // Step 0
-  _drawPanel(y, STEP0_H, steps[0].visual, steps[0].text, false, null);
-  y += STEP0_H;
+  const [storkImg, underlayImg, revealImg] = await Promise.all([
+    _loadImg(step1cfg.underlayImageSrc).catch(() => null),
+    _loadImg(step2cfg.underlayImageSrc).catch(() => null),
+    _loadImg(step2cfg.revealSvgSrc).catch(() => null),
+  ]);
 
-  // Divider
-  ctx.fillStyle = 'rgba(0,0,0,0.08)';
-  ctx.fillRect(PAD, y, W - PAD * 2, DIVIDER_H);
-  y += DIVIDER_H;
+  // ── Panel 1 (neutral) ──
+  ctx.fillStyle = theme.pageBg || '#ede8e0';
+  ctx.fillRect(0, 0, W, PANEL1_H);
 
-  // Step 1
-  _drawPanel(y, STEP1_H, steps[1].visual, steps[1].text, false, null);
-  y += STEP1_H;
+  if (storkImg){
+    const heartW = 400, heartH = 350;
+    const scale  = Math.min(W * 0.55 / heartW, PANEL1_H * 0.65 / heartH);
+    const dw = heartW * scale, dh = heartH * scale;
+    const dx = (W - dw) / 2, dy = (PANEL1_H - dh) / 2;
+    try{ ctx.drawImage(storkImg, dx, dy, dw, dh); }catch(_){}
+  }
 
-  // Divider
-  ctx.fillStyle = 'rgba(0,0,0,0.08)';
-  ctx.fillRect(PAD, y, W - PAD * 2, DIVIDER_H);
-  y += DIVIDER_H;
+  // ── Panel 2 (gender reveal) ──
+  const p2Bg = gender === 'boy' ? '#d0e8f4' : '#f4d0e0';
+  ctx.fillStyle = p2Bg;
+  ctx.fillRect(0, PANEL1_H, W, PANEL2_H);
 
-  // Step 2 (final, emphasized)
-  _drawPanel(y, STEP2_H, steps[2].visual, steps[2].text, true, card.custom_message || null);
-  y += STEP2_H;
+  const hasMsg       = !!card.custom_message;
+  const heartW       = 400, heartH = 350;
+  const scale        = Math.min(W * 0.55 / heartW, (PANEL2_H * (hasMsg ? 0.50 : 0.60)) / heartH);
+  const dw           = heartW * scale, dh = heartH * scale;
+  const dx           = (W - dw) / 2;
+  const dy           = PANEL1_H + (PANEL2_H * (hasMsg ? 0.42 : 0.45)) - dh / 2;
 
-  // Branding bar
-  ctx.fillStyle = '#ffffff';
+  if (underlayImg){
+    try{ ctx.drawImage(underlayImg, dx, dy, dw, dh); }catch(_){}
+  }
+  if (revealImg){
+    try{ ctx.drawImage(revealImg, dx, dy, dw, dh); }catch(_){}
+  }
+
+  if (hasMsg){
+    const font = (theme.messageFont || "'Dancing Script', cursive").replace(/'/g, '');
+    ctx.fillStyle    = theme.messageColor || '#5a4a3a';
+    ctx.font         = `${theme.messageWeight || 600} 52px ${font}`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    const textY      = PANEL1_H + PANEL2_H - 160;
+    try{ ctx.fillText(card.custom_message, W / 2, textY); }catch(_){}
+  }
+
+  // ── Branding bar ──
+  ctx.fillStyle    = '#ffffff';
   ctx.fillRect(0, H - BRANDING_H, W, BRANDING_H);
-  ctx.fillStyle   = '#888';
-  ctx.font        = '400 28px Inter, system-ui, sans-serif';
-  ctx.textAlign   = 'center';
+  ctx.fillStyle    = '#888';
+  ctx.font         = '400 28px Inter, system-ui, sans-serif';
+  ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('chiccanto.pages.dev', W / 2, H - BRANDING_H / 2);
+  ctx.fillText('ChicCanto', W / 2, H - BRANDING_H / 2);
 
-  // Download
+  // ── Download ──
   try{
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
     const a = document.createElement('a');

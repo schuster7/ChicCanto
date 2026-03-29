@@ -1442,129 +1442,118 @@ border-radius: var(--scratch-tile-radius);
 
 .seq-setup__summary { margin-bottom: 1.25rem; }
 
-/* Step progress dots */
-.seq-progress {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 0;
+/* ── Scratch card layout ── */
+
+.seq-title {
+  text-align: center;
+  padding: 0.5rem 1rem;
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
   flex-shrink: 0;
 }
-.seq-progress__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.2;
-  transition: opacity .3s;
-}
-.seq-progress__dot.is-done   { opacity: 0.5; }
-.seq-progress__dot.is-active { opacity: 1; }
 
-/* Scratch area tweak for sequential */
-.seq-scratch-area {
+.seq-heart-area {
   position: relative;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  flex-shrink: 0;
 }
 
-/* Step text (under the foil) — override default sizing */
-.seq-step-text {
+.seq-underlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 600ms ease;
+  mask-size: cover;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: cover;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+.seq-underlay.is-revealed { opacity: 1; }
+
+.seq-reveal-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 800ms ease;
+  z-index: 3;
+  pointer-events: none;
+}
+.seq-reveal-svg.is-revealed { opacity: 1; }
+
+.seq-under-foil-text {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 12% 10%;
-  font-size: clamp(1.4rem, 5vw, 2.4rem) !important;
-  line-height: 1.25;
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
+  line-height: 1.3;
+  padding: 15% 10%;
+  transition: opacity 400ms ease;
+  mask-size: cover;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: cover;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  z-index: 1;
 }
 
-/* Continue / finish buttons */
+.seq-clouds-img {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  width: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 800ms ease, transform 800ms ease;
+  z-index: 4;
+}
+.seq-clouds-img.is-visible { opacity: 1; transform: translateY(0); }
+
+.seq-scratch-tile {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  cursor: grab;
+  mask-size: cover;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: cover;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+.seq-scratch-tile:active { cursor: grabbing; }
+.seq-scratch-tile canvas { display: block; width: 100%; height: 100%; }
+
+.seq-custom-msg {
+  text-align: center;
+  font-size: clamp(1rem, 3.5vw, 1.4rem);
+  padding: 0.5rem 1.5rem;
+  opacity: 0;
+  transition: opacity 600ms ease;
+  flex-shrink: 0;
+}
+.seq-custom-msg.is-visible { opacity: 1; }
+
 .seq-continue-wrap {
   display: flex;
   justify-content: center;
-  padding: 1.25rem 1rem 0.5rem;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
   opacity: 0;
   pointer-events: none;
-  transition: opacity .4s ease;
+  transition: opacity 400ms ease;
   flex-shrink: 0;
 }
-.seq-continue-wrap.is-visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-.seq-continue-btn { min-width: 160px; }
-
-.seq-finish-actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-.seq-finish-actions--revealed {
-  padding: 0.75rem 1rem 1.5rem;
-}
-
-/* Custom message (shown below BOY!/GIRL!) */
-.seq-custom-msg {
-  margin-top: 0.75rem;
-  font-size: clamp(0.9rem, 3vw, 1.2rem);
-  text-align: center;
-  opacity: 0.85;
-  padding: 0 1rem;
-  line-height: 1.4;
-}
-
-/* Step 2 color flood overlay */
-.seq-flood {
-  position: fixed;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 1.2s ease;
-  z-index: 0;
-  mix-blend-mode: multiply;
-}
-.seq-flood.is-active { opacity: 0.28; }
-
-/* Winner animation for final step reveal text */
-.cc-seq-winner {
-  animation:
-    ccWinnerPop 800ms cubic-bezier(.34, 1.4, .64, 1) 1 both,
-    ccWinnerGlow 1.4s ease-out 200ms 1 both;
-}
-
-/* Fully revealed stacked view */
-.seq-revealed {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
-  width: 100%;
-  max-width: 420px;
-  margin: 0 auto;
-}
-.seq-revealed__panel {
-  border-radius: 16px;
-  padding: 1.25rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  min-height: 80px;
-}
-.seq-revealed__panel--final {
-  padding: 1.75rem 1.5rem;
-  min-height: 120px;
-}
-.seq-revealed__text {
-  font-size: clamp(1.2rem, 4.5vw, 2rem);
-  line-height: 1.2;
-}
-.seq-revealed__panel--final .seq-revealed__text {
-  font-size: clamp(2rem, 8vw, 3.5rem);
-}
-.seq-revealed__divider {
-  height: 1px;
-  background: rgba(0,0,0,0.10);
-  margin: 0 1.5rem;
-}
+.seq-continue-wrap.is-visible { opacity: 1; pointer-events: auto; }
