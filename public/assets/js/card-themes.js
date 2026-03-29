@@ -435,12 +435,16 @@ export const CARD_THEMES = {
                   mobile:  '/assets/cards/gender-reveal1/step2-girl/bg-mobile.jpg' },
         },
         underlayImageSrc: {
-          boy:  '/assets/cards/gender-reveal1/heart-boy.png',
-          girl: '/assets/cards/gender-reveal1/heart-girl.png',
+          boy:  '/assets/cards/gender-reveal1/step2-boy/heart-boy.png',
+          girl: '/assets/cards/gender-reveal1/step2-girl/heart-girl.png',
         },
-        revealSvgSrc: {
-          boy:  '/assets/cards/gender-reveal1/boy.svg',
-          girl: '/assets/cards/gender-reveal1/girl.svg',
+        pageBg: {
+          boy:  '#c5d2ea',
+          girl: '#e8c4de',
+        },
+        accentColor: {
+          boy:  '#445f75',
+          girl: '#6d3f64',
         },
         showCustomMessage: true,
       },
@@ -449,11 +453,13 @@ export const CARD_THEMES = {
     stepMessages: {
       en: [
         { title: 'We have news\u2026',         underText: 'We have news\u2026' },
-        { title: "We\u2019re having a\u2026",  underText: "It\u2019s a\u2026" },
+        { title: "We\u2019re having a\u2026",  underText: "It\u2019s a\u2026",
+          revealText: { boy: 'Boy', girl: 'Girl' } },
       ],
       de: [
         { title: 'Wir haben Neuigkeiten\u2026', underText: 'Wir haben Neuigkeiten\u2026' },
-        { title: 'Es wird ein\u2026',           underText: 'Es ist ein\u2026' },
+        { title: 'Es wird ein\u2026',           underText: 'Es ist ein\u2026',
+          revealText: { boy: 'Junge', girl: 'M\u00e4dchen' } },
       ],
     },
   },
@@ -485,14 +491,6 @@ export function getSeqStepConfig(card_key, stepIndex, language, gender){
       : stepEntry.underlayImageSrc;
   }
 
-  // Resolve revealSvgSrc (may be object keyed by gender)
-  let revealSvgSrc = null;
-  if (stepEntry.revealSvgSrc){
-    revealSvgSrc = (typeof stepEntry.revealSvgSrc === 'object')
-      ? (stepEntry.revealSvgSrc[gender] || null)
-      : stepEntry.revealSvgSrc;
-  }
-
   // Resolve bgFloodSrc to { desktop, mobile } using gender
   let bgFloodSrc = null;
   if (stepEntry.bgFloodSrc){
@@ -502,16 +500,30 @@ export function getSeqStepConfig(card_key, stepIndex, language, gender){
     }
   }
 
+  // Resolve revealText from stepMessages (may be object keyed by gender)
+  let revealText = null;
+  if (msgEntry.revealText){
+    revealText = (typeof msgEntry.revealText === 'object')
+      ? (msgEntry.revealText[gender] || null)
+      : msgEntry.revealText;
+  }
+
+  // Resolve stepPageBg and accentColor (may be objects keyed by gender)
+  const _resolveGender = (val) =>
+    val ? ((typeof val === 'object') ? (val[gender] || null) : val) : null;
+
   return {
-    title:            msgEntry.title    || '',
+    title:            msgEntry.title     || '',
     underText:        msgEntry.underText || '',
     bgDesktopSrc:     stepEntry.bgDesktopSrc || '',
     bgMobileSrc:      stepEntry.bgMobileSrc  || stepEntry.bgDesktopSrc || '',
-    cloudsImageSrc:   stepEntry.cloudsImageSrc   || null,
+    cloudsImageSrc:   stepEntry.cloudsImageSrc || null,
     underlayImageSrc,
-    revealSvgSrc,
     bgFloodSrc,
     showCustomMessage: !!stepEntry.showCustomMessage,
+    revealText,
+    stepPageBg:   _resolveGender(stepEntry.pageBg),
+    accentColor:  _resolveGender(stepEntry.accentColor),
   };
 }
 

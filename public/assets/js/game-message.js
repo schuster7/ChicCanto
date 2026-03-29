@@ -1100,7 +1100,12 @@ function _renderSeqScratch(root, card){
 
   const isFinal = stepIndex === totalSteps - 1;
   const { title, underText, bgDesktopSrc, bgMobileSrc, cloudsImageSrc,
-          underlayImageSrc, revealSvgSrc, showCustomMessage } = cfg;
+          underlayImageSrc, showCustomMessage, accentColor } = cfg;
+
+  // Step 2 accent for Continue button
+  const accentBtnStyle = isFinal && accentColor
+    ? `style="background:${accentColor};color:#fff;border-color:transparent;"`
+    : '';
 
   root.innerHTML = `
     <div class="msg-card-wrapper seq-card-wrapper" data-presentation="fullscreen">
@@ -1114,7 +1119,8 @@ function _renderSeqScratch(root, card){
           </picture>
 
           ${cloudsImageSrc
-            ? `<img class="seq-clouds-img" src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">`
+            ? `<img class="seq-clouds-img seq-clouds-left"  src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">
+               <img class="seq-clouds-img seq-clouds-right" src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">`
             : ''}
 
           <div class="msg-card__content">
@@ -1127,11 +1133,8 @@ function _renderSeqScratch(root, card){
             <div class="seq-heart-area" style="aspect-ratio: ${theme.scratchAspect || '400 / 350'};">
 
               ${underlayImageSrc
-                ? `<img class="seq-underlay" src="${underlayImageSrc}" alt="" draggable="false">`
-                : ''}
-
-              ${revealSvgSrc
-                ? `<img class="seq-reveal-svg" src="${revealSvgSrc}" alt="" draggable="false">`
+                ? `<img class="seq-underlay" src="${underlayImageSrc}" alt="" draggable="false"
+                        ${isFinal ? 'style="object-fit:contain;"' : ''}>`
                 : ''}
 
               <div class="seq-under-foil-text"
@@ -1145,18 +1148,9 @@ function _renderSeqScratch(root, card){
 
             </div>
 
-            ${showCustomMessage && card.custom_message
-              ? `<div class="seq-custom-msg" id="seqCustomMsg"
-                      style="font-family:${theme.messageFont || 'inherit'};color:${theme.messageColor || '#5a4a3a'};">
-                   ${_escHtml(card.custom_message)}
-                 </div>`
-              : ''}
-
             <div class="seq-continue-wrap" id="seqContinueWrap">
-              ${!isFinal
-                ? `<button class="btn seq-continue-btn" type="button" id="seqContinueBtn">Continue</button>`
-                : `<button class="btn primary" type="button" id="seqSaveBtn">Save as image</button>
-                   <button class="btn" type="button" id="seqShareBtn">Share</button>`}
+              <button class="btn seq-continue-btn" type="button" id="seqContinueBtn"
+                      ${accentBtnStyle}>Continue &rarr;</button>
             </div>
 
           </div>
@@ -1172,8 +1166,9 @@ function _renderSeqScratch(root, card){
   const underFoilEl  = root.querySelector('.seq-under-foil-text');
   const continueWrap = root.querySelector('#seqContinueWrap');
 
-  if (tileEl)     _applyMask(tileEl, mask);
-  if (underlayEl) _applyMask(underlayEl, mask);
+  if (tileEl)    _applyMask(tileEl, mask);
+  // Step 0: mask stork underlay to heart shape. Step 2: heart PNG has own shape, no mask.
+  if (underlayEl && !isFinal) _applyMask(underlayEl, mask);
   if (underFoilEl) _applyMask(underFoilEl, mask);
 
   _applyFoilOverrides(theme);
@@ -1200,19 +1195,20 @@ async function _onSeqStepScratched(root, card, stepIndex, theme, cfg, tileEl, co
   }, 650);
 
   if (!isFinal){
-    // ── Step 1 (index 0) ──
+    // ── Step 0 ──
 
-    // 2. Fade in underlay
+    // 2. Fade in stork underlay
     const underlayEl = root.querySelector('.seq-underlay');
     if (underlayEl) underlayEl.classList.add('is-revealed');
 
-    // 3. After 400ms: show clouds
+    // 3. After 400ms: drift both cloud halves in
     setTimeout(() => {
-      const cloudsEl = root.querySelector('.seq-clouds-img');
-      if (cloudsEl) cloudsEl.classList.add('is-visible');
+      root.querySelectorAll('.seq-clouds-left, .seq-clouds-right').forEach(el => {
+        el.classList.add('is-visible');
+      });
     }, 400);
 
-    // 4. After 800ms: show continue button
+    // 4. After 800ms: show Continue button
     setTimeout(() => {
       if (continueWrap) continueWrap.classList.add('is-visible');
     }, 800);
@@ -1220,7 +1216,7 @@ async function _onSeqStepScratched(root, card, stepIndex, theme, cfg, tileEl, co
     // 5. Persist step
     _persistSeqStep(card, 0, 1);
 
-    // Wire continue button
+    // Wire Continue
     const continueBtn = root.querySelector('#seqContinueBtn');
     if (continueBtn){
       continueBtn.addEventListener('click', async () => {
@@ -1236,7 +1232,7 @@ async function _onSeqStepScratched(root, card, stepIndex, theme, cfg, tileEl, co
     }
 
   } else {
-    // ── Step 2 (index 1) ──
+    // ── Step 2 ──
 
     // 2. Fade out under-foil-text
     const underFoilEl = root.querySelector('.seq-under-foil-text');
@@ -1245,9 +1241,15 @@ async function _onSeqStepScratched(root, card, stepIndex, theme, cfg, tileEl, co
       underFoilEl.style.opacity    = '0';
     }
 
-    // 3. After 400ms: swap BG and reveal elements
+    // 3. After 400ms: flood page bg + reveal heart underlay + inject reveal text
     setTimeout(() => {
-      // 3a. Swap card background to gender flood image
+      // 3a. Flood page background to gender color
+      const bgColor = cfg.stepPageBg || (card.gender === 'girl' ? '#e8c4de' : '#c5d2ea');
+      document.documentElement.style.setProperty('--page-bg',  bgColor);
+      document.documentElement.style.setProperty('--page-bg1', bgColor);
+      document.documentElement.style.background = bgColor;
+
+      // 3b. Swap card-bg picture to gender flood image
       const bgPic = root.querySelector('.seq-card-bg');
       if (bgPic && cfg.bgFloodSrc){
         bgPic.style.transition = 'none';
@@ -1256,28 +1258,46 @@ async function _onSeqStepScratched(root, card, stepIndex, theme, cfg, tileEl, co
         const img    = bgPic.querySelector('img');
         if (source) source.srcset = cfg.bgFloodSrc.desktop || '';
         if (img)    img.src       = cfg.bgFloodSrc.mobile  || cfg.bgFloodSrc.desktop || '';
-        bgPic.getBoundingClientRect(); // force reflow
+        bgPic.getBoundingClientRect();
         bgPic.style.transition = 'opacity 600ms ease';
         bgPic.style.opacity    = '1';
       }
 
-      // 3c. Fade in underlay (heart-boy/girl)
+      // 3c. Fade in heart underlay
       const underlayEl = root.querySelector('.seq-underlay');
       if (underlayEl) underlayEl.classList.add('is-revealed');
 
-      // 3d. Fade in reveal SVG (boy.svg / girl.svg) with 200ms delay
-      const revealSvg = root.querySelector('.seq-reveal-svg');
-      if (revealSvg){
-        revealSvg.style.transitionDelay = '200ms';
-        revealSvg.classList.add('is-revealed');
+      // 3d. Inject + fade in reveal text over heart
+      const heartArea = root.querySelector('.seq-heart-area');
+      if (heartArea){
+        const accentColor = cfg.accentColor || (card.gender === 'girl' ? '#6d3f64' : '#445f75');
+        const revealText  = cfg.revealText  || (card.gender === 'girl' ? 'Girl' : 'Boy');
+        const revealEl = document.createElement('div');
+        revealEl.id = 'seqRevealText';
+        revealEl.style.cssText = [
+          "font-family:'Dancing Script',cursive",
+          'font-weight:700',
+          'font-size:clamp(3.5rem,18vw,6rem)',
+          `color:${accentColor}`,
+          'text-align:center',
+          'opacity:0',
+          'transition:opacity 800ms ease',
+          'position:absolute',
+          'inset:0',
+          'display:flex',
+          'align-items:center',
+          'justify-content:center',
+          'pointer-events:none',
+          'z-index:3',
+        ].join(';');
+        revealEl.textContent = revealText;
+        heartArea.appendChild(revealEl);
+        // Trigger fade-in after short delay
+        setTimeout(() => { revealEl.style.opacity = '1'; }, 200);
       }
-
-      // 3e. Fade in custom message
-      const customMsgEl = root.querySelector('#seqCustomMsg');
-      if (customMsgEl) customMsgEl.classList.add('is-visible');
     }, 400);
 
-    // 4. After 1000ms: show save/share buttons
+    // 4. After 1000ms: show Continue → button (leads to share screen)
     setTimeout(() => {
       if (continueWrap) continueWrap.classList.add('is-visible');
     }, 1000);
@@ -1291,11 +1311,19 @@ async function _onSeqStepScratched(root, card, stepIndex, theme, cfg, tileEl, co
       console.error('Failed to persist final seq step:', e);
     }
 
-    // Wire save/share
-    const saveBtn  = root.querySelector('#seqSaveBtn');
-    const shareBtn = root.querySelector('#seqShareBtn');
-    if (saveBtn)  saveBtn.addEventListener('click', () => _exportSeqStacked(card));
-    if (shareBtn) shareBtn.addEventListener('click', () => _seqShare(card));
+    // Wire Continue → share screen
+    const continueBtn = root.querySelector('#seqContinueBtn');
+    if (continueBtn){
+      continueBtn.addEventListener('click', () => {
+        continueBtn.disabled = true;
+        const wrapper = root.querySelector('.seq-card-wrapper');
+        if (wrapper){
+          wrapper.style.transition = 'opacity 300ms ease';
+          wrapper.style.opacity    = '0';
+        }
+        setTimeout(() => { _renderSeqShareScreen(root, card); }, 300);
+      });
+    }
   }
 }
 
@@ -1303,60 +1331,79 @@ async function _onSeqStepScratched(root, card, stepIndex, theme, cfg, tileEl, co
 // ── Revealed (returning visitor) ──────────────────────────────────────────────
 
 function _renderSeqRevealed(root, card){
+  // All-done state goes directly to the share screen.
+  _renderSeqShareScreen(root, card);
+}
+
+
+// ── Share screen (post-reveal destination) ────────────────────────────────────
+
+function _renderSeqShareScreen(root, card){
   const theme  = getCardTheme(card.card_key) || {};
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
 
-  _applySeqStepPageTheme(theme);
+  const step0cfg = getSeqStepConfig(card.card_key, 0, lang, gender);
+  const step1cfg = getSeqStepConfig(card.card_key, 1, lang, gender);
 
-  const cfg = getSeqStepConfig(card.card_key, 1, lang, gender);
+  const accentColor = step1cfg.accentColor || (gender === 'girl' ? '#6d3f64' : '#445f75');
+  const bgColor     = step1cfg.stepPageBg  || (gender === 'girl' ? '#e8c4de' : '#c5d2ea');
+  const revealText  = step1cfg.revealText  || (gender === 'girl' ? 'Girl' : 'Boy');
 
-  const bgDesktop = cfg.bgFloodSrc ? (cfg.bgFloodSrc.desktop || cfg.bgDesktopSrc) : cfg.bgDesktopSrc;
-  const bgMobile  = cfg.bgFloodSrc ? (cfg.bgFloodSrc.mobile  || bgDesktop)        : (cfg.bgMobileSrc || bgDesktop);
+  // Flood full viewport
+  document.documentElement.style.setProperty('--page-bg',  bgColor);
+  document.documentElement.style.setProperty('--page-bg1', bgColor);
+  document.documentElement.style.background = bgColor;
+
+  const storkSrc = step0cfg.underlayImageSrc || '';
 
   root.innerHTML = `
-    <div class="msg-card-wrapper seq-card-wrapper" data-presentation="fullscreen">
+    <div class="msg-card-wrapper seq-card-wrapper seq-share-screen" data-presentation="fullscreen">
       <div class="scratch-fx">
-        <div class="scratch-stage msg-stage" data-export-root="1"
-             data-card-style="gender-reveal" data-presentation="fullscreen">
+        <div class="scratch-stage msg-stage seq-share-stage" data-export-root="1"
+             data-card-style="gender-reveal" data-presentation="fullscreen"
+             style="background:${bgColor};">
 
-          <picture class="card-bg seq-card-bg" aria-hidden="true">
-            <source media="(min-width: 700px)" srcset="${bgDesktop}">
-            <img src="${bgMobile}" alt="" draggable="false" loading="eager">
-          </picture>
-
-          <div class="msg-card__content">
-
-            <div class="seq-heart-area" style="aspect-ratio: ${theme.scratchAspect || '400 / 350'};">
-              ${cfg.underlayImageSrc
-                ? `<img class="seq-underlay is-revealed" src="${cfg.underlayImageSrc}" alt="" draggable="false">`
-                : ''}
-              ${cfg.revealSvgSrc
-                ? `<img class="seq-reveal-svg is-revealed" src="${cfg.revealSvgSrc}" alt="" draggable="false">`
-                : ''}
-            </div>
-
-            ${card.custom_message
-              ? `<div class="seq-custom-msg is-visible"
-                      style="font-family:${theme.messageFont || 'inherit'};color:${theme.messageColor || '#5a4a3a'};">
-                   ${_escHtml(card.custom_message)}
-                 </div>`
+          <div class="seq-share__top">
+            ${storkSrc
+              ? `<img class="seq-share__stork" src="${storkSrc}" alt="" draggable="false">`
               : ''}
-
-            <div class="seq-continue-wrap is-visible">
-              <button class="btn primary" type="button" id="seqSaveBtn">Save as image</button>
-              <button class="btn" type="button" id="seqShareBtn">Share</button>
-            </div>
-
           </div>
+
+          <div class="seq-share__divider" style="background:${accentColor};opacity:0.3;"></div>
+
+          <div class="seq-share__bottom">
+            <div class="seq-share__reveal-text" style="
+              font-family:'Dancing Script',cursive;
+              font-weight:700;
+              font-size:clamp(3.5rem,18vw,6rem);
+              color:${accentColor};
+              text-align:center;
+            ">${_escHtml(revealText)}</div>
+            ${card.custom_message
+              ? `<div class="seq-share__custom-msg" style="
+                   font-family:'Dancing Script',cursive;
+                   color:${accentColor};
+                 ">${_escHtml(card.custom_message)}</div>`
+              : ''}
+            <div class="seq-share__branding" style="color:${accentColor};opacity:0.5;">ChicCanto</div>
+          </div>
+
+          <div class="seq-continue-wrap is-visible seq-share__actions">
+            <button class="btn" type="button" id="seqSaveBtn"
+                    style="background:${accentColor};color:#fff;border-color:transparent;border-radius:50px;padding:0.75rem 2rem;">
+              Save as image
+            </button>
+            <button class="btn" type="button" id="seqShareBtn"
+                    style="background:${accentColor};color:#fff;border-color:transparent;border-radius:50px;padding:0.75rem 2rem;">
+              Share
+            </button>
+          </div>
+
         </div>
       </div>
     </div>
   `;
-
-  const mask = theme.scratchMask || '/assets/img/masks/heart.svg';
-  const underlayEl = root.querySelector('.seq-underlay');
-  if (underlayEl) _applyMask(underlayEl, mask);
 
   root.querySelector('#seqSaveBtn')?.addEventListener('click', () => _exportSeqStacked(card));
   root.querySelector('#seqShareBtn')?.addEventListener('click', () => _seqShare(card));
@@ -1377,27 +1424,28 @@ async function _seqShare(card){
 }
 
 
-// ── Stacked JPEG export (1080×1920) ──────────────────────────────────────────
+// ── JPEG export (1080×1920) — mirrors share screen layout ────────────────────
 //
-// 2-panel stacked canvas:
-// Panel 1 (~700px): neutral bg, stork image centred in heart area
-// Panel 2 (~1020px): gender flood bg, heart-boy/girl + reveal SVG, custom message
-// Branding bar (100px) at bottom.
-// All images loaded via Promise.all with per-image try/catch — missing = skip.
+// Stork top half | divider | Boy/Girl text + custom message | branding
 
 async function _exportSeqStacked(card){
   const theme  = getCardTheme(card.card_key) || {};
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
 
-  const step1cfg = getSeqStepConfig(card.card_key, 0, lang, gender);
-  const step2cfg = getSeqStepConfig(card.card_key, 1, lang, gender);
+  const step0cfg = getSeqStepConfig(card.card_key, 0, lang, gender);
+  const step1cfg = getSeqStepConfig(card.card_key, 1, lang, gender);
+
+  const accentColor = step1cfg.accentColor || (gender === 'girl' ? '#6d3f64' : '#445f75');
+  const bgColor     = step1cfg.stepPageBg  || (gender === 'girl' ? '#e8c4de' : '#c5d2ea');
+  const revealText  = step1cfg.revealText  || (gender === 'girl' ? 'Girl' : 'Boy');
 
   const W          = 1080;
   const H          = 1920;
-  const BRANDING_H = 100;
-  const PANEL1_H   = 700;
-  const PANEL2_H   = H - PANEL1_H - BRANDING_H; // 1120
+  const DIVIDER_Y  = Math.round(H * 0.48);
+  const DIVIDER_H  = 3;
+  const TOP_H      = DIVIDER_Y;
+  const BOT_H      = H - DIVIDER_Y - DIVIDER_H - 100; // 100 = branding zone
 
   const canvas = document.createElement('canvas');
   canvas.width  = W;
@@ -1417,61 +1465,54 @@ async function _exportSeqStacked(card){
     });
   }
 
-  const [storkImg, underlayImg, revealImg] = await Promise.all([
-    _loadImg(step1cfg.underlayImageSrc).catch(() => null),
-    _loadImg(step2cfg.underlayImageSrc).catch(() => null),
-    _loadImg(step2cfg.revealSvgSrc).catch(() => null),
-  ]);
+  const storkImg = await _loadImg(step0cfg.underlayImageSrc).catch(() => null);
 
-  // ── Panel 1 (neutral) ──
-  ctx.fillStyle = theme.pageBg || '#ede8e0';
-  ctx.fillRect(0, 0, W, PANEL1_H);
+  // ── Full bleed bg ──
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, W, H);
 
+  // ── Stork top ──
   if (storkImg){
-    const heartW = 400, heartH = 350;
-    const scale  = Math.min(W * 0.55 / heartW, PANEL1_H * 0.65 / heartH);
-    const dw = heartW * scale, dh = heartH * scale;
-    const dx = (W - dw) / 2, dy = (PANEL1_H - dh) / 2;
+    const maxW  = W * 0.70;
+    const maxH  = TOP_H * 0.80;
+    const scale = Math.min(maxW / (storkImg.naturalWidth  || 1),
+                           maxH / (storkImg.naturalHeight || 1));
+    const dw = (storkImg.naturalWidth  || 400) * scale;
+    const dh = (storkImg.naturalHeight || 350) * scale;
+    const dx = (W - dw) / 2;
+    const dy = (TOP_H - dh) / 2;
     try{ ctx.drawImage(storkImg, dx, dy, dw, dh); }catch(_){}
   }
 
-  // ── Panel 2 (gender reveal) ──
-  const p2Bg = gender === 'boy' ? '#d0e8f4' : '#f4d0e0';
-  ctx.fillStyle = p2Bg;
-  ctx.fillRect(0, PANEL1_H, W, PANEL2_H);
+  // ── Divider ──
+  ctx.globalAlpha = 0.30;
+  ctx.fillStyle   = accentColor;
+  ctx.fillRect(W * 0.10, DIVIDER_Y, W * 0.80, DIVIDER_H);
+  ctx.globalAlpha = 1;
 
-  const hasMsg       = !!card.custom_message;
-  const heartW       = 400, heartH = 350;
-  const scale        = Math.min(W * 0.55 / heartW, (PANEL2_H * (hasMsg ? 0.50 : 0.60)) / heartH);
-  const dw           = heartW * scale, dh = heartH * scale;
-  const dx           = (W - dw) / 2;
-  const dy           = PANEL1_H + (PANEL2_H * (hasMsg ? 0.42 : 0.45)) - dh / 2;
-
-  if (underlayImg){
-    try{ ctx.drawImage(underlayImg, dx, dy, dw, dh); }catch(_){}
-  }
-  if (revealImg){
-    try{ ctx.drawImage(revealImg, dx, dy, dw, dh); }catch(_){}
-  }
-
-  if (hasMsg){
-    const font = (theme.messageFont || "'Dancing Script', cursive").replace(/'/g, '');
-    ctx.fillStyle    = theme.messageColor || '#5a4a3a';
-    ctx.font         = `${theme.messageWeight || 600} 52px ${font}`;
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    const textY      = PANEL1_H + PANEL2_H - 160;
-    try{ ctx.fillText(card.custom_message, W / 2, textY); }catch(_){}
-  }
-
-  // ── Branding bar ──
-  ctx.fillStyle    = '#ffffff';
-  ctx.fillRect(0, H - BRANDING_H, W, BRANDING_H);
-  ctx.fillStyle    = '#888';
-  ctx.font         = '400 28px Inter, system-ui, sans-serif';
+  // ── Gender text ──
+  const font   = 'Dancing Script, cursive';
+  const hasMsg = !!card.custom_message;
+  ctx.fillStyle    = accentColor;
+  ctx.font         = `700 160px ${font}`;
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('ChicCanto', W / 2, H - BRANDING_H / 2);
+  const textY = DIVIDER_Y + DIVIDER_H + (hasMsg ? BOT_H * 0.35 : BOT_H * 0.48);
+  try{ ctx.fillText(revealText, W / 2, textY); }catch(_){}
+
+  // ── Custom message ──
+  if (hasMsg){
+    ctx.font  = `400 64px ${font}`;
+    const msgY = DIVIDER_Y + DIVIDER_H + BOT_H * 0.65;
+    try{ ctx.fillText(card.custom_message, W / 2, msgY); }catch(_){}
+  }
+
+  // ── Branding ──
+  ctx.globalAlpha = 0.50;
+  ctx.font         = '400 32px Inter, system-ui, sans-serif';
+  ctx.fillStyle    = accentColor;
+  ctx.fillText('ChicCanto', W / 2, H - 50);
+  ctx.globalAlpha = 1;
 
   // ── Download ──
   try{
