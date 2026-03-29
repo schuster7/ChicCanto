@@ -1510,7 +1510,7 @@ border-radius: var(--scratch-tile-radius);
 
 .seq-clouds-left {
   position: absolute;
-  top: 0; left: -10%;
+  top: 0; left: -5%;
   width: 55%;
   opacity: 0;
   transform: translateX(-60px);
@@ -1524,7 +1524,7 @@ border-radius: var(--scratch-tile-radius);
   width: 50%;
   opacity: 0;
   transform: translateX(60px);
-  transition: opacity 900ms ease 200ms, transform 900ms ease 200ms;
+  transition: opacity 900ms ease 250ms, transform 900ms ease 250ms;
   z-index: 4;
   pointer-events: none;
   transform-origin: right top;
@@ -1638,19 +1638,20 @@ border-radius: var(--scratch-tile-radius);
 /* ── Mobile fullscreen breakout for seq-card-wrapper ── */
 
 @media (max-width: 699px) {
+  .msg-card-wrapper[data-presentation="fullscreen"],
   .seq-card-wrapper {
-    max-width: 100%;
-    margin: 0;
     width: 100vw;
     margin-left: calc(-50vw + 50%);
+    max-width: 100%;
+    margin-right: 0;
   }
+  .msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx,
+  .msg-card-wrapper[data-presentation="fullscreen"] .scratch-stage,
   .seq-card-wrapper .scratch-fx,
   .seq-card-wrapper .scratch-stage,
   .seq-card-wrapper .msg-stage {
     border-radius: 0;
     border: none;
-  }
-  .seq-card-wrapper .scratch-fx {
     width: 100%;
     max-width: 100%;
   }

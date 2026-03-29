@@ -1122,9 +1122,9 @@ function _renderSeqScratch(root, card){
             <img src="${bgMobileSrc || bgDesktopSrc}" alt="" draggable="false" loading="eager">
           </picture>
 
-          ${cloudsImageSrc
-            ? `<img class="seq-clouds-img seq-clouds-left"  src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">
-               <img class="seq-clouds-img seq-clouds-right" src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">`
+          ${!isFinal && cloudsImageSrc
+            ? `<img class="seq-clouds-img seq-clouds-left"  src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false" style="opacity:0;">
+               <img class="seq-clouds-img seq-clouds-right" src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false" style="opacity:0;">`
             : ''}
 
           <div class="msg-card__content">
@@ -1139,7 +1139,8 @@ function _renderSeqScratch(root, card){
               <div class="seq-heart-bg" style="background:${heartFillColor};"></div>
 
               ${underlayImageSrc
-                ? `<img class="seq-underlay" src="${underlayImageSrc}" alt="" draggable="false">`
+                ? `<img class="seq-underlay" src="${underlayImageSrc}" alt="" draggable="false"
+                        style="${isFinal ? 'opacity:0;transition:opacity 600ms ease;' : 'opacity:1;'}">`
                 : ''}
 
               ${underText
@@ -1227,15 +1228,12 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
     // ── Step 0 ──
     const continueWrap = root.querySelector('#seqContinueWrap');
 
-    // 2. Fade in stork underlay
-    const underlayEl = root.querySelector('.seq-underlay');
-    if (underlayEl) underlayEl.classList.add('is-revealed');
-
-    // 3. After 400ms: drift both cloud halves in
+    // 2. After 400ms: drift both cloud halves in
     setTimeout(() => {
-      root.querySelectorAll('.seq-clouds-left, .seq-clouds-right').forEach(el => {
-        el.classList.add('is-visible');
-      });
+      const cloudsLeft  = root.querySelector('.seq-clouds-left');
+      const cloudsRight = root.querySelector('.seq-clouds-right');
+      if (cloudsLeft)  cloudsLeft.classList.add('is-visible');
+      if (cloudsRight) cloudsRight.classList.add('is-visible');
     }, 400);
 
     // 4. After 800ms: show Continue button
