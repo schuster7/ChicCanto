@@ -396,7 +396,7 @@ export const CARD_THEMES = {
     availableLanguages: ['en', 'de'],
     defaultLanguage: 'en',
     thumbSrc: '/assets/cards/gender-reveal1/thumb.jpg',
-    foil: 'gold',
+    foil: 'neutral',
     foilBase: '#c8bfb4',
     foilHi:   '#d8d0c6',
     foilMid:  '#c0b8ac',
@@ -405,11 +405,12 @@ export const CARD_THEMES = {
     scratchMask: '/assets/img/masks/heart.svg',
     scratchAspect: '400 / 350',
     titleFont: "'Dancing Script', cursive",
-    titleWeight: '600',
+    titleWeight: '400',
     titleColor: '#5a4a3a',
     messageFont: "'Dancing Script', cursive",
-    messageWeight: '600',
+    messageWeight: '400',
     messageColor: '#5a4a3a',
+    heartFillColor: '#ede0cc',
     pageBg:  '#ede8e0',
     pageBg1: '#f2ede6',
     pageGlowA1: 'rgba(200,180,140,.10)',
@@ -422,8 +423,9 @@ export const CARD_THEMES = {
       {
         bgDesktopSrc: '/assets/cards/gender-reveal1/bg-desktop.jpg',
         bgMobileSrc:  '/assets/cards/gender-reveal1/bg-mobile.jpg',
-        underlayImageSrc: '/assets/cards/gender-reveal1/stork.png',
-        cloudsImageSrc:   '/assets/cards/gender-reveal1/clouds.png',
+        underlayImageSrc:         '/assets/cards/gender-reveal1/heart-stork.png',
+        cloudsImageSrc:            '/assets/cards/gender-reveal1/clouds.png',
+        applyHeartMaskToUnderlay:  true,
       },
       {
         bgDesktopSrc: '/assets/cards/gender-reveal1/bg-desktop.jpg',
@@ -438,7 +440,8 @@ export const CARD_THEMES = {
           boy:  '/assets/cards/gender-reveal1/step2-boy/heart-boy.png',
           girl: '/assets/cards/gender-reveal1/step2-girl/heart-girl.png',
         },
-        pageBg: {
+        applyHeartMaskToUnderlay: false,
+        floodPageBg: {
           boy:  '#c5d2ea',
           girl: '#e8c4de',
         },
@@ -452,12 +455,12 @@ export const CARD_THEMES = {
 
     stepMessages: {
       en: [
-        { title: 'We have news\u2026',         underText: 'We have news\u2026' },
+        { title: 'We have news\u2026',         underText: null },
         { title: "We\u2019re having a\u2026",  underText: "It\u2019s a\u2026",
           revealText: { boy: 'Boy', girl: 'Girl' } },
       ],
       de: [
-        { title: 'Wir haben Neuigkeiten\u2026', underText: 'Wir haben Neuigkeiten\u2026' },
+        { title: 'Wir haben Neuigkeiten\u2026', underText: null },
         { title: 'Es wird ein\u2026',           underText: 'Es ist ein\u2026',
           revealText: { boy: 'Junge', girl: 'M\u00e4dchen' } },
       ],
@@ -513,16 +516,17 @@ export function getSeqStepConfig(card_key, stepIndex, language, gender){
     val ? ((typeof val === 'object') ? (val[gender] || null) : val) : null;
 
   return {
-    title:            msgEntry.title     || '',
-    underText:        msgEntry.underText || '',
+    title:            msgEntry.title  || '',
+    underText:        msgEntry.underText ?? null,
     bgDesktopSrc:     stepEntry.bgDesktopSrc || '',
     bgMobileSrc:      stepEntry.bgMobileSrc  || stepEntry.bgDesktopSrc || '',
     cloudsImageSrc:   stepEntry.cloudsImageSrc || null,
     underlayImageSrc,
+    applyHeartMaskToUnderlay: stepEntry.applyHeartMaskToUnderlay ?? true,
     bgFloodSrc,
     showCustomMessage: !!stepEntry.showCustomMessage,
     revealText,
-    stepPageBg:   _resolveGender(stepEntry.pageBg),
+    floodPageBg:  _resolveGender(stepEntry.floodPageBg),
     accentColor:  _resolveGender(stepEntry.accentColor),
   };
 }

@@ -1459,12 +1459,23 @@ border-radius: var(--scratch-tile-radius);
   flex-shrink: 0;
 }
 
+.seq-heart-bg {
+  position: absolute;
+  inset: 0;
+  mask-size: cover;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: cover;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+
 .seq-underlay {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   opacity: 0;
   transition: opacity 600ms ease;
   mask-size: cover;
