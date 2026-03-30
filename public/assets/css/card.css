@@ -1639,15 +1639,12 @@ border-radius: var(--scratch-tile-radius);
 /* ── Mobile fullscreen breakout for seq-card-wrapper ── */
 
 @media (max-width: 699px) {
-  .msg-card-wrapper[data-presentation="fullscreen"],
   .seq-card-wrapper {
-    width: 100vw;
+    margin: 0;
     margin-left: calc(-50vw + 50%);
+    width: 100vw;
     max-width: 100%;
-    margin-right: 0;
   }
-  .msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx,
-  .msg-card-wrapper[data-presentation="fullscreen"] .scratch-stage,
   .seq-card-wrapper .scratch-fx,
   .seq-card-wrapper .scratch-stage,
   .seq-card-wrapper .msg-stage {
