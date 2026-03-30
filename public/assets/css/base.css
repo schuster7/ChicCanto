@@ -426,6 +426,17 @@ a.btn {
   padding: 44px 0 60px;
 }
 
+@media (max-width: 699px) {
+  body.has-fullscreen-card .page-main {
+    padding: 0;
+    align-items: stretch;
+  }
+  body.has-fullscreen-card .container {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
 /* Site header */
 .site-header {
   position: sticky;

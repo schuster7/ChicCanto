@@ -681,9 +681,7 @@ border-radius: var(--scratch-tile-radius);
   .msg-card-wrapper[data-presentation="fullscreen"] {
     max-width: 100%;
     margin: 0;
-    /* Break out of .container side padding */
-    width: 100vw;
-    margin-left: calc(-50vw + 50%);
+    width: 100%;
   }
   .msg-card-wrapper[data-presentation="fullscreen"] .scratch-fx,
   .msg-card-wrapper[data-presentation="fullscreen"] .scratch-stage,
@@ -1645,17 +1643,8 @@ border-radius: var(--scratch-tile-radius);
 
 .seq-share__actions { flex-shrink: 0; }
 
-/* ── Mobile fullscreen breakout for seq-card-wrapper ── */
-
+/* ── Sequential card mobile ── */
 @media (max-width: 699px) {
-  .seq-card-wrapper {
-    position: relative;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100vw;
-    max-width: 100vw;
-    margin: 0;
-  }
   .seq-card-wrapper .scratch-fx,
   .seq-card-wrapper .scratch-stage,
   .seq-card-wrapper .msg-stage {
@@ -1664,9 +1653,7 @@ border-radius: var(--scratch-tile-radius);
     width: 100%;
     max-width: 100%;
   }
-  .seq-card-wrapper .msg-stage {
-    min-height: 85vh;
-  }
+  .seq-card-wrapper .msg-stage,
   .seq-card-wrapper .msg-card__content {
     min-height: 85vh;
   }

@@ -514,6 +514,7 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
 // ─── Scratch (recipient view) ────────────────────────────────────────
 
 export function renderMessageScratch(root, card){
+  document.body.classList.add('has-fullscreen-card');
   const theme = getCardTheme(card.card_key) || {};
   if (theme.messageMode === 'sequential'){
     return _renderSeqScratch(root, card);
@@ -1084,6 +1085,7 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
 // ── Scratch (recipient) ───────────────────────────────────────────────────────
 
 function _renderSeqScratch(root, card){
+  document.body.classList.add('has-fullscreen-card');
   const theme      = getCardTheme(card.card_key) || {};
   const totalSteps = (theme.steps || []).length || 2;
   const stepIndex  = typeof card.current_step === 'number' ? card.current_step : 0;
