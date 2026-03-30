@@ -1510,7 +1510,8 @@ border-radius: var(--scratch-tile-radius);
 
 .seq-clouds-left {
   position: absolute;
-  top: 0; left: -5%;
+  top: 0;
+  left: 0;
   width: 55%;
   opacity: 0;
   transform: translateX(-60px);
@@ -1520,14 +1521,14 @@ border-radius: var(--scratch-tile-radius);
 }
 .seq-clouds-right {
   position: absolute;
-  top: 0; right: -5%;
+  top: 0;
+  right: 0;
   width: 50%;
   opacity: 0;
   transform: translateX(60px);
   transition: opacity 900ms ease 250ms, transform 900ms ease 250ms;
   z-index: 4;
   pointer-events: none;
-  transform-origin: right top;
 }
 .seq-clouds-left.is-visible  { opacity: 1; transform: translateX(0); }
 .seq-clouds-right.is-visible { opacity: 1; transform: translateX(0); }

@@ -1122,11 +1122,6 @@ function _renderSeqScratch(root, card){
             <img src="${bgMobileSrc || bgDesktopSrc}" alt="" draggable="false" loading="eager">
           </picture>
 
-          ${!isFinal && cloudsImageSrc
-            ? `<img class="seq-clouds-img seq-clouds-left"  src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">
-               <img class="seq-clouds-img seq-clouds-right" src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">`
-            : ''}
-
           <div class="msg-card__content">
 
             <div class="seq-title"
@@ -1182,6 +1177,10 @@ function _renderSeqScratch(root, card){
 
           </div>
         </div>
+        ${stepIndex === 0 && cloudsImageSrc ? `
+          <img class="seq-clouds-img seq-clouds-left"  src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">
+          <img class="seq-clouds-img seq-clouds-right" src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">
+        ` : ''}
       </div>
     </div>
   `;
