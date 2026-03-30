@@ -1187,19 +1187,6 @@ function _renderSeqScratch(root, card){
     </div>
   `;
 
-  // Force fullscreen breakout via inline style — overrides any cascade issues
-  const wrapper = root.querySelector('.seq-card-wrapper');
-  if (wrapper) {
-    wrapper.style.width = '100vw';
-    wrapper.style.maxWidth = '100%';
-    wrapper.style.marginTop = '0';
-    wrapper.style.marginBottom = '0';
-    requestAnimationFrame(() => {
-      const left = wrapper.getBoundingClientRect().left + (window.scrollX || 0);
-      if (left !== 0) wrapper.style.marginLeft = `-${left}px`;
-    });
-  }
-
   const mask        = theme.scratchMask || '/assets/img/masks/heart.svg';
   const tileEl      = root.querySelector('#seqScratchTile');
   const canvas      = root.querySelector('#seqScratchCanvas');
