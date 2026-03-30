@@ -1508,30 +1508,39 @@ border-radius: var(--scratch-tile-radius);
   z-index: 1;
 }
 
-.seq-clouds-left {
+.seq-cloud {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 55%;
+  pointer-events: none;
+  z-index: 4;
   opacity: 0;
-  transform: translateX(-60px);
+}
+
+/* Right pair: cloud1 leads, cloud2 follows 250ms later */
+.seq-cloud-right1 {
+  top: -2%;
+  right: -2%;
+  width: 52%;
+  transform: translateX(70px);
   transition: opacity 900ms ease, transform 900ms ease;
-  z-index: 4;
-  pointer-events: none;
 }
-.seq-clouds-right {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 50%;
-  opacity: 0;
-  transform: translateX(60px);
+.seq-cloud-right2 {
+  top: 8%;
+  right: 3%;
+  width: 38%;
+  transform: translateX(70px);
   transition: opacity 900ms ease 250ms, transform 900ms ease 250ms;
-  z-index: 4;
-  pointer-events: none;
 }
-.seq-clouds-left.is-visible  { opacity: 1; transform: translateX(0); }
-.seq-clouds-right.is-visible { opacity: 1; transform: translateX(0); }
+
+/* Left cloud (cloud3 — bigger): follows pair by 600ms */
+.seq-cloud-left {
+  top: -3%;
+  left: -2%;
+  width: 50%;
+  transform: translateX(-70px);
+  transition: opacity 900ms ease 600ms, transform 900ms ease 600ms;
+}
+
+.seq-cloud.is-visible { opacity: 1; transform: translateX(0); }
 
 .seq-scratch-tile {
   position: absolute;

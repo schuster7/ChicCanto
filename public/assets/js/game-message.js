@@ -1099,7 +1099,8 @@ function _renderSeqScratch(root, card){
   _applySeqStepPageTheme(theme);
 
   const isFinal = stepIndex === totalSteps - 1;
-  const { title, underText, bgDesktopSrc, bgMobileSrc, cloudsImageSrc,
+  const { title, underText, bgDesktopSrc, bgMobileSrc,
+          cloudsRight1Src, cloudsRight2Src, cloudsLeftSrc,
           underlayImageSrc, showCustomMessage, accentColor, revealText,
           applyHeartMaskToUnderlay } = cfg;
 
@@ -1177,13 +1178,27 @@ function _renderSeqScratch(root, card){
 
           </div>
         </div>
-        ${stepIndex === 0 && cloudsImageSrc ? `
-          <img class="seq-clouds-img seq-clouds-left"  src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">
-          <img class="seq-clouds-img seq-clouds-right" src="${cloudsImageSrc}" alt="" aria-hidden="true" draggable="false">
+        ${stepIndex === 0 && (cloudsRight1Src || cloudsLeftSrc) ? `
+          ${cloudsRight1Src ? `<img class="seq-cloud seq-cloud-right1" src="${cloudsRight1Src}" alt="" aria-hidden="true" draggable="false">` : ''}
+          ${cloudsRight2Src ? `<img class="seq-cloud seq-cloud-right2" src="${cloudsRight2Src}" alt="" aria-hidden="true" draggable="false">` : ''}
+          ${cloudsLeftSrc  ? `<img class="seq-cloud seq-cloud-left"   src="${cloudsLeftSrc}"  alt="" aria-hidden="true" draggable="false">` : ''}
         ` : ''}
       </div>
     </div>
   `;
+
+  // Force fullscreen breakout via inline style — overrides any cascade issues
+  const wrapper = root.querySelector('.seq-card-wrapper');
+  if (wrapper) {
+    wrapper.style.width = '100vw';
+    wrapper.style.maxWidth = '100%';
+    wrapper.style.marginTop = '0';
+    wrapper.style.marginBottom = '0';
+    requestAnimationFrame(() => {
+      const left = wrapper.getBoundingClientRect().left + (window.scrollX || 0);
+      if (left !== 0) wrapper.style.marginLeft = `-${left}px`;
+    });
+  }
 
   const mask        = theme.scratchMask || '/assets/img/masks/heart.svg';
   const tileEl      = root.querySelector('#seqScratchTile');
@@ -1227,12 +1242,9 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
     // ── Step 0 ──
     const continueWrap = root.querySelector('#seqContinueWrap');
 
-    // 2. After 400ms: drift both cloud halves in
+    // 2. After 400ms: drift clouds in (CSS transition-delay staggers them: r1→r2→left)
     setTimeout(() => {
-      const cloudsLeft  = root.querySelector('.seq-clouds-left');
-      const cloudsRight = root.querySelector('.seq-clouds-right');
-      if (cloudsLeft)  cloudsLeft.classList.add('is-visible');
-      if (cloudsRight) cloudsRight.classList.add('is-visible');
+      root.querySelectorAll('.seq-cloud').forEach(el => el.classList.add('is-visible'));
     }, 400);
 
     // 4. After 800ms: show Continue button
