@@ -1658,8 +1658,12 @@ border-radius: var(--scratch-tile-radius);
   transition: background 1500ms ease;
 }
 
+.seq-underlay-img {
+  transition: opacity 800ms ease 200ms, transform 600ms ease 200ms;
+}
+
 .seq-gender-word {
-  transition: opacity 600ms ease;
+  transition: opacity 700ms ease;
 }
 
 /* ── Sequential card mobile ── */

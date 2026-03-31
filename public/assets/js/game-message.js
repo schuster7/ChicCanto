@@ -1187,8 +1187,8 @@ function _renderSeqScratch(root, card){
               <div class="seq-heart-bg" style="background:${heartFillColor};"></div>
 
               ${underlayImageSrc
-                ? `<img class="seq-underlay" src="${underlayImageSrc}" alt="" draggable="false"
-                        style="${isFinal ? 'opacity:0;transition:opacity 600ms ease;' : 'opacity:1;'}">`
+                ? `<img class="seq-underlay seq-underlay-img" src="${underlayImageSrc}" alt="" draggable="false"
+                        style="${isFinal ? 'opacity:0;visibility:hidden;transform:scale(0.92);' : 'opacity:1;'}">`
                 : ''}
 
               ${underText
@@ -1198,24 +1198,7 @@ function _renderSeqScratch(root, card){
                    </div>`
                 : ''}
 
-              ${isFinal && revealText
-                ? `<div id="seqRevealText" style="
-                      font-family:'Dancing Script',cursive;
-                      font-weight:700;
-                      font-size:clamp(3.5rem,18vw,6rem);
-                      color:${accentColor || '#445f75'};
-                      text-align:center;
-                      opacity:0;
-                      transition:opacity 800ms ease;
-                      position:absolute;
-                      inset:0;
-                      display:flex;
-                      align-items:center;
-                      justify-content:center;
-                      pointer-events:none;
-                      z-index:3;
-                   ">${_escHtml(revealText)}</div>`
-                : ''}
+              <!-- gender word injected by JS at reveal time -->
 
               <div class="msg-card__scratch-tile seq-scratch-tile" id="seqScratchTile">
                 <canvas id="seqScratchCanvas"></canvas>
@@ -1312,51 +1295,96 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
 
   } else {
     // ── Step 1 (final) — delayed reveal sequence ──
+    // Phase 0 is during scratch: underlay hidden (opacity:0, visibility:hidden, scale:0.92),
+    //   underText visible, no gender word in DOM, no Continue.
+    // Phase 1 (t=0): foil clears. NOTHING else changes. Wait 3000ms.
+
     const continueWrap = root.querySelector('#seqRevealContinueWrap');
+    const underlayEl   = root.querySelector('.seq-underlay');
+    const underFoilEl  = root.querySelector('.seq-under-foil-text');
+    const msgStage     = root.querySelector('.msg-stage');
+    const heartArea    = root.querySelector('.seq-heart-area');
 
-    // 1. Underlay visible, keep underText visible, gender word hidden
-    const underlayEl = root.querySelector('.seq-underlay');
-    if (underlayEl){
-      underlayEl.style.opacity = '';
-      underlayEl.classList.add('is-revealed');
-    }
+    // Resolve flood color with fallback in case it's still an object
+    let bgColor = cfg.floodPageBg;
+    if (typeof bgColor === 'object' && bgColor) bgColor = bgColor[card.gender] || bgColor.boy;
+    if (!bgColor) bgColor = card.gender === 'girl' ? '#e8c4de' : '#7d9ac9';
 
-    // Swap card-bg to flood variant
-    const bgPic = root.querySelector('.seq-card-bg');
-    if (bgPic && cfg.bgFloodSrc){
-      bgPic.style.transition = 'none';
-      bgPic.style.opacity    = '0';
-      const source = bgPic.querySelector('source');
-      const img    = bgPic.querySelector('img');
-      if (source) source.srcset = cfg.bgFloodSrc.desktop || '';
-      if (img)    img.src       = cfg.bgFloodSrc.mobile  || cfg.bgFloodSrc.desktop || '';
-      bgPic.getBoundingClientRect();
-      bgPic.style.transition = 'opacity 600ms ease';
-      bgPic.style.opacity    = '1';
-    }
+    // Resolve accent color with same fallback
+    let accent = cfg.accentColor;
+    if (typeof accent === 'object' && accent) accent = accent[card.gender] || accent.boy;
+    if (!accent) accent = card.gender === 'girl' ? '#6d3f64' : '#445f75';
 
-    // 2. Start CSS background color flood (1500ms transition)
-    const bgColor = cfg.floodPageBg || (card.gender === 'girl' ? '#e8c4de' : '#c5d2ea');
-    const msgStage = root.querySelector('.msg-stage');
-    if (msgStage){
-      msgStage.classList.add('seq-reveal-flooding');
-      msgStage.style.background = bgColor;
-    }
-    document.documentElement.classList.add('seq-reveal-flooding');
-    document.documentElement.style.setProperty('--page-bg',  bgColor);
-    document.documentElement.style.setProperty('--page-bg1', bgColor);
-    document.documentElement.style.background = bgColor;
-
-    // 3. After 2500ms: fade in gender word
+    // Phase 2 — Animation begins (t=3000ms)
     setTimeout(() => {
-      const revealEl = root.querySelector('#seqRevealText');
-      if (revealEl) revealEl.style.opacity = '1';
-    }, 2500);
+      // Step A: hide underText, start flood, reveal underlay
+      if (underFoilEl) underFoilEl.style.display = 'none';
 
-    // 4. After 3200ms: show Continue button
+      // Background flood via CSS transition
+      if (msgStage){
+        msgStage.classList.add('seq-reveal-flooding');
+        msgStage.style.background = bgColor;
+      }
+      document.documentElement.classList.add('seq-reveal-flooding');
+      document.documentElement.style.setProperty('--page-bg',  bgColor);
+      document.documentElement.style.setProperty('--page-bg1', bgColor);
+      document.documentElement.style.background = bgColor;
+
+      // Swap card-bg to flood variant
+      const bgPic = root.querySelector('.seq-card-bg');
+      if (bgPic && cfg.bgFloodSrc){
+        bgPic.style.transition = 'none';
+        bgPic.style.opacity    = '0';
+        const source = bgPic.querySelector('source');
+        const img    = bgPic.querySelector('img');
+        if (source) source.srcset = cfg.bgFloodSrc.desktop || '';
+        if (img)    img.src       = cfg.bgFloodSrc.mobile  || cfg.bgFloodSrc.desktop || '';
+        bgPic.getBoundingClientRect();
+        bgPic.style.transition = 'opacity 600ms ease';
+        bgPic.style.opacity    = '1';
+      }
+
+      // Reveal underlay image with scale-up transition
+      if (underlayEl){
+        underlayEl.style.visibility = 'visible';
+        underlayEl.style.opacity    = '1';
+        underlayEl.style.transform  = 'scale(1)';
+      }
+    }, 3000);
+
+    // Step B (t=5000ms): inject and fade in gender word
+    setTimeout(() => {
+      if (heartArea && cfg.revealText){
+        const wordEl = document.createElement('div');
+        wordEl.id = 'seqRevealText';
+        wordEl.className = 'seq-gender-word';
+        wordEl.textContent = cfg.revealText;
+        Object.assign(wordEl.style, {
+          fontFamily: "'Dancing Script', cursive",
+          fontWeight: '700',
+          fontSize: 'clamp(3.5rem,18vw,6rem)',
+          color: accent,
+          textAlign: 'center',
+          opacity: '0',
+          position: 'absolute',
+          inset: '0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+          zIndex: '3',
+        });
+        heartArea.appendChild(wordEl);
+        // Force reflow then trigger transition
+        wordEl.getBoundingClientRect();
+        wordEl.style.opacity = '1';
+      }
+    }, 5000);
+
+    // Step C (t=6000ms): show Continue button
     setTimeout(() => {
       if (continueWrap) continueWrap.classList.add('is-visible');
-    }, 3200);
+    }, 6000);
 
     // 6. Persist full reveal
     try{
