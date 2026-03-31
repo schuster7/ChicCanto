@@ -950,13 +950,13 @@ function buildMatch3Board(totalTiles, winTier, tiers, seedKey){
 function render(container, token, card){
   // Card is expected to already exist in storage (redeem/setup creates it).
   applyTheme(card.theme_id);
-  applyPageTheme(card.card_key, card.card_style, { allowDarkMode: false });
-
   const contentId = 'content';
 
   const params = new URLSearchParams(window.location.search);
   const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
   const hasSetupAccess = PREVIEW_MODE ? true : !!(setupParam && card.setup_key && setupParam === card.setup_key);
+
+  applyPageTheme(card.card_key, card.card_style, { allowDarkMode: false, isSetup: hasSetupAccess });
 
   // If a setup param is present, cache it for this token so we can recover sender setup
   // even if the backend redacts setup_key in intermediate responses (KV propagation, etc.).
@@ -2285,7 +2285,7 @@ function applyTheme(themeId){
 // Per-card page background: sets CSS custom properties on <body> so the
 // background gradient and animated glow layers adapt to the card's mood.
 // If the theme doesn't define page values, the CSS defaults (dark theme) remain.
-function applyPageTheme(cardKey, cardStyle, { allowDarkMode = false } = {}){
+function applyPageTheme(cardKey, cardStyle, { allowDarkMode = false, isSetup = false } = {}){
   try{
     // For custom cards with sub-styles, resolve the full theme including style-specific page colors.
     const theme = getResolvedMsgTheme(cardKey, cardStyle) || getCardTheme(cardKey);
@@ -2338,7 +2338,7 @@ function applyPageTheme(cardKey, cardStyle, { allowDarkMode = false } = {}){
       // Light mode: override the animated aurora body background with the card's page color.
       // This prevents the default grey-blue gradient from showing around light-themed cards.
       // Only apply on the recipient card page, not the setup page.
-      if (theme.pageBg && document.body.dataset.page === 'card') {
+      if (theme.pageBg && !isSetup) {
         document.body.style.background = theme.pageBg;
         document.body.style.backgroundImage = 'none';
         document.body.style.animation = 'none';

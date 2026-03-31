@@ -1263,10 +1263,17 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
     // ── Step 0 ──
     const continueWrap = root.querySelector('#seqContinueWrap');
 
-    // 2. Swap title to titleRevealed if available
+    // 2. Swap title to titleRevealed with a fade-out/fade-in
     if (cfg.titleRevealed){
       const titleEl = root.querySelector('.seq-title');
-      if (titleEl) titleEl.textContent = cfg.titleRevealed;
+      if (titleEl){
+        titleEl.style.transition = 'opacity 600ms ease-in';
+        titleEl.style.opacity = '0';
+        setTimeout(() => {
+          titleEl.textContent = cfg.titleRevealed;
+          titleEl.style.opacity = '1';
+        }, 300);
+      }
     }
 
     // 3. After 400ms: drift clouds in (CSS transition-delay staggers them: r1→r2→left)
