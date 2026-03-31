@@ -1125,6 +1125,12 @@ function _renderSeqScratch(root, card){
             <img src="${bgMobileSrc || bgDesktopSrc}" alt="" draggable="false" loading="eager">
           </picture>
 
+          ${stepIndex === 0 && (cloudsRight1Src || cloudsLeftSrc) ? `
+            ${cloudsRight1Src ? `<img class="seq-cloud seq-cloud-right1" src="${cloudsRight1Src}" alt="" aria-hidden="true" draggable="false">` : ''}
+            ${cloudsRight2Src ? `<img class="seq-cloud seq-cloud-right2" src="${cloudsRight2Src}" alt="" aria-hidden="true" draggable="false">` : ''}
+            ${cloudsLeftSrc  ? `<img class="seq-cloud seq-cloud-left"   src="${cloudsLeftSrc}"  alt="" aria-hidden="true" draggable="false">` : ''}
+          ` : ''}
+
           <div class="msg-card__content">
 
             <div class="seq-title"
@@ -1180,11 +1186,6 @@ function _renderSeqScratch(root, card){
 
           </div>
         </div>
-        ${stepIndex === 0 && (cloudsRight1Src || cloudsLeftSrc) ? `
-          ${cloudsRight1Src ? `<img class="seq-cloud seq-cloud-right1" src="${cloudsRight1Src}" alt="" aria-hidden="true" draggable="false">` : ''}
-          ${cloudsRight2Src ? `<img class="seq-cloud seq-cloud-right2" src="${cloudsRight2Src}" alt="" aria-hidden="true" draggable="false">` : ''}
-          ${cloudsLeftSrc  ? `<img class="seq-cloud seq-cloud-left"   src="${cloudsLeftSrc}"  alt="" aria-hidden="true" draggable="false">` : ''}
-        ` : ''}
       </div>
     </div>
   `;
