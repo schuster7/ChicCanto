@@ -2337,7 +2337,8 @@ function applyPageTheme(cardKey, cardStyle, { allowDarkMode = false } = {}){
     } else {
       // Light mode: override the animated aurora body background with the card's page color.
       // This prevents the default grey-blue gradient from showing around light-themed cards.
-      if (theme.pageBg) {
+      // Only apply on the recipient card page, not the setup page.
+      if (theme.pageBg && document.body.dataset.page === 'card') {
         document.body.style.background = theme.pageBg;
         document.body.style.backgroundImage = 'none';
         document.body.style.animation = 'none';

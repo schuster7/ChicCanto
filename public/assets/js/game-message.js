@@ -1325,6 +1325,9 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
       if (underFoilEl) underFoilEl.style.display = 'none';
 
       // Background flood via CSS transition
+      document.body.style.transition = 'background 2000ms ease';
+      document.body.style.background = bgColor;
+
       if (msgStage){
         msgStage.classList.add('seq-reveal-flooding');
         msgStage.style.background = bgColor;
@@ -1440,6 +1443,8 @@ function _renderSeqShareScreen(root, card){
   const dueText      = _formatDueMonth(card.due_month, lang);
 
   // Flood full viewport
+  document.body.style.transition = 'none';
+  document.body.style.background = bgColor;
   document.documentElement.style.setProperty('--page-bg',  bgColor);
   document.documentElement.style.setProperty('--page-bg1', bgColor);
   document.documentElement.style.background = bgColor;
