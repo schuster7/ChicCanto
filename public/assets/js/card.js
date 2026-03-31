@@ -2334,6 +2334,14 @@ function applyPageTheme(cardKey, cardStyle, { allowDarkMode = false } = {}){
       // Show glow layers for dark cards
       document.body.style.setProperty('--page-glow-a-opacity', theme.pageGlowAOpacity || '.9');
       document.body.style.setProperty('--page-glow-b-opacity', theme.pageGlowBOpacity || '.45');
+    } else {
+      // Light mode: override the animated aurora body background with the card's page color.
+      // This prevents the default grey-blue gradient from showing around light-themed cards.
+      if (theme.pageBg) {
+        document.body.style.background = theme.pageBg;
+        document.body.style.backgroundImage = 'none';
+        document.body.style.animation = 'none';
+      }
     }
   }catch{}
 }
