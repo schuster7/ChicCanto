@@ -1292,7 +1292,10 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
       }
 
       const underlayEl = root.querySelector('.seq-underlay');
-      if (underlayEl) underlayEl.classList.add('is-revealed');
+      if (underlayEl) {
+        underlayEl.style.opacity = '';
+        underlayEl.classList.add('is-revealed');
+      }
     }, 500);
 
     // 4. After 700ms: fade in pre-rendered reveal text

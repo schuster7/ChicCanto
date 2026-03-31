@@ -444,7 +444,7 @@ export const CARD_THEMES = {
         },
         applyHeartMaskToUnderlay: false,
         floodPageBg: {
-          boy:  '#c5d2ea',
+          boy:  '#7d9ac9',
           girl: '#e8c4de',
         },
         accentColor: {
