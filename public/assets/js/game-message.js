@@ -1175,7 +1175,7 @@ function _renderSeqScratch(root, card){
 
             <div class="seq-continue-wrap" id="${continueWrapId}">
               <button class="btn seq-continue-btn" type="button" id="${continueBtnId}"
-                      ${accentBtnStyle}>Continue &rarr;</button>
+                      ${accentBtnStyle}>Continue</button>
             </div>
 
           </div>

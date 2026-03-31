@@ -1513,32 +1513,38 @@ border-radius: var(--scratch-tile-radius);
   opacity: 0;
 }
 
-/* Right pair: cloud1 leads, cloud2 follows 250ms later */
+/* cloud1: top-right, small */
 .seq-cloud-right1 {
-  top: -2%;
-  right: -2%;
-  width: 52%;
-  transform: translateX(70px);
+  top: -1%;
+  right: -1%;
+  width: 38%;
+  transform: translateX(60px);
   transition: opacity 900ms ease, transform 900ms ease;
 }
+/* cloud2: below cloud1, same small size, slightly more inset */
 .seq-cloud-right2 {
-  top: 8%;
-  right: 3%;
-  width: 38%;
-  transform: translateX(70px);
+  top: 10%;
+  right: 4%;
+  width: 32%;
+  transform: translateX(60px);
   transition: opacity 900ms ease 250ms, transform 900ms ease 250ms;
 }
-
-/* Left cloud (cloud3 — bigger): follows pair by 600ms */
+/* cloud3: top-left, larger — left offset mirrors cloud2's right offset */
 .seq-cloud-left {
-  top: -3%;
-  left: -2%;
-  width: 50%;
-  transform: translateX(-70px);
+  top: -2%;
+  left: 4%;
+  width: 48%;
+  transform: translateX(-60px);
   transition: opacity 900ms ease 600ms, transform 900ms ease 600ms;
 }
 
 .seq-cloud.is-visible { opacity: 1; transform: translateX(0); }
+
+@media (min-width: 700px) {
+  .seq-cloud-right1 { width: 22%; }
+  .seq-cloud-right2 { width: 18%; right: 6%; top: 12%; }
+  .seq-cloud-left   { width: 28%; left: 6%; }
+}
 
 .seq-scratch-tile {
   position: absolute;

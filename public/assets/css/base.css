@@ -1853,7 +1853,7 @@ button.btn::-moz-focus-inner {
 
 /* Site footer */
 .site-footer{
-  margin-top: 28px;
+  margin-top: 0;
   padding: 18px 0 26px;
   border-top: 1px solid rgba(0, 0, 0, .06);
 }
