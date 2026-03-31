@@ -856,6 +856,10 @@ function _applySeqStepPageTheme(theme){
   const root = document.documentElement;
   root.dataset.colorMode = theme.colorMode || 'light';
 
+  // Clear any direct inline background set by a previous flood
+  root.style.background = '';
+  root.classList.remove('seq-reveal-flooding');
+
   const set = (prop, val) => { if (val) root.style.setProperty(prop, val); };
   set('--page-bg',      theme.pageBg);
   set('--page-bg1',     theme.pageBg1);
@@ -1308,7 +1312,7 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
     // Resolve flood color with fallback in case it's still an object
     let bgColor = cfg.floodPageBg;
     if (typeof bgColor === 'object' && bgColor) bgColor = bgColor[card.gender] || bgColor.boy;
-    if (!bgColor) bgColor = card.gender === 'girl' ? '#e8c4de' : '#7d9ac9';
+    if (!bgColor) bgColor = card.gender === 'girl' ? '#f2cee9' : '#cedaef';
 
     // Resolve accent color with same fallback
     let accent = cfg.accentColor;
@@ -1352,7 +1356,7 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
       }
     }, 3000);
 
-    // Step B (t=5000ms): inject and fade in gender word
+    // Step B (t=4700ms): inject and fade in gender word
     setTimeout(() => {
       if (heartArea && cfg.revealText){
         const wordEl = document.createElement('div');
@@ -1379,7 +1383,7 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
         wordEl.getBoundingClientRect();
         wordEl.style.opacity = '1';
       }
-    }, 5000);
+    }, 4700);
 
     // Step C (t=6000ms): show Continue button
     setTimeout(() => {

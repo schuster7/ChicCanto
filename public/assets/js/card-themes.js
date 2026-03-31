@@ -448,8 +448,8 @@ export const CARD_THEMES = {
         },
         applyHeartMaskToUnderlay: false,
         floodPageBg: {
-          boy:  '#7d9ac9',
-          girl: '#e8c4de',
+          boy:  '#cedaef',
+          girl: '#f2cee9',
         },
         accentColor: {
           boy:  '#445f75',

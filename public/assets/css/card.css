@@ -1655,15 +1655,15 @@ border-radius: var(--scratch-tile-radius);
 .seq-share__actions { flex-shrink: 0; }
 
 .seq-reveal-flooding {
-  transition: background 1500ms ease;
+  transition: background 2000ms ease;
 }
 
 .seq-underlay-img {
-  transition: opacity 800ms ease 200ms, transform 600ms ease 200ms;
+  transition: opacity 1200ms ease 300ms, transform 1000ms ease 300ms;
 }
 
 .seq-gender-word {
-  transition: opacity 700ms ease;
+  transition: opacity 900ms ease;
 }
 
 /* ── Sequential card mobile ── */
