@@ -1145,7 +1145,7 @@ function _renderSeqScratch(root, card){
   _applySeqStepPageTheme(theme);
 
   const isFinal = stepIndex === totalSteps - 1;
-  const { title, underText, bgDesktopSrc, bgMobileSrc,
+  const { title, titleRevealed, underText, bgDesktopSrc, bgMobileSrc,
           cloudsRight1Src, cloudsRight2Src, cloudsLeftSrc,
           underlayImageSrc, showCustomMessage, accentColor, revealText,
           applyHeartMaskToUnderlay } = cfg;
@@ -1276,7 +1276,13 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
     // ── Step 0 ──
     const continueWrap = root.querySelector('#seqContinueWrap');
 
-    // 2. After 400ms: drift clouds in (CSS transition-delay staggers them: r1→r2→left)
+    // 2. Swap title to titleRevealed if available
+    if (cfg.titleRevealed){
+      const titleEl = root.querySelector('.seq-title');
+      if (titleEl) titleEl.textContent = cfg.titleRevealed;
+    }
+
+    // 3. After 400ms: drift clouds in (CSS transition-delay staggers them: r1→r2→left)
     setTimeout(() => {
       root.querySelectorAll('.seq-cloud').forEach(el => el.classList.add('is-visible'));
     }, 400);
@@ -1305,53 +1311,52 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
     }
 
   } else {
-    // ── Step 1 (final) ──
+    // ── Step 1 (final) — delayed reveal sequence ──
     const continueWrap = root.querySelector('#seqRevealContinueWrap');
 
-    // 2. Fade out under-foil-text (if present)
-    const underFoilEl = root.querySelector('.seq-under-foil-text');
-    if (underFoilEl){
-      underFoilEl.style.transition = 'opacity 400ms ease';
-      underFoilEl.style.opacity    = '0';
+    // 1. Underlay visible, keep underText visible, gender word hidden
+    const underlayEl = root.querySelector('.seq-underlay');
+    if (underlayEl){
+      underlayEl.style.opacity = '';
+      underlayEl.classList.add('is-revealed');
     }
 
-    // 3. After 500ms: flood page bg + swap card-bg + fade in heart underlay
-    setTimeout(() => {
-      const bgColor = cfg.floodPageBg || (card.gender === 'girl' ? '#e8c4de' : '#c5d2ea');
-      document.documentElement.style.setProperty('--page-bg',  bgColor);
-      document.documentElement.style.setProperty('--page-bg1', bgColor);
-      document.documentElement.style.background = bgColor;
+    // Swap card-bg to flood variant
+    const bgPic = root.querySelector('.seq-card-bg');
+    if (bgPic && cfg.bgFloodSrc){
+      bgPic.style.transition = 'none';
+      bgPic.style.opacity    = '0';
+      const source = bgPic.querySelector('source');
+      const img    = bgPic.querySelector('img');
+      if (source) source.srcset = cfg.bgFloodSrc.desktop || '';
+      if (img)    img.src       = cfg.bgFloodSrc.mobile  || cfg.bgFloodSrc.desktop || '';
+      bgPic.getBoundingClientRect();
+      bgPic.style.transition = 'opacity 600ms ease';
+      bgPic.style.opacity    = '1';
+    }
 
-      const bgPic = root.querySelector('.seq-card-bg');
-      if (bgPic && cfg.bgFloodSrc){
-        bgPic.style.transition = 'none';
-        bgPic.style.opacity    = '0';
-        const source = bgPic.querySelector('source');
-        const img    = bgPic.querySelector('img');
-        if (source) source.srcset = cfg.bgFloodSrc.desktop || '';
-        if (img)    img.src       = cfg.bgFloodSrc.mobile  || cfg.bgFloodSrc.desktop || '';
-        bgPic.getBoundingClientRect();
-        bgPic.style.transition = 'opacity 600ms ease';
-        bgPic.style.opacity    = '1';
-      }
+    // 2. Start CSS background color flood (1500ms transition)
+    const bgColor = cfg.floodPageBg || (card.gender === 'girl' ? '#e8c4de' : '#c5d2ea');
+    const msgStage = root.querySelector('.msg-stage');
+    if (msgStage){
+      msgStage.classList.add('seq-reveal-flooding');
+      msgStage.style.background = bgColor;
+    }
+    document.documentElement.classList.add('seq-reveal-flooding');
+    document.documentElement.style.setProperty('--page-bg',  bgColor);
+    document.documentElement.style.setProperty('--page-bg1', bgColor);
+    document.documentElement.style.background = bgColor;
 
-      const underlayEl = root.querySelector('.seq-underlay');
-      if (underlayEl) {
-        underlayEl.style.opacity = '';
-        underlayEl.classList.add('is-revealed');
-      }
-    }, 500);
-
-    // 4. After 700ms: fade in pre-rendered reveal text
+    // 3. After 2500ms: fade in gender word
     setTimeout(() => {
       const revealEl = root.querySelector('#seqRevealText');
       if (revealEl) revealEl.style.opacity = '1';
-    }, 700);
+    }, 2500);
 
-    // 5. After 900ms: show Continue → button (leads to share screen)
+    // 4. After 3200ms: show Continue button
     setTimeout(() => {
       if (continueWrap) continueWrap.classList.add('is-visible');
-    }, 900);
+    }, 3200);
 
     // 6. Persist full reveal
     try{
@@ -1394,19 +1399,20 @@ function _renderSeqShareScreen(root, card){
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
 
-  const step0cfg = getSeqStepConfig(card.card_key, 0, lang, gender);
   const step1cfg = getSeqStepConfig(card.card_key, 1, lang, gender);
 
-  const accentColor = step1cfg.accentColor || (gender === 'girl' ? '#6d3f64' : '#445f75');
-  const bgColor     = step1cfg.floodPageBg  || (gender === 'girl' ? '#e8c4de' : '#c5d2ea');
-  const revealText  = step1cfg.revealText  || (gender === 'girl' ? 'Girl' : 'Boy');
+  const accentColor  = step1cfg.accentColor  || (gender === 'girl' ? '#6d3f64' : '#445f75');
+  const bgColor      = step1cfg.floodPageBg  || (gender === 'girl' ? '#e8c4de' : '#c5d2ea');
+  const shareFraming = step1cfg.shareFraming  || (gender === 'girl' ? 'We are expecting a baby girl' : 'We are expecting a baby boy');
+  const heartSrc     = step1cfg.shareImageSrc || step1cfg.underlayImageSrc || '';
+  const dueText      = _formatDueMonth(card.due_month, lang);
 
   // Flood full viewport
   document.documentElement.style.setProperty('--page-bg',  bgColor);
   document.documentElement.style.setProperty('--page-bg1', bgColor);
   document.documentElement.style.background = bgColor;
 
-  const storkSrc = step0cfg.underlayImageSrc || '';
+  let recipientMessage = '';
 
   root.innerHTML = `
     <div class="msg-card-wrapper seq-card-wrapper seq-share-screen" data-presentation="fullscreen">
@@ -1415,28 +1421,29 @@ function _renderSeqShareScreen(root, card){
            style="background:${bgColor};">
 
         <div class="seq-share__top">
-          ${storkSrc
-            ? `<img class="seq-share__stork" src="${storkSrc}" alt="" draggable="false">`
+          <div class="seq-share__framing" style="
+            font-family:'Dancing Script',cursive;
+            font-weight:400;
+            font-size:clamp(1.1rem,4vw,1.6rem);
+            color:${accentColor};
+            text-align:center;
+            padding:0.5rem 1rem 0;
+          ">${_escHtml(shareFraming)}</div>
+          ${heartSrc
+            ? `<img class="seq-share__stork" src="${heartSrc}" alt="" draggable="false">`
             : ''}
         </div>
 
         <div class="seq-share__divider" style="background:${accentColor};opacity:0.3;"></div>
 
         <div class="seq-share__bottom">
-          <div class="seq-share__reveal-text" style="
-            font-family:'Dancing Script',cursive;
-            font-weight:700;
-            font-size:clamp(3.5rem,18vw,6rem);
-            color:${accentColor};
-            text-align:center;
-          ">${_escHtml(revealText)}</div>
-          ${card.custom_message
-            ? `<div class="seq-share__custom-msg" style="
-                 font-family:'Dancing Script',cursive;
-                 color:${accentColor};
-               ">${_escHtml(card.custom_message)}</div>`
-            : ''}
-          ${(() => { const dt = _formatDueMonth(card.due_month, lang); return dt ? `<div class="seq-share__due-date" style="font-family:'Dancing Script',cursive;color:${accentColor};opacity:0.75;font-size:clamp(1rem,4vw,1.4rem);text-align:center;">${_escHtml(dt)}</div>` : ''; })()}
+          <div class="seq-share__textarea-wrap" style="padding:0 1.5rem;width:100%;box-sizing:border-box;">
+            <textarea id="seqRecipientMsg" class="input" maxlength="120" rows="2"
+              placeholder="Add your message\u2026 (optional)"
+              style="font-family:'Dancing Script',cursive;font-size:clamp(1rem,3.5vw,1.3rem);color:${accentColor};text-align:center;resize:none;width:100%;box-sizing:border-box;background:rgba(255,255,255,0.25);border:1px solid ${accentColor}33;border-radius:12px;padding:0.6rem;"></textarea>
+            <div id="seqRecipientCounter" style="font-size:0.75rem;color:${accentColor};opacity:0.6;text-align:right;margin-top:0.15rem;">120</div>
+          </div>
+          ${dueText ? `<div class="seq-share__due-date" style="font-family:'Dancing Script',cursive;color:${accentColor};opacity:0.75;font-size:clamp(1rem,4vw,1.4rem);text-align:center;">${_escHtml(dueText)}</div>` : ''}
           <div class="seq-share__branding" style="color:${accentColor};opacity:0.5;">ChicCanto</div>
         </div>
 
@@ -1455,7 +1462,17 @@ function _renderSeqShareScreen(root, card){
     </div>
   `;
 
-  root.querySelector('#seqSaveBtn')?.addEventListener('click', () => _exportSeqStacked(card));
+  // Textarea input tracking
+  const textarea = root.querySelector('#seqRecipientMsg');
+  const counter  = root.querySelector('#seqRecipientCounter');
+  if (textarea){
+    textarea.addEventListener('input', () => {
+      recipientMessage = textarea.value;
+      if (counter) counter.textContent = String(120 - textarea.value.length);
+    });
+  }
+
+  root.querySelector('#seqSaveBtn')?.addEventListener('click', () => _exportSeqStacked(card, recipientMessage));
   root.querySelector('#seqShareBtn')?.addEventListener('click', () => _seqShare(card));
 }
 
@@ -1478,24 +1495,25 @@ async function _seqShare(card){
 //
 // Stork top half | divider | Boy/Girl text + custom message | branding
 
-async function _exportSeqStacked(card){
+async function _exportSeqStacked(card, recipientMessage = ''){
   const theme  = getCardTheme(card.card_key) || {};
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
 
-  const step0cfg = getSeqStepConfig(card.card_key, 0, lang, gender);
   const step1cfg = getSeqStepConfig(card.card_key, 1, lang, gender);
 
-  const accentColor = step1cfg.accentColor || (gender === 'girl' ? '#6d3f64' : '#445f75');
-  const bgColor     = step1cfg.floodPageBg  || (gender === 'girl' ? '#e8c4de' : '#c5d2ea');
-  const revealText  = step1cfg.revealText  || (gender === 'girl' ? 'Girl' : 'Boy');
+  const accentColor  = step1cfg.accentColor  || (gender === 'girl' ? '#6d3f64' : '#445f75');
+  const bgColor      = step1cfg.floodPageBg  || (gender === 'girl' ? '#e8c4de' : '#c5d2ea');
+  const shareFraming = step1cfg.shareFraming  || (gender === 'girl' ? 'We are expecting a baby girl' : 'We are expecting a baby boy');
+  const heartSrc     = step1cfg.shareImageSrc || step1cfg.underlayImageSrc || '';
 
   const W          = 1080;
   const H          = 1920;
-  const DIVIDER_Y  = Math.round(H * 0.48);
+  const DIVIDER_Y  = Math.round(H * 0.52);
   const DIVIDER_H  = 3;
   const TOP_H      = DIVIDER_Y;
-  const BOT_H      = H - DIVIDER_Y - DIVIDER_H - 100; // 100 = branding zone
+  const BOT_TOP    = DIVIDER_Y + DIVIDER_H;
+  const BOT_H      = H - BOT_TOP;
 
   const canvas = document.createElement('canvas');
   canvas.width  = W;
@@ -1515,23 +1533,23 @@ async function _exportSeqStacked(card){
     });
   }
 
-  const storkImg = await _loadImg(step0cfg.underlayImageSrc).catch(() => null);
+  const heartImg = await _loadImg(heartSrc).catch(() => null);
 
   // ── Full bleed bg ──
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, W, H);
 
-  // ── Stork top ──
-  if (storkImg){
-    const maxW  = W * 0.70;
+  // ── Heart image top ──
+  if (heartImg){
+    const maxW  = W * 0.65;
     const maxH  = TOP_H * 0.80;
-    const scale = Math.min(maxW / (storkImg.naturalWidth  || 1),
-                           maxH / (storkImg.naturalHeight || 1));
-    const dw = (storkImg.naturalWidth  || 400) * scale;
-    const dh = (storkImg.naturalHeight || 350) * scale;
+    const scale = Math.min(maxW / (heartImg.naturalWidth  || 1),
+                           maxH / (heartImg.naturalHeight || 1));
+    const dw = (heartImg.naturalWidth  || 400) * scale;
+    const dh = (heartImg.naturalHeight || 350) * scale;
     const dx = (W - dw) / 2;
     const dy = (TOP_H - dh) / 2;
-    try{ ctx.drawImage(storkImg, dx, dy, dw, dh); }catch(_){}
+    try{ ctx.drawImage(heartImg, dx, dy, dw, dh); }catch(_){}
   }
 
   // ── Divider ──
@@ -1540,45 +1558,40 @@ async function _exportSeqStacked(card){
   ctx.fillRect(W * 0.10, DIVIDER_Y, W * 0.80, DIVIDER_H);
   ctx.globalAlpha = 1;
 
-  // ── Gender text ──
+  // ── Bottom zone: shareFraming, recipientMessage, dueDate, branding ──
   const font    = 'Dancing Script, cursive';
-  const hasMsg  = !!card.custom_message;
   const dueText = _formatDueMonth(card.due_month, lang);
-  const hasDue  = !!dueText;
-  const extras  = (hasMsg ? 1 : 0) + (hasDue ? 1 : 0);
+  const msg     = (recipientMessage || '').trim();
 
-  ctx.fillStyle    = accentColor;
-  ctx.font         = `700 160px ${font}`;
+  // Collect text lines to distribute
+  const lines = [];
+  lines.push({ text: shareFraming, font: `400 52px ${font}`, color: accentColor, alpha: 1 });
+  if (msg)     lines.push({ text: msg,     font: `400 48px ${font}`, color: accentColor, alpha: 0.85 });
+  if (dueText) lines.push({ text: dueText, font: `400 44px ${font}`, color: accentColor, alpha: 0.70 });
+
+  const brandingH = 80; // reserved for branding at bottom
+  const availH    = BOT_H - brandingH;
+  const gap       = Math.min(80, availH / (lines.length + 1));
+  const totalTextH = gap * (lines.length + 1);
+  let curY = BOT_TOP + (availH - totalTextH) / 2 + gap;
+
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
 
-  const textY = DIVIDER_Y + DIVIDER_H + (extras === 0 ? BOT_H * 0.48
-    : extras === 1 ? BOT_H * 0.30
-    : BOT_H * 0.25);
-  try{ ctx.fillText(revealText, W / 2, textY); }catch(_){}
-
-  // ── Custom message ──
-  if (hasMsg){
-    ctx.font  = `400 64px ${font}`;
-    const msgY = textY + (hasDue ? 120 : 160);
-    try{ ctx.fillText(card.custom_message, W / 2, msgY); }catch(_){}
-  }
-
-  // ── Due month ──
-  if (hasDue){
-    ctx.globalAlpha = 0.75;
-    ctx.font  = `400 52px ${font}`;
-    const dueY = hasMsg ? textY + 120 + 80 : textY + 160;
-    try{ ctx.fillText(dueText, W / 2, dueY); }catch(_){}
-    ctx.globalAlpha = 1;
+  for (const line of lines){
+    ctx.globalAlpha = line.alpha;
+    ctx.fillStyle   = line.color;
+    ctx.font        = line.font;
+    try{ ctx.fillText(line.text, W / 2, curY); }catch(_){}
+    curY += gap;
   }
 
   // ── Branding ──
-  ctx.globalAlpha = 0.50;
-  ctx.font         = '400 32px Inter, system-ui, sans-serif';
+  ctx.globalAlpha  = 0.45;
+  ctx.font         = '400 28px Inter, system-ui, sans-serif';
   ctx.fillStyle    = accentColor;
   ctx.fillText('ChicCanto', W / 2, H - 50);
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha  = 1;
 
   // ── Download ──
   try{

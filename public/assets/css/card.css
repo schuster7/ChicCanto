@@ -1654,6 +1654,14 @@ border-radius: var(--scratch-tile-radius);
 
 .seq-share__actions { flex-shrink: 0; }
 
+.seq-reveal-flooding {
+  transition: background 1500ms ease;
+}
+
+.seq-gender-word {
+  transition: opacity 600ms ease;
+}
+
 /* ── Sequential card mobile ── */
 @media (max-width: 699px) {
   .seq-card-wrapper .scratch-fx,

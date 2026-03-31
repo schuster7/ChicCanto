@@ -411,13 +411,13 @@ export const CARD_THEMES = {
     messageWeight: '400',
     messageColor: '#5a4a3a',
     heartFillColor: '#ede0cc',
-    pageBg:  '#ede8e0',
-    pageBg1: '#f2ede6',
-    pageGlowA1: 'rgba(200,180,140,.10)',
-    pageGlowA2: 'rgba(210,190,150,.07)',
-    pageGlowA3: 'rgba(220,200,160,.04)',
-    pageGlowB1: 'rgba(190,170,130,.03)',
-    pageGlowB2: 'rgba(180,160,120,.04)',
+    pageBg:  '#fcf8f5',
+    pageBg1: '#fcf8f5',
+    pageGlowA1: 'rgba(252,248,245,0)',
+    pageGlowA2: 'rgba(252,248,245,0)',
+    pageGlowA3: 'rgba(252,248,245,0)',
+    pageGlowB1: 'rgba(252,248,245,0)',
+    pageGlowB2: 'rgba(252,248,245,0)',
 
     steps: [
       {
@@ -442,6 +442,10 @@ export const CARD_THEMES = {
           boy:  '/assets/cards/gender-reveal1/step2-boy/heart-boy.png',
           girl: '/assets/cards/gender-reveal1/step2-girl/heart-girl.png',
         },
+        shareImageSrc: {
+          boy:  '/assets/cards/gender-reveal1/step2-boy/heart-boy_o1.png',
+          girl: '/assets/cards/gender-reveal1/step2-girl/heart-girl_o1.png',
+        },
         applyHeartMaskToUnderlay: false,
         floodPageBg: {
           boy:  '#7d9ac9',
@@ -457,14 +461,30 @@ export const CARD_THEMES = {
 
     stepMessages: {
       en: [
-        { title: 'We have news\u2026',         underText: null },
-        { title: null,  underText: "It\u2019s a\u2026",
-          revealText: { boy: 'Boy', girl: 'Girl' } },
+        {
+          title: 'We have news\u2026',
+          titleRevealed: 'Someone\u2019s on their way\u2026',
+          underText: null,
+        },
+        {
+          title: 'Ready for the big reveal?',
+          underText: 'It\u2019s a\u2026',
+          revealText: { boy: 'Boy', girl: 'Girl' },
+          shareFraming: { boy: 'We are expecting a baby boy', girl: 'We are expecting a baby girl' },
+        },
       ],
       de: [
-        { title: 'Wir haben Neuigkeiten\u2026', underText: null },
-        { title: null,           underText: 'Es ist ein\u2026',
-          revealText: { boy: 'Junge', girl: 'M\u00e4dchen' } },
+        {
+          title: 'Wir haben Neuigkeiten\u2026',
+          titleRevealed: 'Jemand ist auf dem Weg\u2026',
+          underText: null,
+        },
+        {
+          title: 'Bereit f\u00fcr die Enth\u00fcllung?',
+          underText: 'Es ist ein\u2026',
+          revealText: { boy: 'Junge', girl: 'M\u00e4dchen' },
+          shareFraming: { boy: 'Wir erwarten einen Jungen', girl: 'Wir erwarten ein M\u00e4dchen' },
+        },
       ],
     },
   },
@@ -519,6 +539,7 @@ export function getSeqStepConfig(card_key, stepIndex, language, gender){
 
   return {
     title:            msgEntry.title  || '',
+    titleRevealed:    _resolveGender(msgEntry.titleRevealed),
     underText:        msgEntry.underText ?? null,
     bgDesktopSrc:     stepEntry.bgDesktopSrc || '',
     bgMobileSrc:      stepEntry.bgMobileSrc  || stepEntry.bgDesktopSrc || '',
@@ -526,10 +547,12 @@ export function getSeqStepConfig(card_key, stepIndex, language, gender){
     cloudsRight2Src: stepEntry.cloudsRight2Src || null,
     cloudsLeftSrc:   stepEntry.cloudsLeftSrc   || null,
     underlayImageSrc,
+    shareImageSrc:   _resolveGender(stepEntry.shareImageSrc),
     applyHeartMaskToUnderlay: stepEntry.applyHeartMaskToUnderlay ?? true,
     bgFloodSrc,
     showCustomMessage: !!stepEntry.showCustomMessage,
     revealText,
+    shareFraming:  _resolveGender(msgEntry.shareFraming),
     floodPageBg:  _resolveGender(stepEntry.floodPageBg),
     accentColor:  _resolveGender(stepEntry.accentColor),
   };
