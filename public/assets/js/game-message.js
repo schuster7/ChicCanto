@@ -840,6 +840,17 @@ export function renderMessageRevealed(root, card){
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Format due_month ("YYYY-MM") into a localized string, e.g. "Coming July 2026". */
+function _formatDueMonth(due_month, lang){
+  if (!due_month) return null;
+  const [y, m] = due_month.split('-');
+  if (!y || !m) return null;
+  const date = new Date(Number(y), Number(m) - 1, 1);
+  const locale = lang === 'de' ? 'de-DE' : 'en-GB';
+  const monthName = date.toLocaleString(locale, { month: 'long' });
+  return lang === 'de' ? `Kommt im ${monthName} ${y}` : `Coming ${monthName} ${y}`;
+}
+
 /** Apply page theme CSS vars for the sequential card (theme-level, no per-step overrides). */
 function _applySeqStepPageTheme(theme){
   const root = document.documentElement;
@@ -970,8 +981,34 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
             <span class="msg-setup__counter"><span id="seqMsgCount">60</span> left</span>
           </div>
           <input type="text" id="seqCustomMsg" class="input" maxlength="60"
-            placeholder="e.g. We can&#8217;t wait to meet you!">
+            placeholder="e.g. Meet Oliver! · We can&#8217;t wait! ✨">
           <p class="msg-setup__hint muted" style="margin-top:0.25rem">Shown below the BOY! / GIRL! reveal.</p>
+        </div>
+
+        <div class="msg-setup__field">
+          <label class="msg-setup__field-label">Due date <span class="muted">(optional):</span></label>
+          <div style="display:flex;gap:0.5rem;">
+            <select id="seqDueMonth" class="input" style="flex:1;">
+              <option value="">-- Month --</option>
+              <option value="01">January</option>
+              <option value="02">February</option>
+              <option value="03">March</option>
+              <option value="04">April</option>
+              <option value="05">May</option>
+              <option value="06">June</option>
+              <option value="07">July</option>
+              <option value="08">August</option>
+              <option value="09">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+            <select id="seqDueYear" class="input" style="flex:1;">
+              <option value="">-- Year --</option>
+              ${[0,1,2].map(i => { const y = new Date().getFullYear() + i; return `<option value="${y}">${y}</option>`; }).join('')}
+            </select>
+          </div>
+          <p class="msg-setup__hint muted" style="margin-top:0.25rem">e.g. Shown as &#8216;Coming July 2026&#8217; on the reveal.</p>
         </div>
 
         <div class="msg-setup__actions">
@@ -989,6 +1026,8 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
   const confirmBtn   = root.querySelector('[data-action="confirm"]');
   const customInput  = root.querySelector('#seqCustomMsg');
   const msgCounter   = root.querySelector('#seqMsgCount');
+  const dueMonthSel  = root.querySelector('#seqDueMonth');
+  const dueYearSel   = root.querySelector('#seqDueYear');
 
   function _updateConfirmState(){
     if (confirmBtn) confirmBtn.disabled = !selectedGender;
@@ -1052,11 +1091,15 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
       confirmBtn.textContent = 'Saving\u2026';
 
       const customMsg = customInput ? customInput.value.trim() : '';
+      const dueM = dueMonthSel ? dueMonthSel.value : '';
+      const dueY = dueYearSel  ? dueYearSel.value  : '';
+      const dueMonth = (dueM && dueY) ? `${dueY}-${dueM}` : null;
 
       try{
         card.language       = selectedLang;
         card.gender         = selectedGender;
         card.custom_message = customMsg || null;
+        card.due_month      = dueMonth;
         card.configured     = true;
         card.current_step   = 0;
         card.revealed_steps = [];
@@ -1068,6 +1111,7 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
             language:       selectedLang,
             gender:         selectedGender,
             custom_message: customMsg || null,
+            due_month:      dueMonth,
             configured:     true,
           });
         }
@@ -1133,10 +1177,10 @@ function _renderSeqScratch(root, card){
 
           <div class="msg-card__content">
 
-            <div class="seq-title"
+            ${title ? `<div class="seq-title"
                  style="font-family:${theme.titleFont || 'inherit'};font-weight:${theme.titleWeight || '400'};color:${theme.titleColor || '#5a4a3a'};">
               ${_escHtml(title)}
-            </div>
+            </div>` : ''}
 
             <div class="seq-heart-area" style="aspect-ratio: ${theme.scratchAspect || '400 / 350'};">
 
@@ -1392,6 +1436,7 @@ function _renderSeqShareScreen(root, card){
                  color:${accentColor};
                ">${_escHtml(card.custom_message)}</div>`
             : ''}
+          ${(() => { const dt = _formatDueMonth(card.due_month, lang); return dt ? `<div class="seq-share__due-date" style="font-family:'Dancing Script',cursive;color:${accentColor};opacity:0.75;font-size:clamp(1rem,4vw,1.4rem);text-align:center;">${_escHtml(dt)}</div>` : ''; })()}
           <div class="seq-share__branding" style="color:${accentColor};opacity:0.5;">ChicCanto</div>
         </div>
 
@@ -1496,20 +1541,36 @@ async function _exportSeqStacked(card){
   ctx.globalAlpha = 1;
 
   // ── Gender text ──
-  const font   = 'Dancing Script, cursive';
-  const hasMsg = !!card.custom_message;
+  const font    = 'Dancing Script, cursive';
+  const hasMsg  = !!card.custom_message;
+  const dueText = _formatDueMonth(card.due_month, lang);
+  const hasDue  = !!dueText;
+  const extras  = (hasMsg ? 1 : 0) + (hasDue ? 1 : 0);
+
   ctx.fillStyle    = accentColor;
   ctx.font         = `700 160px ${font}`;
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  const textY = DIVIDER_Y + DIVIDER_H + (hasMsg ? BOT_H * 0.35 : BOT_H * 0.48);
+
+  const textY = DIVIDER_Y + DIVIDER_H + (extras === 0 ? BOT_H * 0.48
+    : extras === 1 ? BOT_H * 0.30
+    : BOT_H * 0.25);
   try{ ctx.fillText(revealText, W / 2, textY); }catch(_){}
 
   // ── Custom message ──
   if (hasMsg){
     ctx.font  = `400 64px ${font}`;
-    const msgY = DIVIDER_Y + DIVIDER_H + BOT_H * 0.65;
+    const msgY = textY + (hasDue ? 120 : 160);
     try{ ctx.fillText(card.custom_message, W / 2, msgY); }catch(_){}
+  }
+
+  // ── Due month ──
+  if (hasDue){
+    ctx.globalAlpha = 0.75;
+    ctx.font  = `400 52px ${font}`;
+    const dueY = hasMsg ? textY + 120 + 80 : textY + 160;
+    try{ ctx.fillText(dueText, W / 2, dueY); }catch(_){}
+    ctx.globalAlpha = 1;
   }
 
   // ── Branding ──

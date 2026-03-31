@@ -128,6 +128,9 @@ function applyAllowedUpdates(existing, body, { allowSender = false } = {}){
     if ('custom_message' in body){
       next.custom_message = (body.custom_message == null) ? null : String(body.custom_message).slice(0, 60);
     }
+    if ('due_month' in body){
+      next.due_month = (body.due_month == null) ? null : String(body.due_month).slice(0, 7);
+    }
   }
 
   // Recipient-writable fields.

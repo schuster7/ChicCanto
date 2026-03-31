@@ -458,12 +458,12 @@ export const CARD_THEMES = {
     stepMessages: {
       en: [
         { title: 'We have news\u2026',         underText: null },
-        { title: "We\u2019re having a\u2026",  underText: "It\u2019s a\u2026",
+        { title: null,  underText: "It\u2019s a\u2026",
           revealText: { boy: 'Boy', girl: 'Girl' } },
       ],
       de: [
         { title: 'Wir haben Neuigkeiten\u2026', underText: null },
-        { title: 'Es wird ein\u2026',           underText: 'Es ist ein\u2026',
+        { title: null,           underText: 'Es ist ein\u2026',
           revealText: { boy: 'Junge', girl: 'M\u00e4dchen' } },
       ],
     },
