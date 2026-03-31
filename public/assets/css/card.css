@@ -403,7 +403,7 @@
 }
 
 /* Keep content above the pattern */
-.scratch-stage > :not(.scratch-stage__inner):not(.card-bg){
+.scratch-stage > :not(.scratch-stage__inner):not(.card-bg):not(.seq-cloud){
   position: relative;
   z-index: 1;
 }
