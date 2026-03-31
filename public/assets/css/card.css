@@ -1443,6 +1443,8 @@ border-radius: var(--scratch-tile-radius);
 /* ── Scratch card layout ── */
 
 .seq-title {
+  position: relative;
+  z-index: 1;
   text-align: center;
   padding: 0.5rem 1rem;
   font-size: clamp(1.4rem, 5vw, 2.2rem);
@@ -1451,6 +1453,7 @@ border-radius: var(--scratch-tile-radius);
 
 .seq-heart-area {
   position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 360px;
   margin: 0 auto;
@@ -1509,29 +1512,29 @@ border-radius: var(--scratch-tile-radius);
 .seq-cloud {
   position: absolute;
   pointer-events: none;
-  z-index: 4;
+  z-index: 0;
   opacity: 0;
 }
 
-/* cloud1: top-right, small */
+/* cloud1: top-right, smallest */
 .seq-cloud-right1 {
-  top: -1%;
+  top: 4%;
   right: -1%;
-  width: 38%;
+  width: 28%;
   transform: translateX(60px);
   transition: opacity 900ms ease, transform 900ms ease;
 }
-/* cloud2: below cloud1, same small size, slightly more inset */
+/* cloud2: below cloud1, nudged left toward center */
 .seq-cloud-right2 {
-  top: 10%;
-  right: 4%;
+  top: 14%;
+  right: 10%;
   width: 32%;
   transform: translateX(60px);
   transition: opacity 900ms ease 250ms, transform 900ms ease 250ms;
 }
-/* cloud3: top-left, larger — left offset mirrors cloud2's right offset */
+/* cloud3: top-left, largest */
 .seq-cloud-left {
-  top: -2%;
+  top: 2%;
   left: 4%;
   width: 48%;
   transform: translateX(-60px);
@@ -1541,9 +1544,9 @@ border-radius: var(--scratch-tile-radius);
 .seq-cloud.is-visible { opacity: 1; transform: translateX(0); }
 
 @media (min-width: 700px) {
-  .seq-cloud-right1 { width: 22%; }
-  .seq-cloud-right2 { width: 18%; right: 6%; top: 12%; }
-  .seq-cloud-left   { width: 28%; left: 6%; }
+  .seq-cloud-right1 { width: 18%; top: 3%; }
+  .seq-cloud-right2 { width: 20%; right: 8%; top: 12%; }
+  .seq-cloud-left   { width: 28%; left: 6%; top: 2%; }
 }
 
 .seq-scratch-tile {
@@ -1572,6 +1575,8 @@ border-radius: var(--scratch-tile-radius);
 .seq-custom-msg.is-visible { opacity: 1; }
 
 .seq-continue-wrap {
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: center;
   gap: 0.75rem;
