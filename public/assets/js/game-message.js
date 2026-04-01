@@ -1477,9 +1477,6 @@ function _renderSeqShareScreen(root, card){
     ? '/assets/cards/gender-reveal1/step2-girl/heart-girl_o1.png'
     : '/assets/cards/gender-reveal1/step2-boy/heart-boy_o1.png');
   const dueText = _formatDueMonth(card.due_month, lang);
-  const bgMobileSrc = gender === 'girl'
-    ? '/assets/cards/gender-reveal1/step2-girl/bg-mobile.jpg'
-    : '/assets/cards/gender-reveal1/step2-boy/bg-mobile.jpg';
 
   document.body.style.transition = 'none';
   document.body.style.background = bgColor;
@@ -1491,7 +1488,12 @@ function _renderSeqShareScreen(root, card){
   root.innerHTML = `
     <div class="msg-card-wrapper seq-card-wrapper seq-share-screen" data-presentation="fullscreen">
       <div class="seq-share-stage msg-stage" data-card-style="gender-reveal" data-presentation="fullscreen"
-           style="background:${bgColor} url('${bgMobileSrc}') center top/contain no-repeat;display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem 1.5rem;gap:1rem;">
+           style="display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem 1.5rem;gap:1rem;">
+
+        <picture class="card-bg seq-card-bg" aria-hidden="true">
+          <source media="(min-width: 700px)" srcset="${gender === 'girl' ? '/assets/cards/gender-reveal1/step2-girl/bg-desktop.jpg' : '/assets/cards/gender-reveal1/step2-boy/bg-desktop.jpg'}">
+          <img src="${gender === 'girl' ? '/assets/cards/gender-reveal1/step2-girl/bg-mobile.jpg' : '/assets/cards/gender-reveal1/step2-boy/bg-mobile.jpg'}" alt="" draggable="false" loading="eager">
+        </picture>
 
         <div class="seq-share__framing" style="
           font-family:'Dancing Script',cursive;
