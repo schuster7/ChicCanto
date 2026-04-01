@@ -1516,7 +1516,7 @@ function _renderSeqShareScreen(root, card){
         ">${_escHtml(dueText)}</div>` : ''}
 
         <div style="width:100%;max-width:480px;box-sizing:border-box;padding:0 0.5rem;">
-          <textarea id="seqShareMsg" class="input" maxlength="100" rows="3"
+          <textarea id="seqShareMsg" class="input" maxlength="110" rows="3"
             placeholder="e.g. We are so happy to share this with you! \u{1F499}"
             style="white-space:pre-wrap;word-break:break-word;width:100%;box-sizing:border-box;overflow-y:auto;font-family:'Inter',sans-serif;font-size:1.1rem;resize:none;background:rgba(255,255,255,0.35);border-color:rgba(255,255,255,0.5);color:${accentColor};"></textarea>
         </div>
