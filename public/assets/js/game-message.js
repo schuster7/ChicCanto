@@ -1024,6 +1024,7 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
         </div>
 
         <div class="msg-setup__actions">
+          <button class="btn outline" type="button" data-action="try-scratch" disabled>Try scratch yourself</button>
           <button type="button" class="btn" data-action="confirm" disabled>Confirm &amp; create link</button>
         </div>
         <p class="msg-setup__hint muted">Once confirmed, the reveal cannot be changed.</p>
@@ -1035,14 +1036,16 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
   let selectedLang   = activeLang;
   let selectedGender = null;
 
-  const confirmBtn   = root.querySelector('[data-action="confirm"]');
-  const customInput  = root.querySelector('#seqCustomMsg');
-  const msgCounter   = root.querySelector('#seqMsgCount');
-  const dueMonthSel  = root.querySelector('#seqDueMonth');
-  const dueYearSel   = root.querySelector('#seqDueYear');
+  const confirmBtn      = root.querySelector('[data-action="confirm"]');
+  const trySeqScratchBtn = root.querySelector('[data-action="try-scratch"]');
+  const customInput     = root.querySelector('#seqCustomMsg');
+  const msgCounter      = root.querySelector('#seqMsgCount');
+  const dueMonthSel     = root.querySelector('#seqDueMonth');
+  const dueYearSel      = root.querySelector('#seqDueYear');
 
   function _updateConfirmState(){
     if (confirmBtn) confirmBtn.disabled = !selectedGender;
+    if (trySeqScratchBtn) trySeqScratchBtn.disabled = !selectedGender;
   }
 
   // ── Language picker ──
@@ -1135,12 +1138,104 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
       }
     });
   }
+
+  // ── Try scratch yourself ──
+  if (trySeqScratchBtn){
+    trySeqScratchBtn.addEventListener('click', () => {
+      if (!selectedGender) return;
+      const customMsg  = customInput ? customInput.value.trim() : '';
+      const dueMVal    = root.querySelector('#seqDueMonth')?.value || '';
+      const dueYVal    = root.querySelector('#seqDueYear')?.value  || '';
+      const dueMonth   = (dueMVal && dueYVal) ? `${dueYVal}-${dueMVal}` : null;
+      const fakeCard = {
+        card_key:       'gender-reveal1',
+        current_step:   0,
+        language:       selectedLang,
+        gender:         selectedGender,
+        custom_message: customMsg || null,
+        due_month:      dueMonth,
+        configured:     true,
+        token:          'preview',
+      };
+      _openSeqPreviewModal(fakeCard);
+    });
+  }
+}
+
+
+// ── Sequential preview modal (sender preview) ─────────────────────────────────
+
+function _openSeqPreviewModal(fakeCard){
+  const existing = document.getElementById('seqPreviewOverlay');
+  if (existing) existing.remove();
+
+  const hadFullscreen = document.body.classList.contains('has-fullscreen-card');
+
+  // Save CSS state to restore on close
+  const rootEl     = document.documentElement;
+  const pageProps  = ['--page-bg','--page-bg1','--page-glow-a1','--page-glow-a2','--page-glow-a3','--page-glow-b1','--page-glow-b2','--page-glow-a-opacity','--page-glow-b-opacity'];
+  const foilProps  = ['--scratch-foil-base','--scratch-foil-hi','--scratch-foil-mid','--scratch-foil-dark','--scratch-foil-text'];
+  const savedPage  = {};
+  const savedFoil  = {};
+  for (const p of pageProps) savedPage[p] = rootEl.style.getPropertyValue(p) || null;
+  for (const p of foilProps) savedFoil[p] = rootEl.style.getPropertyValue(p) || null;
+  const savedColorMode  = rootEl.dataset.colorMode  || null;
+  const savedFoilKey    = rootEl.dataset.foil        || null;
+  const savedBodyBg     = document.body.style.background   || null;
+  const savedBodyTrans  = document.body.style.transition   || null;
+  const savedRootBg     = rootEl.style.background          || null;
+
+  const overlay = document.createElement('div');
+  overlay.id        = 'seqPreviewOverlay';
+  overlay.className = 'cc-try-scratch-modal';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'cc-try-scratch-modal__close';
+  closeBtn.type      = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.textContent = '\u00d7';
+
+  const contentRoot = document.createElement('div');
+  contentRoot.style.cssText = 'display:contents';
+
+  overlay.appendChild(closeBtn);
+  overlay.appendChild(contentRoot);
+  document.body.appendChild(overlay);
+
+  function closeOverlay(){
+    overlay.remove();
+    if (!hadFullscreen) document.body.classList.remove('has-fullscreen-card');
+    rootEl.classList.remove('seq-reveal-flooding');
+    for (const p of pageProps){
+      if (savedPage[p]) rootEl.style.setProperty(p, savedPage[p]);
+      else rootEl.style.removeProperty(p);
+    }
+    for (const p of foilProps){
+      if (savedFoil[p]) rootEl.style.setProperty(p, savedFoil[p]);
+      else rootEl.style.removeProperty(p);
+    }
+    if (savedColorMode) rootEl.dataset.colorMode = savedColorMode;
+    else delete rootEl.dataset.colorMode;
+    if (savedFoilKey) rootEl.dataset.foil = savedFoilKey;
+    else delete rootEl.dataset.foil;
+    if (savedBodyBg) document.body.style.background = savedBodyBg;
+    else document.body.style.removeProperty('background');
+    if (savedBodyTrans) document.body.style.transition = savedBodyTrans;
+    else document.body.style.removeProperty('transition');
+    if (savedRootBg) rootEl.style.background = savedRootBg;
+    else rootEl.style.removeProperty('background');
+  }
+
+  closeBtn.addEventListener('click', closeOverlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeOverlay(); });
+
+  _renderSeqScratch(contentRoot, fakeCard, { isPreview: true, closePreview: closeOverlay });
 }
 
 
 // ── Scratch (recipient) ───────────────────────────────────────────────────────
 
-function _renderSeqScratch(root, card){
+function _renderSeqScratch(root, card, options = {}){
   document.body.classList.add('has-fullscreen-card');
   const theme      = getCardTheme(card.card_key) || {};
   const totalSteps = (theme.steps || []).length || 2;
@@ -1268,13 +1363,13 @@ function _renderSeqScratch(root, card){
   if (!canvas) return;
 
   attachScratchTile(canvas, {
-    onScratched: () => _onSeqStepScratched(root, card, stepIndex, cfg),
+    onScratched: () => _onSeqStepScratched(root, card, stepIndex, cfg, options),
     hintStyle: 'thin',
   });
 }
 
 
-async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
+async function _onSeqStepScratched(root, card, stepIndex, stepConfig, options = {}){
   const isFinal = stepIndex === 1;
   const cfg     = stepConfig;
 
@@ -1316,21 +1411,25 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
       if (continueWrap) continueWrap.classList.add('is-visible');
     }, 800);
 
-    // 5. Persist step
-    _persistSeqStep(card, 0, 1);
+    // 5. Persist step (no-op in preview; mutate local state so next step renders correctly)
+    if (!options.isPreview){
+      _persistSeqStep(card, 0, 1);
+    } else {
+      card.current_step = 1;
+    }
 
     // Wire Continue
     const continueBtn = root.querySelector('#seqContinueBtn');
     if (continueBtn){
       continueBtn.addEventListener('click', async () => {
         continueBtn.disabled = true;
-        await _persistSeqStep(card, 0, 1);
+        if (!options.isPreview) await _persistSeqStep(card, 0, 1);
         const wrapper = root.querySelector('.seq-card-wrapper');
         if (wrapper){
           wrapper.style.transition = 'opacity 300ms ease';
           wrapper.style.opacity    = '0';
         }
-        setTimeout(() => { _renderSeqScratch(root, card); }, 300);
+        setTimeout(() => { _renderSeqScratch(root, card, options); }, 300);
       });
     }
 
@@ -1451,32 +1550,46 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
       if (customMsgEl){ customMsgEl.getBoundingClientRect(); customMsgEl.style.opacity = '0.85'; }
     }, 4900);
 
-    // Step C (t=6000ms): show Continue button
+    // Step C (t=6000ms): show Continue button, or "Looks good?" in preview
     setTimeout(() => {
-      if (continueWrap) continueWrap.classList.add('is-visible');
+      if (options.isPreview){
+        const backWrap = document.createElement('div');
+        backWrap.className = 'cc-try-scratch-modal__back is-visible';
+        backWrap.innerHTML = '<button class="btn" type="button">Looks good? Go back to setup</button>';
+        backWrap.querySelector('.btn').addEventListener('click', () => {
+          if (options.closePreview) options.closePreview();
+        });
+        root.appendChild(backWrap);
+      } else {
+        if (continueWrap) continueWrap.classList.add('is-visible');
+      }
     }, 6000);
 
-    // 6. Persist full reveal
-    try{
-      await _persistSeqStep(card, stepIndex, stepIndex + 1);
-      await setRevealedAndWait(card.token, {});
-      card.revealed = true;
-    }catch(e){
-      console.error('Failed to persist final seq step:', e);
+    // 6. Persist full reveal (no-op in preview)
+    if (!options.isPreview){
+      try{
+        await _persistSeqStep(card, stepIndex, stepIndex + 1);
+        await setRevealedAndWait(card.token, {});
+        card.revealed = true;
+      }catch(e){
+        console.error('Failed to persist final seq step:', e);
+      }
     }
 
-    // Wire Continue → share screen
-    const continueBtn = root.querySelector('#seqRevealContinueBtn');
-    if (continueBtn){
-      continueBtn.addEventListener('click', () => {
-        continueBtn.disabled = true;
-        const wrapper = root.querySelector('.seq-card-wrapper');
-        if (wrapper){
-          wrapper.style.transition = 'opacity 300ms ease';
-          wrapper.style.opacity    = '0';
-        }
-        setTimeout(() => { _renderSeqShareScreen(root, card); }, 300);
-      });
+    // Wire Continue → share screen (non-preview only)
+    if (!options.isPreview){
+      const continueBtn = root.querySelector('#seqRevealContinueBtn');
+      if (continueBtn){
+        continueBtn.addEventListener('click', () => {
+          continueBtn.disabled = true;
+          const wrapper = root.querySelector('.seq-card-wrapper');
+          if (wrapper){
+            wrapper.style.transition = 'opacity 300ms ease';
+            wrapper.style.opacity    = '0';
+          }
+          setTimeout(() => { _renderSeqShareScreen(root, card); }, 300);
+        });
+      }
     }
   }
 }
