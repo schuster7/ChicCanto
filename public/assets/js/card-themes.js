@@ -463,7 +463,7 @@ export const CARD_THEMES = {
       en: [
         {
           title: 'We have news\u2026',
-          titleRevealed: 'Someone\u2019s on their way\u2026',
+          titleRevealed: 'Welcome to the world, little one\u2026',
           underText: null,
         },
         {
@@ -476,7 +476,7 @@ export const CARD_THEMES = {
       de: [
         {
           title: 'Wir haben Neuigkeiten\u2026',
-          titleRevealed: 'Jemand ist auf dem Weg\u2026',
+          titleRevealed: 'Willkommen auf der Welt, Kleines\u2026',
           underText: null,
         },
         {

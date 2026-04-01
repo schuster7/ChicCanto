@@ -911,6 +911,7 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
         </div>
         <div class="seq-setup__form panel panel--glass panel--padded">
           ${card.custom_message ? `<p class="seq-setup__summary muted">Personal message: <em>${_escHtml(card.custom_message)}</em></p>` : ''}
+          ${card.due_month ? `<p class="seq-setup__summary muted">Due date: <em>${_escHtml(_formatDueMonth(card.due_month, lang))}</em></p>` : ''}
           <div class="msg-setup__actions">
             <button class="btn primary" type="button" data-action="copy-link">Copy recipient link</button>
             <button class="btn" type="button" data-action="share-link">Share</button>
@@ -1221,13 +1222,23 @@ function _renderSeqScratch(root, card){
 
             ${isFinal && dueText ? `<div class="seq-reveal-due" id="seqRevealDue" style="
               font-family:'Dancing Script',cursive;
-              font-size:clamp(0.9rem,3.5vw,1.1rem);
+              font-size:clamp(1.3rem,4vw,1.6rem);
               color:${_resolvedAccent};
               opacity:0;
               text-align:center;
               transition:opacity 800ms ease;
               margin-top:0.5rem;
             ">${_escHtml(dueText)}</div>` : ''}
+
+            ${isFinal && card.custom_message ? `<div class="seq-reveal-custom-msg" style="
+              font-family:'Dancing Script',cursive;
+              font-size:clamp(1rem,3.5vw,1.3rem);
+              color:${_resolvedAccent};
+              opacity:0;
+              text-align:center;
+              transition:opacity 800ms ease;
+              margin-top:0.25rem;
+            ">${_escHtml(card.custom_message)}</div>` : ''}
 
             <div class="seq-continue-wrap" id="${continueWrapId}">
               <button class="btn seq-continue-btn" type="button" id="${continueBtnId}"
@@ -1421,6 +1432,8 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
         dueEl.getBoundingClientRect();
         dueEl.style.opacity = '0.85';
       }
+      const customMsgEl = root.querySelector('.seq-reveal-custom-msg');
+      if (customMsgEl){ customMsgEl.getBoundingClientRect(); customMsgEl.style.opacity = '0.85'; }
     }, 4900);
 
     // Step C (t=6000ms): show Continue button
@@ -1510,7 +1523,7 @@ function _renderSeqShareScreen(root, card){
         ${dueText ? `<div class="seq-share__due" style="
           font-family:'Dancing Script',cursive;
           font-weight:400;
-          font-size:clamp(1.5rem,5vw,2.1rem);
+          font-size:clamp(1.3rem,4vw,1.6rem);
           color:${accentColor};
           text-align:center;
         ">${_escHtml(dueText)}</div>` : ''}
