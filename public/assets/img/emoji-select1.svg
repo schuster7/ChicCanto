@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+viewBox="0 0 36 36"
+preserveAspectRatio="xMidYMid meet">
+<g>
+	<ellipse transform="matrix(0.2251 -0.9743 0.9743 0.2251 -3.5898 31.4863)" fill="#FFFFFF" cx="18" cy="18" rx="18" ry="18"/>
+	<ellipse fill="#1F1F1F" cx="11.02" cy="11.777" rx="1.706" ry="2.797"/>
+	<ellipse fill="#1F1F1F" cx="24.52" cy="11.777" rx="1.706" ry="2.797"/>
+	<g>
+		<defs>
+			<path id="XMLID_9_" d="M7.805,19.259c0,0,9.311-1.532,20.391,0c0,0,0.354,9.076-10.196,9.076
+				C7.451,28.335,7.805,19.259,7.805,19.259z"/>
+		</defs>
+		<use xlink:href="#XMLID_9_"  overflow="visible" fill="#1F1F1F"/>
+		<clipPath id="XMLID_00000001630995158898124130000017210851401485790862_">
+			<use xlink:href="#XMLID_9_"  overflow="visible"/>
+		</clipPath>
+		
+			<ellipse clip-path="url(#XMLID_00000001630995158898124130000017210851401485790862_)" fill="#373737" cx="18" cy="28.335" rx="8.653" ry="4.468"/>
+	</g>
+</g>
+</svg>
