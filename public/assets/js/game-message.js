@@ -1517,8 +1517,19 @@ function _renderSeqShareScreen(root, card){
 
         <div style="width:100%;max-width:480px;box-sizing:border-box;padding:0 0.5rem;">
           <textarea id="seqShareMsg" class="input" maxlength="110" rows="3"
-            placeholder="e.g. We are so happy to share this with you! \u{1F499}"
-            style="white-space:pre-wrap;word-break:break-word;width:100%;box-sizing:border-box;overflow-y:auto;font-family:'Inter',sans-serif;font-size:1.1rem;resize:none;background:rgba(255,255,255,0.35);border-color:rgba(255,255,255,0.5);color:${accentColor};"></textarea>
+            placeholder="e.g. We are so happy to share this with you! 💙"
+            style="width:100%;font-family:'Inter',sans-serif;font-size:1rem;resize:none;background:rgba(255,255,255,0.35);border-color:rgba(255,255,255,0.5);color:${accentColor};white-space:pre-wrap;word-break:break-word;box-sizing:border-box;overflow-y:auto;"></textarea>
+          <div id="seqShareMsgFooter" style="display:none;justify-content:space-between;align-items:center;margin-top:0.3rem;">
+            <div id="seqShareEmojis" style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+              <button type="button" data-emoji="💙" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;">💙</button>
+              <button type="button" data-emoji="💗" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;">💗</button>
+              <button type="button" data-emoji="🎉" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;">🎉</button>
+              <button type="button" data-emoji="✨" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;">✨</button>
+              <button type="button" data-emoji="🥹" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;">🥹</button>
+              <button type="button" data-emoji="👶" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;">👶</button>
+            </div>
+            <span id="seqShareMsgCount" style="font-size:0.78rem;color:${accentColor};opacity:0.6;">110</span>
+          </div>
         </div>
 
         <div class="seq-continue-wrap is-visible" style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;">
@@ -1536,12 +1547,36 @@ function _renderSeqShareScreen(root, card){
     </div>
   `;
 
-  const msgArea = root.querySelector('#seqShareMsg');
-  if (msgArea){
+  const msgArea   = root.querySelector('#seqShareMsg');
+  const msgFooter = root.querySelector('#seqShareMsgFooter');
+  const msgCount  = root.querySelector('#seqShareMsgCount');
+
+  if (msgArea) {
     msgArea.addEventListener('input', () => {
       recipientMsg = msgArea.value;
+      const remaining = 110 - msgArea.value.length;
+      if (msgArea.value.length > 0) {
+        msgFooter.style.display = 'flex';
+        msgCount.textContent = String(remaining);
+      } else {
+        msgFooter.style.display = 'none';
+      }
     });
   }
+
+  root.querySelectorAll('[data-emoji]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!msgArea) return;
+      const pos   = msgArea.selectionStart ?? msgArea.value.length;
+      const val   = msgArea.value;
+      const emoji = btn.dataset.emoji;
+      if ((val + emoji).length > 110) return;
+      msgArea.value = val.slice(0, pos) + emoji + val.slice(pos);
+      msgArea.dispatchEvent(new Event('input'));
+      msgArea.focus();
+      msgArea.selectionStart = msgArea.selectionEnd = pos + emoji.length;
+    });
+  });
 
   root.querySelector('#seqSaveBtn')?.addEventListener('click', () => {
     recipientMsg = msgArea ? msgArea.value.trim() : '';
@@ -1707,7 +1742,7 @@ async function _exportSeqStacked(card, recipientMessage = ''){
         const PADDING_Y = 40;
         const MAX_FONT  = 40;
         const MIN_FONT  = 28;
-        const msgFont   = Math.max(MIN_FONT, MAX_FONT - Math.floor(recipientMessage.length / 5));
+        const msgFont   = Math.max(MIN_FONT, MAX_FONT - Math.floor(recipientMessage.length / 4.5));
         const lineH     = msgFont * 1.45;
         const maxTextW  = PANEL_W - PADDING_X * 2;
 
