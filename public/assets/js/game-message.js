@@ -1155,6 +1155,8 @@ function _renderSeqScratch(root, card){
           applyHeartMaskToUnderlay } = cfg;
 
   const heartFillColor = theme.heartFillColor || '#ede0cc';
+  const dueText = isFinal ? _formatDueMonth(card.due_month, lang) : null;
+  const _resolvedAccent = (() => { let a = accentColor; if (typeof a === 'object' && a) a = a[gender] || a.boy; return a || (gender === 'girl' ? '#6d3f64' : '#445f75'); })();
 
   const continueWrapId = isFinal ? 'seqRevealContinueWrap' : 'seqContinueWrap';
   const continueBtnId  = isFinal ? 'seqRevealContinueBtn'  : 'seqContinueBtn';
@@ -1209,6 +1211,16 @@ function _renderSeqScratch(root, card){
               </div>
 
             </div>
+
+            ${isFinal && dueText ? `<div class="seq-reveal-due" id="seqRevealDue" style="
+              font-family:'Dancing Script',cursive;
+              font-size:clamp(0.9rem,3.5vw,1.1rem);
+              color:${_resolvedAccent};
+              opacity:0;
+              text-align:center;
+              transition:opacity 800ms ease;
+              margin-top:0.5rem;
+            ">${_escHtml(dueText)}</div>` : ''}
 
             <div class="seq-continue-wrap" id="${continueWrapId}">
               <button class="btn seq-continue-btn" type="button" id="${continueBtnId}"
@@ -1395,6 +1407,15 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
       }
     }, 4700);
 
+    // Step B2 (t=4900ms): fade in due date below gender word
+    setTimeout(() => {
+      const dueEl = root.querySelector('#seqRevealDue');
+      if (dueEl){
+        dueEl.getBoundingClientRect();
+        dueEl.style.opacity = '0.85';
+      }
+    }, 4900);
+
     // Step C (t=6000ms): show Continue button
     setTimeout(() => {
       if (continueWrap) continueWrap.classList.add('is-visible');
@@ -1444,7 +1465,7 @@ function _renderSeqShareScreen(root, card){
   const step1cfg = getSeqStepConfig(card.card_key, 1, lang, gender);
 
   const accentColor  = step1cfg.accentColor  || (gender === 'girl' ? '#6d3f64' : '#445f75');
-  const bgColor      = step1cfg.floodPageBg  || (gender === 'girl' ? '#e8c4de' : '#c5d2ea');
+  const bgColor      = step1cfg.floodPageBg  || (gender === 'girl' ? '#f2cee9' : '#cedaef');
   const shareFraming = step1cfg.shareFraming  || (gender === 'girl' ? 'We are expecting a baby girl' : 'We are expecting a baby boy');
   const heartSrc     = step1cfg.shareImageSrc || step1cfg.underlayImageSrc || '';
   const dueText      = _formatDueMonth(card.due_month, lang);
@@ -1456,7 +1477,7 @@ function _renderSeqShareScreen(root, card){
   document.documentElement.style.setProperty('--page-bg1', bgColor);
   document.documentElement.style.background = bgColor;
 
-  let recipientMessage = '';
+  let recipientMsg = '';
 
   root.innerHTML = `
     <div class="msg-card-wrapper seq-card-wrapper seq-share-screen" data-presentation="fullscreen">
@@ -1468,27 +1489,27 @@ function _renderSeqShareScreen(root, card){
           <div class="seq-share__framing" style="
             font-family:'Dancing Script',cursive;
             font-weight:400;
-            font-size:clamp(1.1rem,4vw,1.6rem);
+            font-size:clamp(1.1rem,4vw,1.4rem);
             color:${accentColor};
+            opacity:0.85;
             text-align:center;
             padding:0.5rem 1rem 0;
           ">${_escHtml(shareFraming)}</div>
           ${heartSrc
-            ? `<img class="seq-share__stork" src="${heartSrc}" alt="" draggable="false">`
+            ? `<img class="seq-share__stork" src="${heartSrc}" alt="" draggable="false"
+                    style="max-width:75%;">`
             : ''}
         </div>
 
-        <div class="seq-share__divider" style="background:${accentColor};opacity:0.3;"></div>
-
         <div class="seq-share__bottom">
+          ${dueText ? `<div class="seq-share__due-date" style="font-family:'Dancing Script',cursive;color:${accentColor};font-size:clamp(1.2rem,5vw,1.8rem);text-align:center;">${_escHtml(dueText)}</div>` : ''}
           <div class="seq-share__textarea-wrap" style="padding:0 1.5rem;width:100%;box-sizing:border-box;">
-            <textarea id="seqRecipientMsg" class="input" maxlength="120" rows="2"
-              placeholder="Add your message\u2026 (optional)"
+            <textarea id="seqRecipientMsg" class="input" maxlength="80" rows="2"
+              placeholder="Add a message\u2026 (optional)"
               style="font-family:'Dancing Script',cursive;font-size:clamp(1rem,3.5vw,1.3rem);color:${accentColor};text-align:center;resize:none;width:100%;box-sizing:border-box;background:rgba(255,255,255,0.25);border:1px solid ${accentColor}33;border-radius:12px;padding:0.6rem;"></textarea>
-            <div id="seqRecipientCounter" style="font-size:0.75rem;color:${accentColor};opacity:0.6;text-align:right;margin-top:0.15rem;">120</div>
+            <div id="seqRecipientCounter" style="font-size:0.75rem;color:${accentColor};opacity:0.6;text-align:right;margin-top:0.15rem;">80</div>
           </div>
-          ${dueText ? `<div class="seq-share__due-date" style="font-family:'Dancing Script',cursive;color:${accentColor};opacity:0.75;font-size:clamp(1rem,4vw,1.4rem);text-align:center;">${_escHtml(dueText)}</div>` : ''}
-          <div class="seq-share__branding" style="color:${accentColor};opacity:0.5;">ChicCanto</div>
+          <div class="seq-share__branding" style="color:${accentColor};opacity:0.4;">ChicCanto</div>
         </div>
 
         <div class="seq-continue-wrap is-visible seq-share__actions">
@@ -1511,12 +1532,12 @@ function _renderSeqShareScreen(root, card){
   const counter  = root.querySelector('#seqRecipientCounter');
   if (textarea){
     textarea.addEventListener('input', () => {
-      recipientMessage = textarea.value;
-      if (counter) counter.textContent = String(120 - textarea.value.length);
+      recipientMsg = textarea.value;
+      if (counter) counter.textContent = String(80 - textarea.value.length);
     });
   }
 
-  root.querySelector('#seqSaveBtn')?.addEventListener('click', () => _exportSeqStacked(card, recipientMessage));
+  root.querySelector('#seqSaveBtn')?.addEventListener('click', () => _exportSeqStacked(card, recipientMsg));
   root.querySelector('#seqShareBtn')?.addEventListener('click', () => _seqShare(card));
 }
 
@@ -1535,9 +1556,9 @@ async function _seqShare(card){
 }
 
 
-// ── JPEG export (1080×1920) — mirrors share screen layout ────────────────────
+// ── JPEG export (1080×1350 4:5) — mirrors share screen layout ───────────────
 //
-// Stork top half | divider | Boy/Girl text + custom message | branding
+// framing text | heart image | due date | recipient message | branding
 
 async function _exportSeqStacked(card, recipientMessage = ''){
   const theme  = getCardTheme(card.card_key) || {};
@@ -1547,17 +1568,12 @@ async function _exportSeqStacked(card, recipientMessage = ''){
   const step1cfg = getSeqStepConfig(card.card_key, 1, lang, gender);
 
   const accentColor  = step1cfg.accentColor  || (gender === 'girl' ? '#6d3f64' : '#445f75');
-  const bgColor      = step1cfg.floodPageBg  || (gender === 'girl' ? '#e8c4de' : '#c5d2ea');
+  const bgColor      = step1cfg.floodPageBg  || (gender === 'girl' ? '#f2cee9' : '#cedaef');
   const shareFraming = step1cfg.shareFraming  || (gender === 'girl' ? 'We are expecting a baby girl' : 'We are expecting a baby boy');
   const heartSrc     = step1cfg.shareImageSrc || step1cfg.underlayImageSrc || '';
 
-  const W          = 1080;
-  const H          = 1920;
-  const DIVIDER_Y  = Math.round(H * 0.52);
-  const DIVIDER_H  = 3;
-  const TOP_H      = DIVIDER_Y;
-  const BOT_TOP    = DIVIDER_Y + DIVIDER_H;
-  const BOT_H      = H - BOT_TOP;
+  const W = 1080;
+  const H = 1350;
 
   const canvas = document.createElement('canvas');
   canvas.width  = W;
@@ -1583,66 +1599,86 @@ async function _exportSeqStacked(card, recipientMessage = ''){
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, W, H);
 
-  // ── Heart image top ──
-  if (heartImg){
-    const maxW  = W * 0.65;
-    const maxH  = TOP_H * 0.80;
-    const scale = Math.min(maxW / (heartImg.naturalWidth  || 1),
-                           maxH / (heartImg.naturalHeight || 1));
-    const dw = (heartImg.naturalWidth  || 400) * scale;
-    const dh = (heartImg.naturalHeight || 350) * scale;
-    const dx = (W - dw) / 2;
-    const dy = (TOP_H - dh) / 2;
-    try{ ctx.drawImage(heartImg, dx, dy, dw, dh); }catch(_){}
-  }
-
-  // ── Divider ──
-  ctx.globalAlpha = 0.30;
-  ctx.fillStyle   = accentColor;
-  ctx.fillRect(W * 0.10, DIVIDER_Y, W * 0.80, DIVIDER_H);
-  ctx.globalAlpha = 1;
-
-  // ── Bottom zone: shareFraming, recipientMessage, dueDate, branding ──
+  // ── Build content blocks with heights ──
   const font    = 'Dancing Script, cursive';
   const dueText = _formatDueMonth(card.due_month, lang);
   const msg     = (recipientMessage || '').trim();
 
-  // Collect text lines to distribute
-  const lines = [];
-  lines.push({ text: shareFraming, font: `400 52px ${font}`, color: accentColor, alpha: 1 });
-  if (msg)     lines.push({ text: msg,     font: `400 48px ${font}`, color: accentColor, alpha: 0.85 });
-  if (dueText) lines.push({ text: dueText, font: `400 44px ${font}`, color: accentColor, alpha: 0.70 });
+  const FRAMING_H  = 80;
+  const HEART_H    = 680;
+  const DUE_H      = dueText ? 80 : 0;
+  const MSG_H      = msg ? 70 : 0;
+  const BRAND_H    = 40;
+  const GAP        = 40;
+  const GAP_SM     = 30;
 
-  const brandingH = 80; // reserved for branding at bottom
-  const availH    = BOT_H - brandingH;
-  const gap       = Math.min(80, availH / (lines.length + 1));
-  const totalTextH = gap * (lines.length + 1);
-  let curY = BOT_TOP + (availH - totalTextH) / 2 + gap;
+  // Total content height
+  let contentH = FRAMING_H + GAP + HEART_H;
+  if (DUE_H)  contentH += GAP + DUE_H;
+  if (MSG_H)  contentH += GAP_SM + MSG_H;
+  contentH += GAP_SM + BRAND_H;
+
+  // Center vertically
+  let y = Math.round((H - contentH) / 2);
 
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
 
-  for (const line of lines){
-    ctx.globalAlpha = line.alpha;
-    ctx.fillStyle   = line.color;
-    ctx.font        = line.font;
-    try{ ctx.fillText(line.text, W / 2, curY); }catch(_){}
-    curY += gap;
+  // ── Framing text ──
+  ctx.globalAlpha = 1;
+  ctx.fillStyle   = accentColor;
+  ctx.font        = `700 52px ${font}`;
+  try{ ctx.fillText(shareFraming, W / 2, y + FRAMING_H / 2); }catch(_){}
+  y += FRAMING_H + GAP;
+
+  // ── Heart image ──
+  if (heartImg){
+    const maxW  = 800;
+    const maxH  = HEART_H;
+    const scale = Math.min(maxW / (heartImg.naturalWidth || 1),
+                           maxH / (heartImg.naturalHeight || 1));
+    const dw = (heartImg.naturalWidth  || 400) * scale;
+    const dh = (heartImg.naturalHeight || 350) * scale;
+    const dx = (W - dw) / 2;
+    const dy = y + (HEART_H - dh) / 2;
+    try{ ctx.drawImage(heartImg, dx, dy, dw, dh); }catch(_){}
+  }
+  y += HEART_H;
+
+  // ── Due date ──
+  if (dueText){
+    y += GAP;
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = accentColor;
+    ctx.font        = `400 64px ${font}`;
+    try{ ctx.fillText(dueText, W / 2, y + DUE_H / 2); }catch(_){}
+    y += DUE_H;
+  }
+
+  // ── Recipient message ──
+  if (msg){
+    y += GAP_SM;
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle   = accentColor;
+    ctx.font        = `400 52px ${font}`;
+    try{ ctx.fillText(msg, W / 2, y + MSG_H / 2); }catch(_){}
+    y += MSG_H;
   }
 
   // ── Branding ──
-  ctx.globalAlpha  = 0.45;
-  ctx.font         = '400 28px Inter, system-ui, sans-serif';
-  ctx.fillStyle    = accentColor;
-  ctx.fillText('ChicCanto', W / 2, H - 50);
-  ctx.globalAlpha  = 1;
+  y += GAP_SM;
+  ctx.globalAlpha = 0.40;
+  ctx.fillStyle   = accentColor;
+  ctx.font        = '400 28px Inter, system-ui, sans-serif';
+  try{ ctx.fillText('ChicCanto', W / 2, y + BRAND_H / 2); }catch(_){}
+  ctx.globalAlpha = 1;
 
   // ── Download ──
   try{
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
     const a = document.createElement('a');
     a.href     = dataUrl;
-    a.download = 'gender-reveal.jpg';
+    a.download = `gender-reveal-${card.gender || 'baby'}.jpg`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
