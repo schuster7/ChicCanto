@@ -1248,6 +1248,7 @@ function _renderSeqScratch(root, card, options = {}){
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
   const cfg    = getSeqStepConfig(card.card_key, stepIndex, lang, gender);
+  if (!cfg) { console.error('[preview] getSeqStepConfig returned null', { card_key: card.card_key, stepIndex, lang, gender }); return; }
 
   _applySeqStepPageTheme(theme);
 

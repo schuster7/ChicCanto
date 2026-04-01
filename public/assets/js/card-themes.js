@@ -501,7 +501,7 @@ export function getSeqStepConfig(card_key, stepIndex, language, gender){
   const theme = getCardTheme(card_key);
   if (!theme || theme.messageMode !== 'sequential') return null;
 
-  const lang      = language || theme.defaultLanguage || 'en';
+  const lang      = (language || theme.defaultLanguage || 'en').toLowerCase();
   const msgs      = (theme.stepMessages && (theme.stepMessages[lang] || theme.stepMessages['en'])) || [];
   const steps     = theme.steps || [];
 
