@@ -1163,7 +1163,6 @@ function _renderSeqScratch(root, card){
 
   const heartFillColor = theme.heartFillColor || '#ede0cc';
   const dueText = isFinal ? _formatDueMonth(card.due_month, lang) : null;
-  console.log('[seq] isFinal:', isFinal, 'due_month:', card.due_month, 'dueText:', dueText);
   const _resolvedAccent = (() => { let a = accentColor; if (typeof a === 'object' && a) a = a[gender] || a.boy; return a || (gender === 'girl' ? '#6d3f64' : '#445f75'); })();
 
   const continueWrapId = isFinal ? 'seqRevealContinueWrap' : 'seqContinueWrap';
