@@ -1477,6 +1477,9 @@ function _renderSeqShareScreen(root, card){
     ? '/assets/cards/gender-reveal1/step2-girl/heart-girl_o1.png'
     : '/assets/cards/gender-reveal1/step2-boy/heart-boy_o1.png');
   const dueText = _formatDueMonth(card.due_month, lang);
+  const bgMobileSrc = gender === 'girl'
+    ? '/assets/cards/gender-reveal1/step2-girl/bg-mobile.jpg'
+    : '/assets/cards/gender-reveal1/step2-boy/bg-mobile.jpg';
 
   document.body.style.transition = 'none';
   document.body.style.background = bgColor;
@@ -1488,11 +1491,11 @@ function _renderSeqShareScreen(root, card){
   root.innerHTML = `
     <div class="msg-card-wrapper seq-card-wrapper seq-share-screen" data-presentation="fullscreen">
       <div class="seq-share-stage msg-stage" data-card-style="gender-reveal" data-presentation="fullscreen"
-           style="background:${bgColor};display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem 1.5rem;gap:1rem;">
+           style="background:url('${bgMobileSrc}') center/cover no-repeat;display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem 1.5rem;gap:1rem;">
 
         <div class="seq-share__framing" style="
           font-family:'Dancing Script',cursive;
-          font-weight:700;
+          font-weight:400;
           font-size:clamp(1.6rem,5vw,2.4rem);
           color:${accentColor};
           text-align:center;
@@ -1511,19 +1514,13 @@ function _renderSeqShareScreen(root, card){
         ">${_escHtml(dueText)}</div>` : ''}
 
         <div style="width:100%;max-width:480px;">
-          <textarea id="seqShareMsg" class="input" maxlength="80" rows="2"
+          <textarea id="seqShareMsg" class="input" maxlength="80" rows="3"
             placeholder="e.g. We are so happy to share this with you! \u{1F499}"
-            style="width:100%;font-family:'Inter',sans-serif;font-size:1.1rem;resize:none;background:rgba(255,255,255,0.35);border-color:rgba(255,255,255,0.5);color:${accentColor};"></textarea>
+            style="width:100%;font-family:'Inter',sans-serif;font-size:1.1rem;resize:none;overflow-y:auto;background:rgba(255,255,255,0.35);border-color:rgba(255,255,255,0.5);color:${accentColor};"></textarea>
         </div>
 
-        <div class="seq-share__branding" style="
-          font-family:'Inter',sans-serif;
-          font-size:0.7rem;
-          letter-spacing:0.12em;
-          text-transform:uppercase;
-          color:${accentColor};
-          opacity:0.4;
-        ">ChicCanto</div>
+        <img src="/assets/img/logo1.svg" alt="ChicCanto" draggable="false"
+             style="width:120px;height:auto;opacity:0.85;filter:brightness(0) invert(1);">
 
         <div class="seq-continue-wrap is-visible" style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;">
           <button class="btn" type="button" id="seqSaveBtn"
