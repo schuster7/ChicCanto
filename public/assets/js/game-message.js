@@ -1661,7 +1661,7 @@ async function _exportSeqStacked(card, recipientMessage = ''){
   ];
 
   const totalH = lines.reduce((s, l) => s + l.h, 0);
-  let y = Math.max((H - totalH) / 2, 80);
+  let y = Math.max((H - totalH) / 2 - 80, 60);
 
   for (const line of lines){
     const cy = y + line.h / 2;
@@ -1765,20 +1765,21 @@ async function _exportSeqStacked(card, recipientMessage = ''){
         break;
       }
       case 'brand': {
-        const brandY = H - 80 - BRAND_SIZE;
+        const brandY = H - 72;
+        const logoW  = 140;
+        const logoH  = Math.round(logoW * 46 / 345); // known aspect ratio
+        const lx     = (W - logoW) / 2;
         if (logoImg) {
-          const logoW = 140;
-          const logoH = Math.round(logoW * (logoImg.naturalHeight || 46) / (logoImg.naturalWidth || 345));
-          const lx = (W - logoW) / 2;
-          const offscreen = document.createElement('canvas');
-          offscreen.width = logoW; offscreen.height = logoH;
+          const offscreen  = document.createElement('canvas');
+          offscreen.width  = logoW * 2;
+          offscreen.height = logoH * 2;
           const octx = offscreen.getContext('2d');
-          octx.drawImage(logoImg, 0, 0, logoW, logoH);
+          octx.drawImage(logoImg, 0, 0, logoW * 2, logoH * 2);
           octx.globalCompositeOperation = 'source-in';
           octx.fillStyle = '#ffffff';
-          octx.fillRect(0, 0, logoW, logoH);
+          octx.fillRect(0, 0, logoW * 2, logoH * 2);
           ctx.globalAlpha = 0.85;
-          try{ ctx.drawImage(offscreen, lx, brandY + (BRAND_SIZE - logoH) / 2, logoW, logoH); }catch(_){}
+          try { ctx.drawImage(offscreen, lx, brandY - logoH, logoW, logoH); } catch(_) {}
           ctx.globalAlpha = 1;
         }
         break;
