@@ -840,15 +840,20 @@ export function renderMessageRevealed(root, card){
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Format due_month ("YYYY-MM") into a localized string, e.g. "Coming July 2026". */
-function _formatDueMonth(due_month, lang){
+/** Format due_month ("YYYY-MM") into a localized string, e.g. "Arriving July 2026". */
+function _formatDueMonth(due_month, lang) {
   if (!due_month) return null;
-  const [y, m] = due_month.split('-');
+  const parts = String(due_month).split('-');
+  if (parts.length < 2) return null;
+  const y = parts[0];
+  const m = parts[1];
   if (!y || !m) return null;
-  const date = new Date(Number(y), Number(m) - 1, 1);
-  const locale = lang === 'de' ? 'de-DE' : 'en-GB';
-  const monthName = date.toLocaleString(locale, { month: 'long' });
-  return lang === 'de' ? `Kommt im ${monthName} ${y}` : `Coming ${monthName} ${y}`;
+  try {
+    const date = new Date(Number(y), Number(m) - 1, 1);
+    const locale = lang === 'de' ? 'de-DE' : 'en-GB';
+    const monthName = date.toLocaleString(locale, { month: 'long' });
+    return lang === 'de' ? `Kommt im ${monthName} ${y}` : `Arriving ${monthName} ${y}`;
+  } catch(_) { return null; }
 }
 
 /** Apply page theme CSS vars for the sequential card (theme-level, no per-step overrides). */
@@ -1009,10 +1014,12 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
             </select>
             <select id="seqDueYear" class="input" style="flex:1;">
               <option value="">-- Year --</option>
-              ${[0,1,2].map(i => { const y = new Date().getFullYear() + i; return `<option value="${y}">${y}</option>`; }).join('')}
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
             </select>
           </div>
-          <p class="msg-setup__hint muted" style="margin-top:0.25rem">e.g. Shown as &#8216;Coming July 2026&#8217; on the reveal.</p>
+          <p class="msg-setup__hint muted" style="margin-top:0.25rem">Shown on the reveal and share image.</p>
         </div>
 
         <div class="msg-setup__actions">
@@ -1095,9 +1102,9 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
       confirmBtn.textContent = 'Saving\u2026';
 
       const customMsg = customInput ? customInput.value.trim() : '';
-      const dueM = dueMonthSel ? dueMonthSel.value : '';
-      const dueY = dueYearSel  ? dueYearSel.value  : '';
-      const dueMonth = (dueM && dueY) ? `${dueY}-${dueM}` : null;
+      const dueMVal = root.querySelector('#seqDueMonth')?.value || '';
+      const dueYVal = root.querySelector('#seqDueYear')?.value || '';
+      const dueMonth = (dueMVal && dueYVal) ? `${dueYVal}-${dueMVal}` : null;
 
       try{
         card.language       = selectedLang;
@@ -1462,57 +1469,67 @@ function _renderSeqShareScreen(root, card){
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
 
-  const step1cfg = getSeqStepConfig(card.card_key, 1, lang, gender);
+  const step1cfg    = getSeqStepConfig(card.card_key, 1, lang, gender);
+  const accentColor = step1cfg.accentColor || (gender === 'girl' ? '#6d3f64' : '#445f75');
+  const bgColor     = step1cfg.floodPageBg || (gender === 'girl' ? '#f2cee9' : '#cedaef');
+  const shareFraming = step1cfg.shareFraming || (gender === 'girl' ? 'We are expecting a baby girl' : 'We are expecting a baby boy');
+  const shareImgSrc  = step1cfg.shareImageSrc || (gender === 'girl'
+    ? '/assets/cards/gender-reveal1/step2-girl/heart-girl_o1.png'
+    : '/assets/cards/gender-reveal1/step2-boy/heart-boy_o1.png');
+  const dueText = _formatDueMonth(card.due_month, lang);
 
-  const accentColor  = step1cfg.accentColor  || (gender === 'girl' ? '#6d3f64' : '#445f75');
-  const bgColor      = step1cfg.floodPageBg  || (gender === 'girl' ? '#f2cee9' : '#cedaef');
-  const shareFraming = step1cfg.shareFraming  || (gender === 'girl' ? 'We are expecting a baby girl' : 'We are expecting a baby boy');
-  const heartSrc     = step1cfg.shareImageSrc || step1cfg.underlayImageSrc || '';
-  const dueText      = _formatDueMonth(card.due_month, lang);
-
-  // Flood full viewport
   document.body.style.transition = 'none';
   document.body.style.background = bgColor;
   document.documentElement.style.setProperty('--page-bg',  bgColor);
   document.documentElement.style.setProperty('--page-bg1', bgColor);
-  document.documentElement.style.background = bgColor;
 
   let recipientMsg = '';
 
   root.innerHTML = `
     <div class="msg-card-wrapper seq-card-wrapper seq-share-screen" data-presentation="fullscreen">
-      <div class="seq-share-stage msg-stage" data-export-root="1"
-           data-card-style="gender-reveal" data-presentation="fullscreen"
-           style="background:${bgColor};">
+      <div class="seq-share-stage msg-stage" data-card-style="gender-reveal" data-presentation="fullscreen"
+           style="background:${bgColor};display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem 1.5rem;gap:1rem;">
 
-        <div class="seq-share__top">
-          <div class="seq-share__framing" style="
-            font-family:'Dancing Script',cursive;
-            font-weight:400;
-            font-size:clamp(1.1rem,4vw,1.4rem);
-            color:${accentColor};
-            opacity:0.85;
-            text-align:center;
-            padding:0.5rem 1rem 0;
-          ">${_escHtml(shareFraming)}</div>
-          ${heartSrc
-            ? `<img class="seq-share__stork" src="${heartSrc}" alt="" draggable="false"
-                    style="max-width:75%;">`
-            : ''}
-        </div>
+        <div class="seq-share__framing" style="
+          font-family:'Dancing Script',cursive;
+          font-weight:700;
+          font-size:clamp(1.4rem,5vw,2rem);
+          color:${accentColor};
+          text-align:center;
+          opacity:0.9;
+        ">${_escHtml(shareFraming)}</div>
 
-        <div class="seq-share__bottom">
-          ${dueText ? `<div class="seq-share__due-date" style="font-family:'Dancing Script',cursive;color:${accentColor};font-size:clamp(1.2rem,5vw,1.8rem);text-align:center;">${_escHtml(dueText)}</div>` : ''}
-          <div class="seq-share__textarea-wrap" style="padding:0 1.5rem;width:100%;box-sizing:border-box;">
-            <textarea id="seqRecipientMsg" class="input" maxlength="80" rows="2"
-              placeholder="Add a message\u2026 (optional)"
-              style="font-family:'Dancing Script',cursive;font-size:clamp(1rem,3.5vw,1.3rem);color:${accentColor};text-align:center;resize:none;width:100%;box-sizing:border-box;background:rgba(255,255,255,0.25);border:1px solid ${accentColor}33;border-radius:12px;padding:0.6rem;"></textarea>
-            <div id="seqRecipientCounter" style="font-size:0.75rem;color:${accentColor};opacity:0.6;text-align:right;margin-top:0.15rem;">80</div>
+        <img class="seq-share__heart" src="${shareImgSrc}" alt="" draggable="false"
+             style="width:min(75%,420px);height:auto;flex-shrink:0;">
+
+        ${dueText ? `<div class="seq-share__due" style="
+          font-family:'Dancing Script',cursive;
+          font-weight:400;
+          font-size:clamp(1.3rem,5vw,1.8rem);
+          color:${accentColor};
+          text-align:center;
+        ">${_escHtml(dueText)}</div>` : ''}
+
+        <div style="width:100%;max-width:480px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:0.25rem;">
+            <label style="font-size:0.8rem;color:${accentColor};opacity:0.7;">Add a message (optional)</label>
+            <span id="seqShareMsgCount" style="font-size:0.8rem;color:${accentColor};opacity:0.5;">80</span>
           </div>
-          <div class="seq-share__branding" style="color:${accentColor};opacity:0.4;">ChicCanto</div>
+          <textarea id="seqShareMsg" class="input" maxlength="80" rows="2"
+            placeholder="e.g. We are so happy to share this with you! \u{1F499}"
+            style="width:100%;font-family:'Dancing Script',cursive;font-size:1.1rem;resize:none;background:rgba(255,255,255,0.35);border-color:rgba(255,255,255,0.5);color:${accentColor};"></textarea>
         </div>
 
-        <div class="seq-continue-wrap is-visible seq-share__actions">
+        <div class="seq-share__branding" style="
+          font-family:'Inter',sans-serif;
+          font-size:0.7rem;
+          letter-spacing:0.12em;
+          text-transform:uppercase;
+          color:${accentColor};
+          opacity:0.4;
+        ">ChicCanto</div>
+
+        <div class="seq-continue-wrap is-visible" style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;">
           <button class="btn" type="button" id="seqSaveBtn"
                   style="background:${accentColor};color:#fff;border-color:transparent;border-radius:50px;padding:0.75rem 2rem;">
             Save as image
@@ -1527,17 +1544,19 @@ function _renderSeqShareScreen(root, card){
     </div>
   `;
 
-  // Textarea input tracking
-  const textarea = root.querySelector('#seqRecipientMsg');
-  const counter  = root.querySelector('#seqRecipientCounter');
-  if (textarea){
-    textarea.addEventListener('input', () => {
-      recipientMsg = textarea.value;
-      if (counter) counter.textContent = String(80 - textarea.value.length);
+  const msgArea  = root.querySelector('#seqShareMsg');
+  const msgCount = root.querySelector('#seqShareMsgCount');
+  if (msgArea){
+    msgArea.addEventListener('input', () => {
+      recipientMsg = msgArea.value;
+      if (msgCount) msgCount.textContent = String(80 - msgArea.value.length);
     });
   }
 
-  root.querySelector('#seqSaveBtn')?.addEventListener('click', () => _exportSeqStacked(card, recipientMsg));
+  root.querySelector('#seqSaveBtn')?.addEventListener('click', () => {
+    recipientMsg = msgArea ? msgArea.value.trim() : '';
+    _exportSeqStacked(card, recipientMsg);
+  });
   root.querySelector('#seqShareBtn')?.addEventListener('click', () => _seqShare(card));
 }
 
@@ -1565,12 +1584,16 @@ async function _exportSeqStacked(card, recipientMessage = ''){
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
 
-  const step1cfg = getSeqStepConfig(card.card_key, 1, lang, gender);
-
-  const accentColor  = step1cfg.accentColor  || (gender === 'girl' ? '#6d3f64' : '#445f75');
-  const bgColor      = step1cfg.floodPageBg  || (gender === 'girl' ? '#f2cee9' : '#cedaef');
-  const shareFraming = step1cfg.shareFraming  || (gender === 'girl' ? 'We are expecting a baby girl' : 'We are expecting a baby boy');
-  const heartSrc     = step1cfg.shareImageSrc || step1cfg.underlayImageSrc || '';
+  const step1cfg    = getSeqStepConfig(card.card_key, 1, lang, gender);
+  const accentColor = step1cfg.accentColor || (gender === 'girl' ? '#6d3f64' : '#445f75');
+  const shareFraming = step1cfg.shareFraming || (gender === 'girl' ? 'We are expecting a baby girl' : 'We are expecting a baby boy');
+  const shareImgSrc  = step1cfg.shareImageSrc || (gender === 'girl'
+    ? '/assets/cards/gender-reveal1/step2-girl/heart-girl_o1.png'
+    : '/assets/cards/gender-reveal1/step2-boy/heart-boy_o1.png');
+  const bgMobileSrc = gender === 'girl'
+    ? '/assets/cards/gender-reveal1/step2-girl/bg-mobile.jpg'
+    : '/assets/cards/gender-reveal1/step2-boy/bg-mobile.jpg';
+  const dueText = _formatDueMonth(card.due_month, lang);
 
   const W = 1080;
   const H = 1350;
@@ -1593,92 +1616,109 @@ async function _exportSeqStacked(card, recipientMessage = ''){
     });
   }
 
-  const heartImg = await _loadImg(heartSrc).catch(() => null);
+  const [bgImg, heartImg] = await Promise.all([
+    _loadImg(bgMobileSrc),
+    _loadImg(shareImgSrc),
+  ]);
 
-  // ── Full bleed bg ──
-  ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, W, H);
+  // ── Background image (cover fill) ──
+  if (bgImg){
+    const bw = bgImg.naturalWidth  || W;
+    const bh = bgImg.naturalHeight || H;
+    const scale = Math.max(W / bw, H / bh);
+    const dw = bw * scale;
+    const dh = bh * scale;
+    const dx = (W - dw) / 2;
+    const dy = (H - dh) / 2;
+    try{ ctx.drawImage(bgImg, dx, dy, dw, dh); }catch(_){}
+  } else {
+    // fallback flat color
+    const bgColor = step1cfg.floodPageBg || (gender === 'girl' ? '#f2cee9' : '#cedaef');
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, W, H);
+  }
 
-  // ── Build content blocks with heights ──
-  const font    = 'Dancing Script, cursive';
-  const dueText = _formatDueMonth(card.due_month, lang);
-  const msg     = (recipientMessage || '').trim();
-
-  const FRAMING_H  = 80;
-  const HEART_H    = 680;
-  const DUE_H      = dueText ? 80 : 0;
-  const MSG_H      = msg ? 70 : 0;
-  const BRAND_H    = 40;
-  const GAP        = 40;
-  const GAP_SM     = 30;
-
-  // Total content height
-  let contentH = FRAMING_H + GAP + HEART_H;
-  if (DUE_H)  contentH += GAP + DUE_H;
-  if (MSG_H)  contentH += GAP_SM + MSG_H;
-  contentH += GAP_SM + BRAND_H;
-
-  // Center vertically
-  let y = Math.round((H - contentH) / 2);
-
+  const scriptFont = "'Dancing Script', Dancing Script, cursive";
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
 
-  // ── Framing text ──
-  ctx.globalAlpha = 1;
-  ctx.fillStyle   = accentColor;
-  ctx.font        = `700 52px ${font}`;
-  try{ ctx.fillText(shareFraming, W / 2, y + FRAMING_H / 2); }catch(_){}
-  y += FRAMING_H + GAP;
+  // ── Layout: compute block heights to center vertically ──
+  const FRAMING_SIZE = 62;
+  const HEART_MAX_W  = 750;
+  const HEART_MAX_H  = 680;
+  const DUE_SIZE     = 72;
+  const MSG_SIZE     = 56;
+  const BRAND_SIZE   = 30;
+  const GAP          = 40;
 
-  // ── Heart image ──
+  let heartW = 0, heartH = 0;
   if (heartImg){
-    const maxW  = 800;
-    const maxH  = HEART_H;
-    const scale = Math.min(maxW / (heartImg.naturalWidth || 1),
-                           maxH / (heartImg.naturalHeight || 1));
-    const dw = (heartImg.naturalWidth  || 400) * scale;
-    const dh = (heartImg.naturalHeight || 350) * scale;
-    const dx = (W - dw) / 2;
-    const dy = y + (HEART_H - dh) / 2;
-    try{ ctx.drawImage(heartImg, dx, dy, dw, dh); }catch(_){}
-  }
-  y += HEART_H;
-
-  // ── Due date ──
-  if (dueText){
-    y += GAP;
-    ctx.globalAlpha = 1;
-    ctx.fillStyle   = accentColor;
-    ctx.font        = `400 64px ${font}`;
-    try{ ctx.fillText(dueText, W / 2, y + DUE_H / 2); }catch(_){}
-    y += DUE_H;
+    const hw = heartImg.naturalWidth  || 800;
+    const hh = heartImg.naturalHeight || 800;
+    const sc = Math.min(HEART_MAX_W / hw, HEART_MAX_H / hh);
+    heartW = hw * sc;
+    heartH = hh * sc;
   }
 
-  // ── Recipient message ──
-  if (msg){
-    y += GAP_SM;
-    ctx.globalAlpha = 0.85;
-    ctx.fillStyle   = accentColor;
-    ctx.font        = `400 52px ${font}`;
-    try{ ctx.fillText(msg, W / 2, y + MSG_H / 2); }catch(_){}
-    y += MSG_H;
-  }
+  const lines = [
+    { type: 'framing', h: FRAMING_SIZE },
+    { type: 'gap',     h: GAP },
+    { type: 'heart',   h: heartH || HEART_MAX_H },
+    { type: 'gap',     h: GAP },
+    ...(dueText          ? [{ type: 'due',   h: DUE_SIZE   }, { type: 'gap', h: GAP * 0.75 }] : []),
+    ...(recipientMessage ? [{ type: 'msg',   h: MSG_SIZE   }, { type: 'gap', h: GAP * 0.75 }] : []),
+    { type: 'brand',   h: BRAND_SIZE },
+  ];
 
-  // ── Branding ──
-  y += GAP_SM;
-  ctx.globalAlpha = 0.40;
-  ctx.fillStyle   = accentColor;
-  ctx.font        = '400 28px Inter, system-ui, sans-serif';
-  try{ ctx.fillText('ChicCanto', W / 2, y + BRAND_H / 2); }catch(_){}
-  ctx.globalAlpha = 1;
+  const totalH = lines.reduce((s, l) => s + l.h, 0);
+  let y = (H - totalH) / 2;
+
+  for (const line of lines){
+    const cy = y + line.h / 2;
+    switch(line.type){
+      case 'framing':
+        ctx.globalAlpha = 0.90;
+        ctx.fillStyle   = accentColor;
+        ctx.font        = `700 ${FRAMING_SIZE}px ${scriptFont}`;
+        try{ ctx.fillText(shareFraming, W / 2, cy); }catch(_){}
+        ctx.globalAlpha = 1;
+        break;
+      case 'heart':
+        if (heartImg){
+          const hx = (W - heartW) / 2;
+          try{ ctx.drawImage(heartImg, hx, y, heartW, heartH); }catch(_){}
+        }
+        break;
+      case 'due':
+        ctx.globalAlpha = 1;
+        ctx.fillStyle   = accentColor;
+        ctx.font        = `400 ${DUE_SIZE}px ${scriptFont}`;
+        try{ ctx.fillText(dueText, W / 2, cy); }catch(_){}
+        break;
+      case 'msg':
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle   = accentColor;
+        ctx.font        = `400 ${MSG_SIZE}px ${scriptFont}`;
+        try{ ctx.fillText(recipientMessage, W / 2, cy); }catch(_){}
+        ctx.globalAlpha = 1;
+        break;
+      case 'brand':
+        ctx.globalAlpha = 0.40;
+        ctx.fillStyle   = accentColor;
+        ctx.font        = `400 ${BRAND_SIZE}px Inter, system-ui, sans-serif`;
+        try{ ctx.fillText('ChicCanto', W / 2, cy); }catch(_){}
+        ctx.globalAlpha = 1;
+        break;
+    }
+    y += line.h;
+  }
 
   // ── Download ──
   try{
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
     const a = document.createElement('a');
     a.href     = dataUrl;
-    a.download = `gender-reveal-${card.gender || 'baby'}.jpg`;
+    a.download = `gender-reveal-${gender}.jpg`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
