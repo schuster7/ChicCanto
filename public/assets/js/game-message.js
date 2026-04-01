@@ -1823,20 +1823,19 @@ async function _exportSeqStacked(card, recipientMessage = ''){
         y += PANEL_H + 44;
         break;
       }
-      case 'brand': {
-        if (logoImg) {
-          const logoW = 140;
-          const logoH = Math.round(logoW * logoImg.naturalHeight / logoImg.naturalWidth);
-          const lx    = (W - logoW) / 2;
-          const by    = H - 60 - logoH;
-          ctx.globalAlpha = 0.85;
-          try { ctx.drawImage(logoImg, lx, by, logoW, logoH); } catch(_) {}
-          ctx.globalAlpha = 1;
-        }
-        break;
-      }
     }
     y += line.h;
+  }
+
+  // ── Logo (always pinned to bottom) ──
+  if (logoImg) {
+    const logoW = 140;
+    const logoH = Math.round(logoW * logoImg.naturalHeight / logoImg.naturalWidth);
+    const lx    = (W - logoW) / 2;
+    const by    = H - 60 - logoH;
+    ctx.globalAlpha = 0.85;
+    try { ctx.drawImage(logoImg, lx, by, logoW, logoH); } catch(_) {}
+    ctx.globalAlpha = 1;
   }
 
   // ── Download ──
