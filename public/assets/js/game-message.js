@@ -1640,6 +1640,7 @@ async function _exportSeqStacked(card, recipientMessage = ''){
   }
 
   const scriptFont = "'Dancing Script', Dancing Script, cursive";
+  const interFont  = "'Inter', system-ui, sans-serif";
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
 
@@ -1648,7 +1649,6 @@ async function _exportSeqStacked(card, recipientMessage = ''){
   const HEART_MAX_W  = 860;
   const HEART_MAX_H  = 780;
   const DUE_SIZE     = 72;
-  const MSG_SIZE     = 38;
   const BRAND_SIZE   = 50;
   const GAP          = 55;
 
@@ -1666,8 +1666,8 @@ async function _exportSeqStacked(card, recipientMessage = ''){
     { type: 'gap',     h: GAP },
     { type: 'heart',   h: heartH || HEART_MAX_H },
     { type: 'gap',     h: GAP },
-    ...(dueText          ? [{ type: 'due',   h: DUE_SIZE   }, { type: 'gap', h: GAP * 0.75 }] : []),
-    ...(recipientMessage ? [{ type: 'msg',   h: MSG_SIZE   }, { type: 'gap', h: GAP * 0.75 }] : []),
+    ...(dueText          ? [{ type: 'due', h: DUE_SIZE }, { type: 'gap', h: GAP * 0.75 }] : []),
+    ...(recipientMessage ? [{ type: 'msg', h: 0 }] : []),
     { type: 'brand',   h: BRAND_SIZE },
   ];
 
@@ -1696,13 +1696,51 @@ async function _exportSeqStacked(card, recipientMessage = ''){
         ctx.font        = `400 ${DUE_SIZE}px ${scriptFont}`;
         try{ ctx.fillText(dueText, W / 2, cy); }catch(_){}
         break;
-      case 'msg':
-        ctx.globalAlpha = 0.75;
-        ctx.fillStyle   = accentColor;
-        ctx.font        = `400 ${MSG_SIZE}px 'Inter', system-ui, sans-serif`;
-        try{ ctx.fillText(recipientMessage, W / 2, cy); }catch(_){}
+      case 'msg': {
+        const PANEL_W   = Math.round(heartW || 800);
+        const PANEL_X   = (W - PANEL_W) / 2;
+        const PADDING_X = 48;
+        const PADDING_Y = 44;
+        const MAX_FONT  = 42;
+        const MIN_FONT  = 26;
+        const msgFont   = Math.max(MIN_FONT, MAX_FONT - Math.floor(recipientMessage.length / 5));
+        const PANEL_H   = msgFont + PADDING_Y * 2;
+        const r         = 28;
+
+        // Panel — same translucent white as share screen textarea
+        ctx.globalAlpha = 0.40;
+        ctx.fillStyle   = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(PANEL_X + r, y);
+        ctx.lineTo(PANEL_X + PANEL_W - r, y);
+        ctx.quadraticCurveTo(PANEL_X + PANEL_W, y, PANEL_X + PANEL_W, y + r);
+        ctx.lineTo(PANEL_X + PANEL_W, y + PANEL_H - r);
+        ctx.quadraticCurveTo(PANEL_X + PANEL_W, y + PANEL_H, PANEL_X + PANEL_W - r, y + PANEL_H);
+        ctx.lineTo(PANEL_X + r, y + PANEL_H);
+        ctx.quadraticCurveTo(PANEL_X, y + PANEL_H, PANEL_X, y + PANEL_H - r);
+        ctx.lineTo(PANEL_X, y + r);
+        ctx.quadraticCurveTo(PANEL_X, y, PANEL_X + r, y);
+        ctx.closePath();
+        ctx.fill();
         ctx.globalAlpha = 1;
+
+        // Text — clipped to panel interior, center aligned, Inter light
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(PANEL_X + PADDING_X, y + PADDING_Y, PANEL_W - PADDING_X * 2, PANEL_H - PADDING_Y * 2);
+        ctx.clip();
+        ctx.globalAlpha = 0.82;
+        ctx.fillStyle   = accentColor;
+        ctx.font        = `300 ${msgFont}px ${interFont}`;
+        ctx.textAlign   = 'center';
+        ctx.textBaseline = 'middle';
+        try { ctx.fillText(recipientMessage, W / 2, y + PANEL_H / 2); } catch(_) {}
+        ctx.restore();
+        ctx.globalAlpha = 1;
+
+        y += PANEL_H + 44;  // line.h = 0, so outer y += line.h is a no-op
         break;
+      }
       case 'brand': {
         const brandY = H - 80 - BRAND_SIZE;
         if (logoImg) {
