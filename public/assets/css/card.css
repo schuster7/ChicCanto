@@ -1522,8 +1522,8 @@ border-radius: var(--scratch-tile-radius);
 
 /* cloud1: top-right, smallest */
 .seq-cloud-right1 {
-  top: 4%;
-  right: -1%;
+  top: 2%;
+  right: 3%;
   width: 28%;
   transform: translateX(60px);
   transition: opacity 900ms ease, transform 900ms ease;
