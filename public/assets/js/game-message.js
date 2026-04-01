@@ -1765,21 +1765,13 @@ async function _exportSeqStacked(card, recipientMessage = ''){
         break;
       }
       case 'brand': {
-        const brandY = H - 72;
-        const logoW  = 140;
-        const logoH  = Math.round(logoW * 46 / 345); // known aspect ratio
-        const lx     = (W - logoW) / 2;
         if (logoImg) {
-          const offscreen  = document.createElement('canvas');
-          offscreen.width  = logoW * 2;
-          offscreen.height = logoH * 2;
-          const octx = offscreen.getContext('2d');
-          octx.drawImage(logoImg, 0, 0, logoW * 2, logoH * 2);
-          octx.globalCompositeOperation = 'source-in';
-          octx.fillStyle = '#ffffff';
-          octx.fillRect(0, 0, logoW * 2, logoH * 2);
+          const logoW = 140;
+          const logoH = Math.round(logoW * logoImg.naturalHeight / logoImg.naturalWidth);
+          const lx    = (W - logoW) / 2;
+          const by    = H - 60 - logoH;
           ctx.globalAlpha = 0.85;
-          try { ctx.drawImage(offscreen, lx, brandY - logoH, logoW, logoH); } catch(_) {}
+          try { ctx.drawImage(logoImg, lx, by, logoW, logoH); } catch(_) {}
           ctx.globalAlpha = 1;
         }
         break;
