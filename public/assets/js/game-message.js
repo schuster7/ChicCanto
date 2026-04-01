@@ -1493,31 +1493,27 @@ function _renderSeqShareScreen(root, card){
         <div class="seq-share__framing" style="
           font-family:'Dancing Script',cursive;
           font-weight:700;
-          font-size:clamp(1.4rem,5vw,2rem);
+          font-size:clamp(1.6rem,5vw,2.4rem);
           color:${accentColor};
           text-align:center;
           opacity:0.9;
         ">${_escHtml(shareFraming)}</div>
 
         <img class="seq-share__heart" src="${shareImgSrc}" alt="" draggable="false"
-             style="width:min(75%,420px);height:auto;flex-shrink:0;">
+             style="width:min(85%,460px);height:auto;flex-shrink:0;">
 
         ${dueText ? `<div class="seq-share__due" style="
           font-family:'Dancing Script',cursive;
           font-weight:400;
-          font-size:clamp(1.3rem,5vw,1.8rem);
+          font-size:clamp(1.5rem,5vw,2.1rem);
           color:${accentColor};
           text-align:center;
         ">${_escHtml(dueText)}</div>` : ''}
 
         <div style="width:100%;max-width:480px;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:0.25rem;">
-            <label style="font-size:0.8rem;color:${accentColor};opacity:0.7;">Add a message (optional)</label>
-            <span id="seqShareMsgCount" style="font-size:0.8rem;color:${accentColor};opacity:0.5;">80</span>
-          </div>
           <textarea id="seqShareMsg" class="input" maxlength="80" rows="2"
             placeholder="e.g. We are so happy to share this with you! \u{1F499}"
-            style="width:100%;font-family:'Dancing Script',cursive;font-size:1.1rem;resize:none;background:rgba(255,255,255,0.35);border-color:rgba(255,255,255,0.5);color:${accentColor};"></textarea>
+            style="width:100%;font-family:'Inter',sans-serif;font-size:1.1rem;resize:none;background:rgba(255,255,255,0.35);border-color:rgba(255,255,255,0.5);color:${accentColor};"></textarea>
         </div>
 
         <div class="seq-share__branding" style="
@@ -1544,12 +1540,10 @@ function _renderSeqShareScreen(root, card){
     </div>
   `;
 
-  const msgArea  = root.querySelector('#seqShareMsg');
-  const msgCount = root.querySelector('#seqShareMsgCount');
+  const msgArea = root.querySelector('#seqShareMsg');
   if (msgArea){
     msgArea.addEventListener('input', () => {
       recipientMsg = msgArea.value;
-      if (msgCount) msgCount.textContent = String(80 - msgArea.value.length);
     });
   }
 
@@ -1668,7 +1662,6 @@ async function _exportSeqStacked(card, recipientMessage = ''){
     { type: 'gap',     h: GAP },
     ...(dueText          ? [{ type: 'due', h: DUE_SIZE }, { type: 'gap', h: GAP * 0.75 }] : []),
     ...(recipientMessage ? [{ type: 'msg', h: 0 }] : []),
-    { type: 'brand',   h: BRAND_SIZE },
   ];
 
   const totalH = lines.reduce((s, l) => s + l.h, 0);
@@ -1677,13 +1670,28 @@ async function _exportSeqStacked(card, recipientMessage = ''){
   for (const line of lines){
     const cy = y + line.h / 2;
     switch(line.type){
-      case 'framing':
+      case 'framing': {
         ctx.globalAlpha = 0.90;
         ctx.fillStyle   = accentColor;
         ctx.font        = `400 ${FRAMING_SIZE}px ${scriptFont}`;
-        try{ ctx.fillText(shareFraming, W / 2, cy); }catch(_){}
+        const maxFW     = W - 80;
+        const fWords    = shareFraming.split(' ');
+        const fLines    = [];
+        let fCur        = '';
+        for (const w of fWords) {
+          const t = fCur ? fCur + ' ' + w : w;
+          if (ctx.measureText(t).width > maxFW && fCur) { fLines.push(fCur); fCur = w; }
+          else fCur = t;
+        }
+        if (fCur) fLines.push(fCur);
+        const fLineH = FRAMING_SIZE * 1.3;
+        const fStartY = cy - ((fLines.length - 1) * fLineH) / 2;
+        for (let i = 0; i < fLines.length; i++) {
+          try { ctx.fillText(fLines[i], W / 2, fStartY + i * fLineH); } catch(_) {}
+        }
         ctx.globalAlpha = 1;
         break;
+      }
       case 'heart':
         if (heartImg){
           const hx = (W - heartW) / 2;
@@ -1699,16 +1707,36 @@ async function _exportSeqStacked(card, recipientMessage = ''){
       case 'msg': {
         const PANEL_W   = Math.round(heartW || 800);
         const PANEL_X   = (W - PANEL_W) / 2;
-        const PADDING_X = 48;
-        const PADDING_Y = 44;
-        const MAX_FONT  = 42;
+        const PADDING_X = 52;
+        const PADDING_Y = 40;
+        const MAX_FONT  = 40;
         const MIN_FONT  = 26;
         const msgFont   = Math.max(MIN_FONT, MAX_FONT - Math.floor(recipientMessage.length / 5));
-        const PANEL_H   = msgFont + PADDING_Y * 2;
-        const r         = 28;
+        const lineH     = msgFont * 1.45;
+        const maxTextW  = PANEL_W - PADDING_X * 2;
 
-        // Panel — same translucent white as share screen textarea
-        ctx.globalAlpha = 0.40;
+        // Word-wrap
+        ctx.font = `300 ${msgFont}px ${interFont}`;
+        const words     = recipientMessage.split(' ');
+        const msgLines  = [];
+        let current     = '';
+        for (const word of words) {
+          const test = current ? current + ' ' + word : word;
+          if (ctx.measureText(test).width > maxTextW && current) {
+            msgLines.push(current);
+            current = word;
+          } else {
+            current = test;
+          }
+        }
+        if (current) msgLines.push(current);
+
+        const textBlockH = msgLines.length * lineH;
+        const PANEL_H    = textBlockH + PADDING_Y * 2;
+        const r          = 28;
+
+        // Panel
+        ctx.globalAlpha = 0.55;
         ctx.fillStyle   = '#ffffff';
         ctx.beginPath();
         ctx.moveTo(PANEL_X + r, y);
@@ -1724,21 +1752,20 @@ async function _exportSeqStacked(card, recipientMessage = ''){
         ctx.fill();
         ctx.globalAlpha = 1;
 
-        // Text — clipped to panel interior, center aligned, Inter light
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(PANEL_X + PADDING_X, y + PADDING_Y, PANEL_W - PADDING_X * 2, PANEL_H - PADDING_Y * 2);
-        ctx.clip();
-        ctx.globalAlpha = 0.82;
-        ctx.fillStyle   = accentColor;
-        ctx.font        = `300 ${msgFont}px ${interFont}`;
-        ctx.textAlign   = 'center';
+        // Text
+        ctx.globalAlpha  = 0.82;
+        ctx.fillStyle    = accentColor;
+        ctx.font         = `300 ${msgFont}px ${interFont}`;
+        ctx.textAlign    = 'center';
         ctx.textBaseline = 'middle';
-        try { ctx.fillText(recipientMessage, W / 2, y + PANEL_H / 2); } catch(_) {}
+        const textStartY = y + PADDING_Y + lineH / 2;
+        for (let i = 0; i < msgLines.length; i++) {
+          try { ctx.fillText(msgLines[i], W / 2, textStartY + i * lineH); } catch(_) {}
+        }
         ctx.restore();
         ctx.globalAlpha = 1;
 
-        y += PANEL_H + 44;  // line.h = 0, so outer y += line.h is a no-op
+        y += PANEL_H + 44;
         break;
       }
       case 'brand': {
