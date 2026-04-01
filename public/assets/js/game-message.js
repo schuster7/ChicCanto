@@ -1220,16 +1220,6 @@ function _renderSeqScratch(root, card){
 
             </div>
 
-            ${isFinal && dueText ? `<div class="seq-reveal-due" id="seqRevealDue" style="
-              font-family:'Dancing Script',cursive;
-              font-size:clamp(1.3rem,4vw,1.6rem);
-              color:${_resolvedAccent};
-              opacity:0;
-              text-align:center;
-              transition:opacity 800ms ease;
-              margin-top:0.5rem;
-            ">${_escHtml(dueText)}</div>` : ''}
-
             ${isFinal && card.custom_message ? `<div class="seq-reveal-custom-msg" style="
               font-family:'Dancing Script',cursive;
               font-size:clamp(1rem,3.5vw,1.3rem);
@@ -1239,6 +1229,16 @@ function _renderSeqScratch(root, card){
               transition:opacity 800ms ease;
               margin-top:0.25rem;
             ">${_escHtml(card.custom_message)}</div>` : ''}
+
+            ${isFinal && dueText ? `<div class="seq-reveal-due" id="seqRevealDue" style="
+              font-family:'Dancing Script',cursive;
+              font-size:clamp(1.3rem,4vw,1.6rem);
+              color:${_resolvedAccent};
+              opacity:0;
+              text-align:center;
+              transition:opacity 800ms ease;
+              margin-top:0.5rem;
+            ">${_escHtml(dueText)}</div>` : ''}
 
             <div class="seq-continue-wrap" id="${continueWrapId}">
               <button class="btn seq-continue-btn" type="button" id="${continueBtnId}"
