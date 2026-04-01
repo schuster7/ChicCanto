@@ -1521,9 +1521,6 @@ function _renderSeqShareScreen(root, card){
             style="white-space:pre-wrap;word-break:break-word;width:100%;box-sizing:border-box;overflow-y:auto;font-family:'Inter',sans-serif;font-size:1.1rem;resize:none;background:rgba(255,255,255,0.35);border-color:rgba(255,255,255,0.5);color:${accentColor};"></textarea>
         </div>
 
-        <img src="/assets/img/logo1.svg" alt="ChicCanto" draggable="false"
-             style="width:120px;height:auto;opacity:0.85;filter:brightness(0) invert(1);">
-
         <div class="seq-continue-wrap is-visible" style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;">
           <button class="btn" type="button" id="seqSaveBtn"
                   style="background:${accentColor};color:#fff;border-color:transparent;border-radius:50px;padding:0.75rem 2rem;">
@@ -1770,7 +1767,7 @@ async function _exportSeqStacked(card, recipientMessage = ''){
       case 'brand': {
         const brandY = H - 80 - BRAND_SIZE;
         if (logoImg) {
-          const logoW = 200;
+          const logoW = 140;
           const logoH = Math.round(logoW * (logoImg.naturalHeight || 46) / (logoImg.naturalWidth || 345));
           const lx = (W - logoW) / 2;
           const offscreen = document.createElement('canvas');
