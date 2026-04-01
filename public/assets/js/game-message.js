@@ -1515,20 +1515,20 @@ function _renderSeqShareScreen(root, card){
           text-align:center;
         ">${_escHtml(dueText)}</div>` : ''}
 
-        <div style="width:100%;max-width:480px;box-sizing:border-box;padding:0 0.5rem;">
+        <div style="width:100%;max-width:480px;box-sizing:border-box;padding:0 0.5rem;position:relative;">
           <textarea id="seqShareMsg" class="input" maxlength="110" rows="3"
             placeholder="e.g. We are so happy to share this with you! 💙"
             style="width:100%;font-family:'Inter',sans-serif;font-size:1rem;resize:none;background:rgba(255,255,255,0.35);border-color:rgba(255,255,255,0.5);color:${accentColor};white-space:pre-wrap;word-break:break-word;box-sizing:border-box;overflow-y:auto;"></textarea>
           <div id="seqShareMsgFooter" style="display:none;justify-content:space-between;align-items:center;margin-top:0.3rem;">
-            <div id="seqShareEmojis" style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-              <button type="button" data-emoji="💙" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;">💙</button>
-              <button type="button" data-emoji="💗" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;">💗</button>
-              <button type="button" data-emoji="🎉" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;">🎉</button>
-              <button type="button" data-emoji="✨" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;">✨</button>
-              <button type="button" data-emoji="🥹" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;">🥹</button>
-              <button type="button" data-emoji="👶" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;">👶</button>
-            </div>
+            <button type="button" id="seqEmojiToggle" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.1rem;line-height:1;opacity:0.7;">🙂</button>
             <span id="seqShareMsgCount" style="font-size:0.78rem;color:${accentColor};opacity:0.6;">110</span>
+          </div>
+          <div id="seqEmojiPanel" style="display:none;position:absolute;left:0.5rem;top:100%;margin-top:0.2rem;background:rgba(255,255,255,0.92);border-radius:12px;padding:0.6rem;box-shadow:0 4px 20px rgba(0,0,0,0.12);z-index:10;width:220px;">
+            <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0.3rem;">
+              ${['💙','💗','💜','🤍','🧡','💛','👶','🍼','🧸','👼','🤰','🌱','🎉','🎊','✨','🥂','🎈','🎁','👨‍👩‍👦','👨‍👩‍👧','🫂','🤗','😍','🥹','🌸','🌈','⭐','🌙','🦋','🌻','😊','🙏','💫','🍀','🕊️','📸'].map(e =>
+                `<button type="button" data-emoji="${e}" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.2rem;border-radius:6px;line-height:1;">${e}</button>`
+              ).join('')}
+            </div>
           </div>
         </div>
 
@@ -1547,9 +1547,19 @@ function _renderSeqShareScreen(root, card){
     </div>
   `;
 
-  const msgArea   = root.querySelector('#seqShareMsg');
-  const msgFooter = root.querySelector('#seqShareMsgFooter');
-  const msgCount  = root.querySelector('#seqShareMsgCount');
+  const msgArea     = root.querySelector('#seqShareMsg');
+  const msgFooter   = root.querySelector('#seqShareMsgFooter');
+  const msgCount    = root.querySelector('#seqShareMsgCount');
+  const emojiToggle = root.querySelector('#seqEmojiToggle');
+  const emojiPanel  = root.querySelector('#seqEmojiPanel');
+
+  let emojiOpen = false;
+
+  function closeEmoji() {
+    emojiOpen = false;
+    if (emojiPanel) emojiPanel.style.display = 'none';
+    if (emojiToggle) emojiToggle.style.opacity = '0.7';
+  }
 
   if (msgArea) {
     msgArea.addEventListener('input', () => {
@@ -1560,13 +1570,25 @@ function _renderSeqShareScreen(root, card){
         msgCount.textContent = String(remaining);
       } else {
         msgFooter.style.display = 'none';
+        closeEmoji();
       }
     });
   }
 
-  root.querySelectorAll('[data-emoji]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (!msgArea) return;
+  if (emojiToggle) {
+    emojiToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      emojiOpen = !emojiOpen;
+      emojiPanel.style.display = emojiOpen ? 'block' : 'none';
+      emojiToggle.style.opacity = emojiOpen ? '1' : '0.7';
+    });
+  }
+
+  if (emojiPanel) {
+    emojiPanel.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const btn = e.target.closest('[data-emoji]');
+      if (!btn || !msgArea) return;
       const pos   = msgArea.selectionStart ?? msgArea.value.length;
       const val   = msgArea.value;
       const emoji = btn.dataset.emoji;
@@ -1576,7 +1598,9 @@ function _renderSeqShareScreen(root, card){
       msgArea.focus();
       msgArea.selectionStart = msgArea.selectionEnd = pos + emoji.length;
     });
-  });
+  }
+
+  document.addEventListener('click', closeEmoji, { once: false });
 
   root.querySelector('#seqSaveBtn')?.addEventListener('click', () => {
     recipientMsg = msgArea ? msgArea.value.trim() : '';
