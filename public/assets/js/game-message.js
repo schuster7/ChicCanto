@@ -1616,9 +1616,10 @@ async function _exportSeqStacked(card, recipientMessage = ''){
     });
   }
 
-  const [bgImg, heartImg] = await Promise.all([
+  const [bgImg, heartImg, logoImg] = await Promise.all([
     _loadImg(bgMobileSrc),
     _loadImg(shareImgSrc),
+    _loadImg('/assets/img/logo1.svg'),
   ]);
 
   // ── Background image (cover fill) ──
@@ -1644,12 +1645,12 @@ async function _exportSeqStacked(card, recipientMessage = ''){
 
   // ── Layout: compute block heights to center vertically ──
   const FRAMING_SIZE = 62;
-  const HEART_MAX_W  = 750;
-  const HEART_MAX_H  = 680;
+  const HEART_MAX_W  = 860;
+  const HEART_MAX_H  = 780;
   const DUE_SIZE     = 72;
-  const MSG_SIZE     = 56;
-  const BRAND_SIZE   = 30;
-  const GAP          = 40;
+  const MSG_SIZE     = 38;
+  const BRAND_SIZE   = 50;
+  const GAP          = 55;
 
   let heartW = 0, heartH = 0;
   if (heartImg){
@@ -1671,7 +1672,7 @@ async function _exportSeqStacked(card, recipientMessage = ''){
   ];
 
   const totalH = lines.reduce((s, l) => s + l.h, 0);
-  let y = (H - totalH) / 2;
+  let y = Math.max((H - totalH) / 2, 80);
 
   for (const line of lines){
     const cy = y + line.h / 2;
@@ -1679,7 +1680,7 @@ async function _exportSeqStacked(card, recipientMessage = ''){
       case 'framing':
         ctx.globalAlpha = 0.90;
         ctx.fillStyle   = accentColor;
-        ctx.font        = `700 ${FRAMING_SIZE}px ${scriptFont}`;
+        ctx.font        = `400 ${FRAMING_SIZE}px ${scriptFont}`;
         try{ ctx.fillText(shareFraming, W / 2, cy); }catch(_){}
         ctx.globalAlpha = 1;
         break;
@@ -1696,19 +1697,31 @@ async function _exportSeqStacked(card, recipientMessage = ''){
         try{ ctx.fillText(dueText, W / 2, cy); }catch(_){}
         break;
       case 'msg':
-        ctx.globalAlpha = 0.85;
+        ctx.globalAlpha = 0.75;
         ctx.fillStyle   = accentColor;
-        ctx.font        = `400 ${MSG_SIZE}px ${scriptFont}`;
+        ctx.font        = `400 ${MSG_SIZE}px 'Inter', system-ui, sans-serif`;
         try{ ctx.fillText(recipientMessage, W / 2, cy); }catch(_){}
         ctx.globalAlpha = 1;
         break;
-      case 'brand':
-        ctx.globalAlpha = 0.40;
-        ctx.fillStyle   = accentColor;
-        ctx.font        = `400 ${BRAND_SIZE}px Inter, system-ui, sans-serif`;
-        try{ ctx.fillText('ChicCanto', W / 2, cy); }catch(_){}
-        ctx.globalAlpha = 1;
+      case 'brand': {
+        const brandY = H - 80 - BRAND_SIZE;
+        if (logoImg) {
+          const logoW = 200;
+          const logoH = Math.round(logoW * (logoImg.naturalHeight || 46) / (logoImg.naturalWidth || 345));
+          const lx = (W - logoW) / 2;
+          const offscreen = document.createElement('canvas');
+          offscreen.width = logoW; offscreen.height = logoH;
+          const octx = offscreen.getContext('2d');
+          octx.drawImage(logoImg, 0, 0, logoW, logoH);
+          octx.globalCompositeOperation = 'source-in';
+          octx.fillStyle = '#ffffff';
+          octx.fillRect(0, 0, logoW, logoH);
+          ctx.globalAlpha = 0.85;
+          try{ ctx.drawImage(offscreen, lx, brandY + (BRAND_SIZE - logoH) / 2, logoW, logoH); }catch(_){}
+          ctx.globalAlpha = 1;
+        }
         break;
+      }
     }
     y += line.h;
   }
