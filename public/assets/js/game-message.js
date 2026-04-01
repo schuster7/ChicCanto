@@ -1394,6 +1394,21 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
         underlayEl.style.opacity    = '1';
         underlayEl.style.transform  = 'scale(1)';
       }
+
+      // Swap title text and color
+      const titleEl = root.querySelector('.seq-title');
+      if (titleEl) {
+        titleEl.style.transition = 'opacity 600ms ease';
+        titleEl.style.opacity = '0';
+        setTimeout(() => {
+          const newTitle = card.gender === 'girl'
+            ? (card.language === 'de' ? 'Wir erwarten ein M\u00e4dchen' : 'We are expecting a baby girl')
+            : (card.language === 'de' ? 'Wir erwarten einen Jungen' : 'We are expecting a baby boy');
+          titleEl.textContent = newTitle;
+          titleEl.style.color = accent;
+          titleEl.style.opacity = '1';
+        }, 400);
+      }
     }, 3000);
 
     // Step B (t=4700ms): inject and fade in gender word
