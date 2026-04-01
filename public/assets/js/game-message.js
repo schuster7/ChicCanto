@@ -1634,21 +1634,38 @@ function _renderSeqShareScreen(root, card){
     recipientMsg = msgArea ? msgArea.value.trim() : '';
     _exportSeqStacked(card, recipientMsg);
   });
-  root.querySelector('#seqShareBtn')?.addEventListener('click', () => _seqShare(card));
+  root.querySelector('#seqShareBtn')?.addEventListener('click', async function(){
+    const msg = msgArea ? msgArea.value.trim() : '';
+    await _seqShare(card, msg, this);
+  });
 }
 
 
 // ── Share helper ──────────────────────────────────────────────────────────────
 
-async function _seqShare(card){
-  const url = `${window.location.origin}/open/?token=${card.token}`;
+async function _seqShare(card, recipientMsg, btn){
+  const origText = btn ? btn.textContent : 'Share';
+  if (btn){ btn.disabled = true; btn.textContent = 'Sharing…'; }
   try{
-    if (navigator.share){
-      await navigator.share({ url, text: 'Watch our gender reveal! 🎉' });
+    const blob = await _exportSeqStacked(card, recipientMsg, true);
+    const file = new File([blob], 'gender-reveal.jpg', { type: 'image/jpeg' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      await navigator.share({ files: [file] });
     } else {
-      await copyText(url);
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement('a');
+      a.href     = url;
+      a.download = 'gender-reveal.jpg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
-  }catch(_){}
+  }catch(e){
+    if (e && e.name === 'AbortError') return;
+  }finally{
+    if (btn){ btn.disabled = false; btn.textContent = origText; }
+  }
 }
 
 
@@ -1656,7 +1673,7 @@ async function _seqShare(card){
 //
 // framing text | heart image | due date | recipient message | branding
 
-async function _exportSeqStacked(card, recipientMessage = ''){
+async function _exportSeqStacked(card, recipientMessage = '', returnBlob = false){
   const theme  = getCardTheme(card.card_key) || {};
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
@@ -1866,7 +1883,10 @@ async function _exportSeqStacked(card, recipientMessage = ''){
     ctx.globalAlpha = 1;
   }
 
-  // ── Download ──
+  // ── Return blob (for share) or download ──
+  if (returnBlob){
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+  }
   try{
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
     const a = document.createElement('a');
