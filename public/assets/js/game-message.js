@@ -1523,9 +1523,9 @@ function _renderSeqShareScreen(root, card){
             <button type="button" id="seqEmojiToggle" style="background:none;border:none;cursor:pointer;padding:0.1rem;line-height:1;opacity:0.75;"><img src="/assets/img/emoji-select1.svg" alt="emoji" style="width:1.5rem;height:1.5rem;display:block;"></button>
             <span id="seqShareMsgCount" style="font-size:0.78rem;color:${accentColor};opacity:0.6;">110</span>
           </div>
-          <div id="seqEmojiPanel" style="display:none;position:absolute;left:0.5rem;bottom:calc(100% + 0.3rem);background:rgba(255,255,255,0.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;padding:0.6rem;box-shadow:0 4px 20px rgba(0,0,0,0.10);z-index:100;width:220px;">
+          <div id="seqEmojiPanel" style="display:none;position:absolute;left:0.5rem;bottom:calc(100% + 0.3rem);background:rgba(255,255,255,0.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;padding:0.6rem;box-shadow:0 4px 20px rgba(0,0,0,0.10);z-index:100;width:260px;">
             <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0.3rem;">
-              ${['💙','💗','💜','🤍','🧡','💛','👶','🍼','🧸','👼','🤰','🌱','🎉','🎊','✨','🥂','🎈','🎁','👨‍👩‍👦','👨‍👩‍👧','🫂','🤗','😍','🥹','🌸','🌈','⭐','🌙','🦋','🌻','😊','🙏','💫','🍀','🕊️','📸'].map(e =>
+              ${['💙','💗','💜','🤍','❤️','💛','👶','🍼','🧸','👼','🤰','🌱','🎉','🎊','✨','🥂','🎈','🎁','👪','🤗','😍','🥹','😊','🙏','🌸','🌈','⭐','🌙','🦋','🌻','💫','🍀','🌟','🎀','🍭','📸'].map(e =>
                 `<button type="button" data-emoji="${e}" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.2rem;border-radius:6px;line-height:1;">${e}</button>`
               ).join('')}
             </div>
