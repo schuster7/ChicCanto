@@ -1609,7 +1609,7 @@ async function _exportSeqStacked(card, recipientMessage = ''){
   const [bgImg, heartImg, logoImg] = await Promise.all([
     _loadImg(bgMobileSrc),
     _loadImg(shareImgSrc),
-    _loadImg('/assets/img/logo1.svg'),
+    _loadImg('/assets/img/logo1_white.png'),
   ]);
 
   // ── Background image (cover fill) ──
