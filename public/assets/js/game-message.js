@@ -1301,6 +1301,7 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig){
         titleEl.style.opacity = '0';
         setTimeout(() => {
           titleEl.textContent = cfg.titleRevealed;
+          titleEl.style.color = _resolvedAccent;
           titleEl.style.opacity = '1';
         }, 300);
       }
