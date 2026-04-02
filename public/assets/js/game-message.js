@@ -1544,10 +1544,11 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
             || (card.gender === 'girl'
               ? (card.language === 'de' ? 'Wir erwarten ein M\u00e4dchen' : 'We are expecting a baby girl')
               : (card.language === 'de' ? 'Wir erwarten einen Jungen' : 'We are expecting a baby boy'));
-          titleEl.style.transition = 'opacity 600ms ease-in';
-          titleEl.getBoundingClientRect();
+          titleEl.style.transition = 'none';
           if (newTitle){ titleEl.textContent = newTitle; }
           titleEl.style.color = accent;
+          titleEl.getBoundingClientRect();
+          titleEl.style.transition = 'opacity 600ms ease-in';
           titleEl.style.opacity = '1';
         }, 400);
       }
