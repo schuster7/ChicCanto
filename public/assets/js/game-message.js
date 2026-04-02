@@ -1538,10 +1538,12 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
         titleEl.style.transition = 'opacity 600ms ease';
         titleEl.style.opacity = '0';
         setTimeout(() => {
-          const newTitle = cfg.titleRevealed || null;
-          console.log('[title swap]', card.gender, card.language, newTitle);
+          const newTitle = cfg.titleRevealed
+            || (card.gender === 'girl'
+              ? (card.language === 'de' ? 'Wir erwarten ein M\u00e4dchen' : 'We are expecting a baby girl')
+              : (card.language === 'de' ? 'Wir erwarten einen Jungen' : 'We are expecting a baby boy'));
           if (newTitle){ titleEl.textContent = newTitle; }
-          titleEl.style.color = theme.titleColor || '#5a4a3a';
+          titleEl.style.color = accent;
           titleEl.style.opacity = '1';
         }, 400);
       }
