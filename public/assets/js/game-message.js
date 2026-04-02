@@ -1431,7 +1431,10 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
         titleEl.style.transition = 'opacity 600ms ease-in';
         titleEl.style.opacity = '0';
         setTimeout(() => {
+          titleEl.style.transition = 'none';
           titleEl.textContent = cfg.titleRevealed;
+          titleEl.getBoundingClientRect();
+          titleEl.style.transition = 'opacity 600ms ease-in';
           titleEl.style.opacity = '1';
         }, 300);
       }
