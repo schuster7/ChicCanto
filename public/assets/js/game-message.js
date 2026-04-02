@@ -1507,11 +1507,13 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
 
         if (msgStage){
           msgStage.classList.add('seq-reveal-flooding');
+          msgStage.style.transition = 'background 2000ms ease';
           msgStage.style.background = bgColor;
         }
         document.documentElement.classList.add('seq-reveal-flooding');
         document.documentElement.style.setProperty('--page-bg',  bgColor);
         document.documentElement.style.setProperty('--page-bg1', bgColor);
+        document.documentElement.style.transition = 'background 2000ms ease';
         document.documentElement.style.background = bgColor;
 
         // Swap card-bg to flood variant
