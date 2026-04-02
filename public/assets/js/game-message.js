@@ -1429,9 +1429,14 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
     // ── Step 0 ──
     const continueWrap = root.querySelector('#seqContinueWrap');
 
-    // 2. Swap title to titleRevealed with a fade-out/fade-in
+    // 2. Swap title to titleRevealed with a fade-out/fade-in; fade out from_line permanently
     if (cfg.titleRevealed){
-      const titleEl = root.querySelector('.seq-title');
+      const titleEl  = root.querySelector('.seq-title');
+      const fromEl   = root.querySelector('.seq-step0-from');
+      if (fromEl){
+        fromEl.style.transition = 'opacity 600ms ease-in';
+        fromEl.style.opacity = '0';
+      }
       if (titleEl){
         titleEl.style.transition = 'opacity 600ms ease-in';
         titleEl.style.opacity = '0';
