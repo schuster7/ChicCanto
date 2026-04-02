@@ -4,181 +4,169 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>ChicCanto | Open</title>
-  <meta name="description" content="Open your ChicCanto scratch card in your browser for a stable reveal."/>
-<meta property="og:title" content="ChicCanto Scratch Card"/>
-<meta property="og:description" content="Some chat apps use in-app browsers. Copy the link and open it in your browser for a stable reveal."/>
-<meta property="og:type" content="website"/>
-<meta property="og:image" content="https://chiccanto.pages.dev/assets/img/preview-messenger.jpg"/>
-<meta property="og:url" content="https://chiccanto.pages.dev/open/"/>
-<meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content="ChicCanto Scratch Card"/>
-<meta name="twitter:description" content="Copy the link and open it in your browser for a stable reveal."/>
-<meta name="twitter:image" content="https://chiccanto.pages.dev/assets/img/preview-messenger.jpg"/>
-<link href="/favicon.ico" rel="icon"/>
+  <title>ChicCanto | You've got a scratch card</title>
+  <meta name="description" content="Someone sent you a ChicCanto scratch card."/>
+  <meta property="og:title" content="ChicCanto Scratch Card"/>
+  <meta property="og:description" content="Someone sent you a scratch card — open it in your browser."/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:image" content="https://chiccanto.pages.dev/assets/img/preview-messenger.jpg"/>
+  <meta property="og:url" content="https://chiccanto.pages.dev/open/"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="ChicCanto Scratch Card"/>
+  <meta name="twitter:description" content="Someone sent you a scratch card — open it in your browser."/>
+  <meta name="twitter:image" content="https://chiccanto.pages.dev/assets/img/preview-messenger.jpg"/>
+  <link href="/favicon.ico" rel="icon"/>
   <link href="/assets/css/base.css" rel="stylesheet"/>
-
   <style>
-    .cc-open-divider{height:1px;background:rgba(255,255,255,.12);margin:18px 0;}
-    .cc-open-steps{display:grid;gap:10px;margin:12px 0 14px;}
-    .cc-open-step{padding:10px 12px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(255,255,255,.04);}
-    .cc-open-step.is-primary{border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.07);}
-    .cc-open-note{margin-top:12px;}
-    .cc-open-block{display:block;}
-  </style>
+    html, body {
+      min-height: 100vh;
+      background: #fcf8f5;
+    }
 
+    .cc-inapp-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(70, 55, 40, 0.94);
+      color: #fff;
+      padding: 0.9rem 1.25rem;
+      font-size: 0.875rem;
+      text-align: center;
+      line-height: 1.6;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+    .cc-inapp-banner strong {
+      display: block;
+      margin-bottom: 0.1rem;
+      font-size: 0.95rem;
+    }
+
+    .cc-intro {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 5rem 2rem 3rem;
+      text-align: center;
+      box-sizing: border-box;
+      opacity: 0;
+      transition: opacity 500ms ease;
+    }
+    .cc-intro.is-ready { opacity: 1; }
+
+    .cc-intro__logo {
+      width: 110px;
+      margin-bottom: 3rem;
+      opacity: 0.8;
+    }
+
+    .cc-intro__sender {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.9rem, 6.5vw, 3rem);
+      font-weight: 500;
+      color: #5a4a3a;
+      line-height: 1.2;
+      margin-bottom: 0.65rem;
+    }
+
+    .cc-intro__flavour {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: clamp(0.95rem, 3vw, 1.05rem);
+      color: #9a8a78;
+      margin-bottom: 2.75rem;
+      line-height: 1.5;
+    }
+
+    .cc-intro__cta {
+      font-size: 1.05rem;
+      padding: 0.9rem 2.75rem;
+      border-radius: 50px;
+      min-width: 210px;
+    }
+
+    .cc-intro__powered {
+      margin-top: 3.5rem;
+      font-size: 0.75rem;
+      color: #c0b0a0;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+  </style>
 </head>
 
-<body class="theme-default" data-page="redeem">
-  <header class="site-header">
-    <div class="site-header__inner">
-      <a class="brand" href="/activate/" aria-label="ChicCanto activate">
-        <img alt="ChicCanto" class="brand__logo" src="/assets/img/logo1.svg"/>
-      </a>
-      <div class="site-header__actions">
-        <a class="btn outline" href="/faq/">FAQ</a>
-      </div>
-    </div>
-  </header>
+<body class="theme-default">
 
-  <main class="page-main">
-    <div class="container">
-      <section class="flow-screen">
-        <div class="flow-layout">
-          <div class="flow-intro">
-            <h1 class="flow-title">Open in your browser</h1>
-            <p class="flow-lead muted panel-meta">
-              Scratching does not work inside Messenger.
-              Open this link in your phone’s browser.
-              
-            </p>
-          </div>
+  <div class="cc-inapp-banner" id="inappBanner" style="display:none;">
+    <strong>Scratching doesn't work inside this app</strong>
+    Tap ··· (iOS) or ⋮ (Android) and choose <em>Open in browser</em>
+  </div>
 
-          <section aria-label="Open card" class="flow-panel--combined panel panel--glass panel--padded">
-            <div class="cc-open-block">
-              <div class="panel-meta">
-                <div>Step 1</div>
-                <div class="flow-panel__hint">Open in external browser</div>
-              </div>
-
-              <div class="cc-open-steps" role="list">
-                <div class="cc-open-step" id="iosStep" role="listitem">iOS: Tap ⋯ → Open in external browser</div>
-                <div class="cc-open-step" id="androidStep" role="listitem">Android: Tap ⋮ → Open in browser</div>
-              </div>
-
-              <button class="btn" id="openBtn" type="button">Open card</button>
-            </div>
-
-            <div class="cc-open-divider" role="separator" aria-hidden="true"></div>
-
-            <div class="cc-open-block">
-              <div class="panel-meta">
-                <div>Card link</div>
-                <div class="flow-panel__hint">Copy link instead</div>
-              </div>
-
-              <div class="control-grid">
-                <div class="field">
-                  <input class="input" id="cardLink" readonly type="text"/>
-                </div>
-
-                <button class="btn outline" id="copyBtn" type="button">Copy link</button>
-              </div>
-
-              <p class="muted small cc-open-note" id="helpText">Paste the link into your browser.</p>
-              <a class="muted small" href="#" id="continueLink">Continue here anyway</a>
-            </div>
-          </section>
-        </div>
-      </section>
-
-      <footer class="site-footer">
-        <a class="footer-link" href="/privacy/">Privacy</a>
-        <span class="dot">•</span>
-        <a class="footer-link" href="mailto:chiccanto@wearrs.com">chiccanto@wearrs.com</a>
-      </footer>
-    </div>
-  </main>
+  <div class="cc-intro" id="introScreen">
+    <img class="cc-intro__logo" src="/assets/img/logo1.svg" alt="ChicCanto"/>
+    <div class="cc-intro__sender" id="introSender">Someone has a surprise for you</div>
+    <div class="cc-intro__flavour" id="introFlavour">They've left something just for you</div>
+    <button class="btn primary cc-intro__cta" type="button" id="openCardBtn">Open your card →</button>
+    <div class="cc-intro__powered">Powered by ChicCanto</div>
+  </div>
 
   <script>
     (function () {
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get("token");
-
-      const origin = window.location.origin;
+      const params  = new URLSearchParams(window.location.search);
+      const token   = params.get('token');
+      const origin  = window.location.origin;
       const cardUrl = token ? `${origin}/card/?token=${encodeURIComponent(token)}` : `${origin}/`;
 
-      const ua = navigator.userAgent || "";
+      const ua       = navigator.userAgent || '';
+      const isInApp  = /(FBAN|FBAV|FB_IAB|FB4A|FBMD|Instagram|Messenger)/i.test(ua);
       const isMobile = /(iPhone|iPad|iPod|Android|Mobi)/i.test(ua);
-      const isInApp = /(FBAN|FBAV|FB_IAB|FB4A|FBMD|Instagram|Messenger)/i.test(ua);
 
-      
+      const introScreen = document.getElementById('introScreen');
+      const senderEl    = document.getElementById('introSender');
+      const flavourEl   = document.getElementById('introFlavour');
+      const openBtn     = document.getElementById('openCardBtn');
+      const inappBanner = document.getElementById('inappBanner');
 
-      // If we are already in a normal browser (not an in-app webview), go straight to the card.
-      // /open/ is only meant as a handoff screen for Messenger/Instagram in-app browsers.
-      if (token && !isInApp) {
-        window.location.replace(cardUrl);
-        return;
+      if (isInApp && isMobile) {
+        inappBanner.style.display = 'block';
+        introScreen.style.paddingTop = '7rem';
       }
-const input = document.getElementById("cardLink");
-      const openBtn = document.getElementById("openBtn");
-      const copyBtn = document.getElementById("copyBtn");
-      const continueLink = document.getElementById("continueLink");
-      const helpText = document.getElementById("helpText");
 
-      input.value = cardUrl;
-      continueLink.href = cardUrl;
+      function getFlavour(card_key) {
+        if (!card_key) return "They've left something just for you";
+        if (card_key === 'gender-reveal')  return "They're about to share some big news";
+        if (card_key === 'custom-card')    return "They've hidden a message just for you";
+        if (/novice|advanced|birthday/i.test(card_key)) return "They've got a prize waiting for you";
+        return "They've left something just for you";
+      }
 
-      const setCopied = () => {
-        copyBtn.disabled = true;
-        copyBtn.textContent = "Copied";
-        window.setTimeout(() => { copyBtn.textContent = "Copy link"; copyBtn.disabled = false; }, 1200);
-      };
-
-      copyBtn.addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(cardUrl);
-          setCopied();
-        } catch (e) {
-          input.focus();
-          input.select();
-          document.execCommand("copy");
-          setCopied();
+      function render(fromLine, card_key) {
+        if (fromLine) {
+          senderEl.textContent = fromLine + ' have a surprise for you';
         }
-      });
+        flavourEl.textContent = getFlavour(card_key);
+        introScreen.classList.add('is-ready');
+      }
 
-      openBtn.addEventListener("click", () => {
+      openBtn.addEventListener('click', () => {
         window.location.href = cardUrl;
       });
 
-      // Desktop: Open is useful. Mobile in-app: Open is misleading (still in-app).
-      const isIOS = /(iPhone|iPad|iPod)/i.test(ua);
-      const iosStep = document.getElementById("iosStep");
-      const androidStep = document.getElementById("androidStep");
-
-      // Emphasize the correct menu hint for the current device.
-      if (isIOS) {
-        iosStep.classList.add("is-primary");
-      } else {
-        androidStep.classList.add("is-primary");
-      }
-
-      if (isInApp && isMobile) {
-        openBtn.style.display = "none";
-        continueLink.style.display = "none";
-      } else if (!isInApp) {
-        // Not in-app: allow a one-tap open.
-        continueLink.style.display = "none";
-      }
-
       if (!token) {
-        openBtn.disabled = true;
-        copyBtn.disabled = true;
-        continueLink.style.display = "none";
-        input.value = "Missing token in link.";
-        helpText.textContent = "This link is missing a token.";
+        render(null, null);
+        return;
       }
+
+      fetch('/token/' + encodeURIComponent(token))
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          const fromLine = data && data.from_line ? data.from_line : null;
+          const card_key = data && data.card_key  ? data.card_key  : null;
+          render(fromLine, card_key);
+        })
+        .catch(function() { render(null, null); });
     })();
   </script>
+
 </body>
 </html>
