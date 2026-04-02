@@ -1402,11 +1402,6 @@ function _renderSeqScratch(root, card, options = {}){
     onScratched: () => _onSeqStepScratched(root, card, stepIndex, cfg, theme, options),
     hintStyle: 'thin',
   });
-
-  if (isFinal){
-    const heartBgEl = root.querySelector('.seq-heart-bg');
-    if (heartBgEl) heartBgEl.style.opacity = '0';
-  }
 }
 
 
@@ -1485,6 +1480,7 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
     const underFoilEl  = root.querySelector('.seq-under-foil-text');
     const msgStage     = root.querySelector('.msg-stage');
     const heartArea    = root.querySelector('.seq-heart-area');
+    const heartBgEl    = root.querySelector('.seq-heart-bg');
 
     // Resolve flood color with fallback in case it's still an object
     let bgColor = cfg.floodPageBg;
@@ -1536,6 +1532,7 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
         underlayEl.style.opacity    = '1';
         underlayEl.style.transform  = 'scale(1)';
       }
+      if (heartBgEl) heartBgEl.style.opacity = '0';
 
       // Swap title text and color
       const titleEl = root.querySelector('.seq-title');
@@ -1547,9 +1544,10 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
             || (card.gender === 'girl'
               ? (card.language === 'de' ? 'Wir erwarten ein M\u00e4dchen' : 'We are expecting a baby girl')
               : (card.language === 'de' ? 'Wir erwarten einen Jungen' : 'We are expecting a baby boy'));
+          titleEl.style.transition = 'opacity 600ms ease-in';
+          titleEl.getBoundingClientRect();
           if (newTitle){ titleEl.textContent = newTitle; }
           titleEl.style.color = accent;
-          titleEl.style.transition = 'opacity 600ms ease-in';
           titleEl.style.opacity = '1';
         }, 400);
       }
