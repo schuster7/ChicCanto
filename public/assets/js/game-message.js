@@ -1497,8 +1497,8 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
 
     // Phase 2 — Animation begins (t=3000ms)
     setTimeout(() => {
-      // Step A: hide underText, start flood, reveal underlay
-      if (underFoilEl) underFoilEl.style.display = 'none';
+      // Step A: fade out underText, start flood, reveal underlay
+      if (underFoilEl) underFoilEl.style.opacity = '0';
 
       if (bgColor){
         // Background flood via CSS transition
@@ -1535,7 +1535,10 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
         underlayEl.style.opacity    = '1';
         underlayEl.style.transform  = 'scale(1)';
       }
-      if (heartBgEl) heartBgEl.style.opacity = '0';
+      if (heartBgEl){
+        heartBgEl.style.transition = 'opacity 600ms ease';
+        heartBgEl.style.opacity = '0';
+      }
 
       // Swap title text and color
       const titleEl = root.querySelector('.seq-title');
