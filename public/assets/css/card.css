@@ -1530,7 +1530,7 @@ border-radius: var(--scratch-tile-radius);
 }
 /* cloud2: below cloud1, nudged left toward center */
 .seq-cloud-right2 {
-  top: 5%;
+  top: 7%;
   right: 10%;
   width: 32%;
   transform: translateX(60px);
