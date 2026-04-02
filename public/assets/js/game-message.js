@@ -1449,43 +1449,45 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, options = 
     // Resolve flood color with fallback in case it's still an object
     let bgColor = cfg.floodPageBg;
     if (typeof bgColor === 'object' && bgColor) bgColor = bgColor[card.gender] || bgColor.boy;
-    if (!bgColor) bgColor = card.gender === 'girl' ? '#f2cee9' : '#cedaef';
+    if (!bgColor) bgColor = null;
 
     // Resolve accent color with same fallback
     let accent = cfg.accentColor;
     if (typeof accent === 'object' && accent) accent = accent[card.gender] || accent.boy;
-    if (!accent) accent = card.gender === 'girl' ? '#6d3f64' : '#445f75';
+    if (!accent) accent = theme.titleColor || '#5a4a3a';
 
     // Phase 2 — Animation begins (t=3000ms)
     setTimeout(() => {
       // Step A: hide underText, start flood, reveal underlay
       if (underFoilEl) underFoilEl.style.display = 'none';
 
-      // Background flood via CSS transition
-      document.body.style.transition = 'background 2000ms ease';
-      document.body.style.background = bgColor;
+      if (bgColor){
+        // Background flood via CSS transition
+        document.body.style.transition = 'background 2000ms ease';
+        document.body.style.background = bgColor;
 
-      if (msgStage){
-        msgStage.classList.add('seq-reveal-flooding');
-        msgStage.style.background = bgColor;
-      }
-      document.documentElement.classList.add('seq-reveal-flooding');
-      document.documentElement.style.setProperty('--page-bg',  bgColor);
-      document.documentElement.style.setProperty('--page-bg1', bgColor);
-      document.documentElement.style.background = bgColor;
+        if (msgStage){
+          msgStage.classList.add('seq-reveal-flooding');
+          msgStage.style.background = bgColor;
+        }
+        document.documentElement.classList.add('seq-reveal-flooding');
+        document.documentElement.style.setProperty('--page-bg',  bgColor);
+        document.documentElement.style.setProperty('--page-bg1', bgColor);
+        document.documentElement.style.background = bgColor;
 
-      // Swap card-bg to flood variant
-      const bgPic = root.querySelector('.seq-card-bg');
-      if (bgPic && cfg.bgFloodSrc){
-        bgPic.style.transition = 'none';
-        bgPic.style.opacity    = '0';
-        const source = bgPic.querySelector('source');
-        const img    = bgPic.querySelector('img');
-        if (source) source.srcset = cfg.bgFloodSrc.desktop || '';
-        if (img)    img.src       = cfg.bgFloodSrc.mobile  || cfg.bgFloodSrc.desktop || '';
-        bgPic.getBoundingClientRect();
-        bgPic.style.transition = 'opacity 600ms ease';
-        bgPic.style.opacity    = '1';
+        // Swap card-bg to flood variant
+        const bgPic = root.querySelector('.seq-card-bg');
+        if (bgPic && cfg.bgFloodSrc){
+          bgPic.style.transition = 'none';
+          bgPic.style.opacity    = '0';
+          const source = bgPic.querySelector('source');
+          const img    = bgPic.querySelector('img');
+          if (source) source.srcset = cfg.bgFloodSrc.desktop || '';
+          if (img)    img.src       = cfg.bgFloodSrc.mobile  || cfg.bgFloodSrc.desktop || '';
+          bgPic.getBoundingClientRect();
+          bgPic.style.transition = 'opacity 600ms ease';
+          bgPic.style.opacity    = '1';
+        }
       }
 
       // Reveal underlay image with scale-up transition
@@ -1501,10 +1503,8 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, options = 
         titleEl.style.transition = 'opacity 600ms ease';
         titleEl.style.opacity = '0';
         setTimeout(() => {
-          const newTitle = card.gender === 'girl'
-            ? (card.language === 'de' ? 'Wir erwarten ein M\u00e4dchen' : 'We are expecting a baby girl')
-            : (card.language === 'de' ? 'Wir erwarten einen Jungen' : 'We are expecting a baby boy');
-          titleEl.textContent = newTitle;
+          const newTitle = cfg.titleRevealed || null;
+          if (newTitle){ titleEl.textContent = newTitle; }
           titleEl.style.color = accent;
           titleEl.style.opacity = '1';
         }, 400);
@@ -1607,17 +1607,16 @@ function _renderSeqRevealed(root, card){
 // ── Share screen (post-reveal destination) ────────────────────────────────────
 
 function _renderSeqShareScreen(root, card){
-  const theme  = getCardTheme(card.card_key) || {};
+  const theme      = getCardTheme(card.card_key) || {};
+  const totalSteps = (theme.steps || []).length || 2;
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
 
-  const step1cfg    = getSeqStepConfig(card.card_key, 1, lang, gender);
-  const accentColor = step1cfg.accentColor || (gender === 'girl' ? '#6d3f64' : '#445f75');
-  const bgColor     = step1cfg.floodPageBg || (gender === 'girl' ? '#f2cee9' : '#cedaef');
-  const shareFraming = step1cfg.shareFraming || (gender === 'girl' ? 'We are expecting a baby girl' : 'We are expecting a baby boy');
-  const shareImgSrc  = step1cfg.shareImageSrc || (gender === 'girl'
-    ? '/assets/cards/gender-reveal1/step2-girl/heart-girl_o1.png'
-    : '/assets/cards/gender-reveal1/step2-boy/heart-boy_o1.png');
+  const step1cfg    = getSeqStepConfig(card.card_key, totalSteps - 1, lang, gender);
+  const accentColor = step1cfg.accentColor || theme.titleColor || '#5a4a3a';
+  const bgColor     = step1cfg.floodPageBg || theme.pageBg || '#fcf8f5';
+  const shareFraming = step1cfg.shareFraming || null;
+  const shareImgSrc  = step1cfg.shareImageSrc || null;
   const dueText = _formatDueMonth(card.due_month, lang);
 
   document.body.style.transition = 'none';
@@ -1637,17 +1636,17 @@ function _renderSeqShareScreen(root, card){
           <img src="${gender === 'girl' ? '/assets/cards/gender-reveal1/step2-girl/bg-mobile.jpg' : '/assets/cards/gender-reveal1/step2-boy/bg-mobile.jpg'}" alt="" draggable="false" loading="eager">
         </picture>
 
-        <div class="seq-share__framing" style="
+        ${shareFraming ? `<div class="seq-share__framing" style="
           font-family:'Dancing Script',cursive;
           font-weight:400;
           font-size:clamp(1.6rem,5vw,2.4rem);
           color:${accentColor};
           text-align:center;
           opacity:0.9;
-        ">${_escHtml(shareFraming)}</div>
+        ">${_escHtml(shareFraming)}</div>` : ''}
 
-        <img class="seq-share__heart" src="${shareImgSrc}" alt="" draggable="false"
-             style="width:min(85%,460px);height:auto;flex-shrink:0;">
+        ${shareImgSrc ? `<img class="seq-share__heart" src="${shareImgSrc}" alt="" draggable="false"
+             style="width:min(85%,460px);height:auto;flex-shrink:0;">` : ''}
 
         ${dueText ? `<div class="seq-share__due" style="
           font-family:'Dancing Script',cursive;
@@ -1788,19 +1787,16 @@ async function _seqShare(card, recipientMsg, btn){
 // framing text | heart image | due date | recipient message | branding
 
 async function _exportSeqStacked(card, recipientMessage = '', returnBlob = false){
-  const theme  = getCardTheme(card.card_key) || {};
+  const theme      = getCardTheme(card.card_key) || {};
+  const totalSteps = (theme.steps || []).length || 2;
   const lang   = card.language || theme.defaultLanguage || 'en';
   const gender = card.gender || 'boy';
 
-  const step1cfg    = getSeqStepConfig(card.card_key, 1, lang, gender);
-  const accentColor = step1cfg.accentColor || (gender === 'girl' ? '#6d3f64' : '#445f75');
-  const shareFraming = step1cfg.shareFraming || (gender === 'girl' ? 'We are expecting a baby girl' : 'We are expecting a baby boy');
-  const shareImgSrc  = step1cfg.shareImageSrc || (gender === 'girl'
-    ? '/assets/cards/gender-reveal1/step2-girl/heart-girl_o1.png'
-    : '/assets/cards/gender-reveal1/step2-boy/heart-boy_o1.png');
-  const bgMobileSrc = gender === 'girl'
-    ? '/assets/cards/gender-reveal1/step2-girl/bg-mobile.jpg'
-    : '/assets/cards/gender-reveal1/step2-boy/bg-mobile.jpg';
+  const step1cfg    = getSeqStepConfig(card.card_key, totalSteps - 1, lang, gender);
+  const accentColor = step1cfg.accentColor || theme.titleColor || '#5a4a3a';
+  const shareFraming = step1cfg.shareFraming || null;
+  const shareImgSrc  = step1cfg.shareImageSrc || null;
+  const bgMobileSrc = step1cfg.bgFloodSrc?.[gender]?.mobile || step1cfg.bgMobileSrc || null;
   const dueText = _formatDueMonth(card.due_month, lang);
 
   const W = 1080;
@@ -1842,7 +1838,7 @@ async function _exportSeqStacked(card, recipientMessage = '', returnBlob = false
     try{ ctx.drawImage(bgImg, dx, dy, dw, dh); }catch(_){}
   } else {
     // fallback flat color
-    const bgColor = step1cfg.floodPageBg || (gender === 'girl' ? '#f2cee9' : '#cedaef');
+    const bgColor = step1cfg.floodPageBg || theme.pageBg || '#f0ece8';
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, W, H);
   }
@@ -1870,8 +1866,7 @@ async function _exportSeqStacked(card, recipientMessage = '', returnBlob = false
   }
 
   const lines = [
-    { type: 'framing', h: FRAMING_SIZE },
-    { type: 'gap',     h: GAP },
+    ...(shareFraming      ? [{ type: 'framing', h: FRAMING_SIZE }, { type: 'gap', h: GAP }] : []),
     { type: 'heart',   h: heartH || HEART_MAX_H },
     { type: 'gap',     h: GAP },
     ...(dueText          ? [{ type: 'due', h: DUE_SIZE }, { type: 'gap', h: GAP * 0.75 }] : []),
@@ -1885,6 +1880,7 @@ async function _exportSeqStacked(card, recipientMessage = '', returnBlob = false
     const cy = y + line.h / 2;
     switch(line.type){
       case 'framing': {
+        if (!shareFraming) break;
         ctx.globalAlpha = 0.90;
         ctx.fillStyle   = accentColor;
         ctx.font        = `400 ${FRAMING_SIZE}px ${scriptFont}`;
