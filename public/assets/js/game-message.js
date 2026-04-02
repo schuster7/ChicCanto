@@ -1342,33 +1342,33 @@ function _renderSeqScratch(root, card, options = {}){
 
             ${isFinal && card.custom_message ? `<div class="seq-reveal-custom-msg" style="
               font-family:'Dancing Script',cursive;
-              font-size:clamp(1rem,3.5vw,1.3rem);
-              color:${_resolvedAccent};
-              opacity:0;
-              text-align:center;
-              transition:opacity 800ms ease;
-              margin-top:0.25rem;
-            ">${_escHtml(card.custom_message)}</div>` : ''}
-
-            ${isFinal && dueText ? `<div class="seq-reveal-due" id="seqRevealDue" style="
-              font-family:'Dancing Script',cursive;
-              font-size:clamp(1.3rem,4vw,1.6rem);
+              font-size:clamp(1rem,3.2vw,1.2rem);
               color:${_resolvedAccent};
               opacity:0;
               text-align:center;
               transition:opacity 800ms ease;
               margin-top:0.5rem;
+            ">${_escHtml(card.custom_message)}</div>` : ''}
+
+            ${isFinal && dueText ? `<div class="seq-reveal-due" id="seqRevealDue" style="
+              font-family:'Dancing Script',cursive;
+              font-size:clamp(1.1rem,3.5vw,1.4rem);
+              color:${_resolvedAccent};
+              opacity:0;
+              text-align:center;
+              transition:opacity 800ms ease;
+              margin-top:0.35rem;
             ">${_escHtml(dueText)}</div>` : ''}
 
             ${isFinal && card.from_line ? `<div class="seq-reveal-from" id="seqRevealFrom" style="
-              font-family:${theme.titleFont || 'inherit'};
+              font-family:${theme.titleFont || "'Dancing Script',cursive"};
               font-weight:${theme.titleWeight || '400'};
-              color:${theme.titleColor || '#5a4a3a'};
-              font-size:clamp(0.95rem,3.5vw,1.15rem);
+              font-size:clamp(0.95rem,3.2vw,1.1rem);
+              color:${_resolvedAccent};
               text-align:center;
               opacity:0;
-              transition:opacity 600ms ease;
-              margin-top:0.25rem;
+              transition:opacity 800ms ease;
+              margin-top:0.2rem;
             ">${_escHtml(card.from_line)}</div>` : ''}
 
             <div class="seq-continue-wrap" id="${continueWrapId}">
@@ -1650,10 +1650,12 @@ function _renderSeqShareScreen(root, card){
   const gender = card.gender || 'boy';
 
   const step1cfg    = getSeqStepConfig(card.card_key, totalSteps - 1, lang, gender);
-  const accentColor = step1cfg.accentColor || theme.titleColor || '#5a4a3a';
-  const bgColor     = step1cfg.floodPageBg || theme.pageBg || '#fcf8f5';
-  const shareFraming = step1cfg.shareFraming || null;
-  const shareImgSrc  = step1cfg.shareImageSrc || null;
+  const accentColor = (step1cfg && step1cfg.accentColor) || theme.titleColor || '#5a4a3a';
+  const bgColor     = (step1cfg && step1cfg.floodPageBg) || theme.pageBg || '#fcf8f5';
+  const shareFraming = (step1cfg && step1cfg.shareFraming)
+    ? step1cfg.shareFraming
+    : (gender === 'girl' ? 'We are expecting a baby girl' : 'We are expecting a baby boy');
+  const shareImgSrc  = (step1cfg && step1cfg.shareImageSrc) || null;
   const dueText = _formatDueMonth(card.due_month, lang);
 
   document.body.style.transition = 'none';
