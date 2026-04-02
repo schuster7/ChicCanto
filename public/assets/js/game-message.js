@@ -1316,6 +1316,11 @@ function _renderSeqScratch(root, card, options = {}){
               ${_escHtml(title)}
             </div>` : ''}
 
+            ${stepIndex === 0 && card.from_line ? `<div class="seq-step0-from"
+                 style="font-family:${theme.titleFont || 'inherit'};font-weight:${theme.titleWeight || '400'};color:${theme.titleColor || '#5a4a3a'};font-size:clamp(0.85rem,2.5vw,1rem);opacity:0.7;text-align:center;margin-top:-0.25rem;">
+              ${_escHtml(card.from_line)}
+            </div>` : ''}
+
             <div class="seq-heart-area" style="aspect-ratio: ${theme.scratchAspect || '400 / 350'};">
 
               <div class="seq-heart-bg" style="background:${heartFillColor};"></div>
