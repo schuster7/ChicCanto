@@ -1177,7 +1177,7 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
         gender:         selectedGender,
         custom_message: customMsg || null,
         due_month:      dueMonth,
-        from_line:      null,
+        from_line:      root.querySelector('#seqFromLine')?.value.trim() || null,
         configured:     true,
         token:          'preview',
       };
