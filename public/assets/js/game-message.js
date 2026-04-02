@@ -912,6 +912,7 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
         <div class="seq-setup__form panel panel--glass panel--padded">
           ${card.custom_message ? `<p class="seq-setup__summary muted">Personal message: <em>${_escHtml(card.custom_message)}</em></p>` : ''}
           ${card.due_month ? `<p class="seq-setup__summary muted">Due date: <em>${_escHtml(_formatDueMonth(card.due_month, lang))}</em></p>` : ''}
+          ${card.from_line ? `<p class="seq-setup__summary muted">From: <em>${_escHtml(card.from_line)}</em></p>` : ''}
           <div class="msg-setup__actions">
             <button class="btn primary" type="button" data-action="copy-link">Copy recipient link</button>
             <button class="btn" type="button" data-action="share-link">Share</button>
@@ -1023,6 +1024,16 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
           <p class="msg-setup__hint muted" style="margin-top:0.25rem">Shown on the reveal and share image.</p>
         </div>
 
+        <div class="msg-setup__field">
+          <div class="msg-setup__field-header">
+            <label for="seqFromLine">From <span class="muted">(optional):</span></label>
+            <span class="msg-setup__counter"><span id="seqFromCount">40</span> left</span>
+          </div>
+          <input type="text" id="seqFromLine" class="input" maxlength="40"
+            placeholder="e.g. Sarah &amp; Tom 💙">
+          <p class="msg-setup__hint muted" style="margin-top:0.25rem">Shown below the reveal.</p>
+        </div>
+
         <div class="msg-setup__actions">
           <button class="btn outline" type="button" data-action="try-scratch" disabled>Try scratch yourself</button>
           <button type="button" class="btn" data-action="confirm" disabled>Confirm &amp; create link</button>
@@ -1074,6 +1085,15 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
     });
   }
 
+  // ── From line counter ──
+  const fromLineInput = root.querySelector('#seqFromLine');
+  const fromLineCount = root.querySelector('#seqFromCount');
+  if (fromLineInput){
+    fromLineInput.addEventListener('input', () => {
+      if (fromLineCount) fromLineCount.textContent = String(40 - fromLineInput.value.length);
+    });
+  }
+
   // ── Confirm (double-click) ──
   if (confirmBtn){
     let confirmPending = false;
@@ -1106,6 +1126,7 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
       confirmBtn.textContent = 'Saving\u2026';
 
       const customMsg = customInput ? customInput.value.trim() : '';
+      const fromLine  = root.querySelector('#seqFromLine')?.value.trim() || '';
       const dueMVal = root.querySelector('#seqDueMonth')?.value || '';
       const dueYVal = root.querySelector('#seqDueYear')?.value || '';
       const dueMonth = (dueMVal && dueYVal) ? `${dueYVal}-${dueMVal}` : null;
@@ -1115,6 +1136,7 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
         card.gender         = selectedGender;
         card.custom_message = customMsg || null;
         card.due_month      = dueMonth;
+        card.from_line      = fromLine || null;
         card.configured     = true;
         card.current_step   = 0;
         card.revealed_steps = [];
@@ -1127,6 +1149,7 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
             gender:         selectedGender,
             custom_message: customMsg || null,
             due_month:      dueMonth,
+            from_line:      fromLine || null,
             configured:     true,
           });
         }
@@ -1154,6 +1177,7 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
         gender:         selectedGender,
         custom_message: customMsg || null,
         due_month:      dueMonth,
+        from_line:      null,
         configured:     true,
         token:          'preview',
       };
@@ -1335,6 +1359,17 @@ function _renderSeqScratch(root, card, options = {}){
               transition:opacity 800ms ease;
               margin-top:0.5rem;
             ">${_escHtml(dueText)}</div>` : ''}
+
+            ${isFinal && card.from_line ? `<div class="seq-reveal-from" id="seqRevealFrom" style="
+              font-family:${theme.titleFont || 'inherit'};
+              font-weight:${theme.titleWeight || '400'};
+              color:${theme.titleColor || '#5a4a3a'};
+              font-size:clamp(0.95rem,3.5vw,1.15rem);
+              text-align:center;
+              opacity:0;
+              transition:opacity 600ms ease;
+              margin-top:0.25rem;
+            ">${_escHtml(card.from_line)}</div>` : ''}
 
             <div class="seq-continue-wrap" id="${continueWrapId}">
               <button class="btn seq-continue-btn" type="button" id="${continueBtnId}"
@@ -1549,6 +1584,8 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, options = 
       }
       const customMsgEl = root.querySelector('.seq-reveal-custom-msg');
       if (customMsgEl){ customMsgEl.getBoundingClientRect(); customMsgEl.style.opacity = '0.85'; }
+      const fromEl = root.querySelector('#seqRevealFrom');
+      if (fromEl){ fromEl.getBoundingClientRect(); fromEl.style.opacity = '0.85'; }
     }, 4900);
 
     // Step C (t=6000ms): show Continue button, or "Looks good?" in preview
