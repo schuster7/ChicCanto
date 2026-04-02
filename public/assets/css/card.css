@@ -1549,10 +1549,9 @@ border-radius: var(--scratch-tile-radius);
 
 @media (min-width: 700px) {
   .seq-cloud-right1 { width: 18%; top: 3%; }
-  .seq-cloud-right2 { width: 20%; right: 8%; top: 15%; }
+  .seq-cloud-right2 { width: 20%; right: 8%; top: 35%; }
   .seq-cloud-left   { width: 28%; left: 6%; top: 2%; }
 }
-
 
 .seq-scratch-tile {
   position: absolute;
