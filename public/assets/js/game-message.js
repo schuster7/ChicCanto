@@ -1399,13 +1399,13 @@ function _renderSeqScratch(root, card, options = {}){
   if (!canvas) return;
 
   attachScratchTile(canvas, {
-    onScratched: () => _onSeqStepScratched(root, card, stepIndex, cfg, options),
+    onScratched: () => _onSeqStepScratched(root, card, stepIndex, cfg, theme, options),
     hintStyle: 'thin',
   });
 }
 
 
-async function _onSeqStepScratched(root, card, stepIndex, stepConfig, options = {}){
+async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, options = {}){
   const isFinal = stepIndex === 1;
   const cfg     = stepConfig;
 
@@ -1539,8 +1539,9 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, options = 
         titleEl.style.opacity = '0';
         setTimeout(() => {
           const newTitle = cfg.titleRevealed || null;
+          console.log('[title swap]', card.gender, card.language, newTitle);
           if (newTitle){ titleEl.textContent = newTitle; }
-          titleEl.style.color = accent;
+          titleEl.style.color = theme.titleColor || '#5a4a3a';
           titleEl.style.opacity = '1';
         }, 400);
       }
