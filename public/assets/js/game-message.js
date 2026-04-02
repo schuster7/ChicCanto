@@ -1402,6 +1402,11 @@ function _renderSeqScratch(root, card, options = {}){
     onScratched: () => _onSeqStepScratched(root, card, stepIndex, cfg, theme, options),
     hintStyle: 'thin',
   });
+
+  if (isFinal){
+    const heartBgEl = root.querySelector('.seq-heart-bg');
+    if (heartBgEl) heartBgEl.style.opacity = '0';
+  }
 }
 
 
@@ -1544,6 +1549,7 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
               : (card.language === 'de' ? 'Wir erwarten einen Jungen' : 'We are expecting a baby boy'));
           if (newTitle){ titleEl.textContent = newTitle; }
           titleEl.style.color = accent;
+          titleEl.style.transition = 'opacity 600ms ease-in';
           titleEl.style.opacity = '1';
         }, 400);
       }
