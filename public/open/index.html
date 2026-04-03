@@ -118,8 +118,15 @@
       margin-top: 2.5rem;
       font-size: 0.75rem;
       color: #c0b0a0;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .cc-intro__powered img {
+      width: 72px;
+      opacity: 0.45;
+      filter: invert(30%) sepia(10%) saturate(400%) hue-rotate(10deg) brightness(0.7);
     }
   </style>
 </head>
@@ -132,11 +139,10 @@
   </div>
 
   <div class="cc-intro" id="introScreen">
-    <img class="cc-intro__logo" src="/assets/img/logo1_white.png" alt="ChicCanto" style="filter:invert(1) sepia(1) saturate(0.4) hue-rotate(10deg) brightness(0.55);"/>
     <div class="cc-intro__sender" id="introSender">Someone has a surprise for you</div>
     <div class="cc-intro__flavour" id="introFlavour">They've left something just for you</div>
     <button class="btn cc-intro__cta" type="button" id="openCardBtn">Open your card →</button>
-    <div class="cc-intro__powered">Powered by ChicCanto</div>
+    <div class="cc-intro__powered">Powered by <img src="/assets/img/logo1.svg" alt="ChicCanto"></div>
   </div>
 
   <script>
