@@ -1316,11 +1316,6 @@ function _renderSeqScratch(root, card, options = {}){
               ${_escHtml(title)}
             </div>` : ''}
 
-            ${stepIndex === 0 && card.from_line ? `<div class="seq-step0-from"
-                 style="font-family:${theme.titleFont || 'inherit'};font-weight:${theme.titleWeight || '400'};color:${theme.titleColor || '#5a4a3a'};font-size:clamp(0.85rem,2.5vw,1rem);opacity:0.7;text-align:center;margin-top:-0.25rem;">
-              ${_escHtml(card.from_line)}
-            </div>` : ''}
-
             <div class="seq-heart-area" style="aspect-ratio: ${theme.scratchAspect || '400 / 350'};">
 
               <div class="seq-heart-bg" style="background:${heartFillColor};"></div>
@@ -1364,17 +1359,6 @@ function _renderSeqScratch(root, card, options = {}){
               transition:opacity 800ms ease;
               margin-top:0.35rem;
             ">${_escHtml(dueText)}</div>` : ''}
-
-            ${isFinal && card.from_line ? `<div class="seq-reveal-from" id="seqRevealFrom" style="
-              font-family:${theme.titleFont || "'Dancing Script',cursive"};
-              font-weight:${theme.titleWeight || '400'};
-              font-size:clamp(0.95rem,3.2vw,1.1rem);
-              color:${_resolvedAccent};
-              text-align:center;
-              opacity:0;
-              transition:opacity 800ms ease;
-              margin-top:0.2rem;
-            ">${_escHtml(card.from_line)}</div>` : ''}
 
             <div class="seq-continue-wrap" id="${continueWrapId}">
               <button class="btn seq-continue-btn" type="button" id="${continueBtnId}"
@@ -1432,11 +1416,6 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
     // 2. Swap title to titleRevealed with a fade-out/fade-in; fade out from_line permanently
     if (cfg.titleRevealed){
       const titleEl  = root.querySelector('.seq-title');
-      const fromEl   = root.querySelector('.seq-step0-from');
-      if (fromEl){
-        fromEl.style.transition = 'opacity 600ms ease-in';
-        fromEl.style.opacity = '0';
-      }
       if (titleEl){
         titleEl.style.transition = 'opacity 600ms ease-in';
         titleEl.style.opacity = '0';
@@ -1610,8 +1589,6 @@ async function _onSeqStepScratched(root, card, stepIndex, stepConfig, theme, opt
       }
       const customMsgEl = root.querySelector('.seq-reveal-custom-msg');
       if (customMsgEl){ customMsgEl.getBoundingClientRect(); customMsgEl.style.opacity = '0.85'; }
-      const fromEl = root.querySelector('#seqRevealFrom');
-      if (fromEl){ fromEl.getBoundingClientRect(); fromEl.style.opacity = '0.85'; }
     }, 4900);
 
     // Step C (t=6000ms): show Continue button, or "Looks good?" in preview
