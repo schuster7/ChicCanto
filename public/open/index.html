@@ -103,10 +103,10 @@
   </div>
 
   <div class="cc-intro" id="introScreen">
-    <img class="cc-intro__logo" src="/assets/img/logo1.svg" alt="ChicCanto"/>
+    <img class="cc-intro__logo" src="/assets/img/logo1_white.png" alt="ChicCanto" style="filter:invert(1) sepia(1) saturate(0.4) hue-rotate(10deg) brightness(0.55);"/>
     <div class="cc-intro__sender" id="introSender">Someone has a surprise for you</div>
     <div class="cc-intro__flavour" id="introFlavour">They've left something just for you</div>
-    <button class="btn primary cc-intro__cta" type="button" id="openCardBtn">Open your card →</button>
+    <button class="btn cc-intro__cta" type="button" id="openCardBtn">Open your card →</button>
     <div class="cc-intro__powered">Powered by ChicCanto</div>
   </div>
 
@@ -142,7 +142,8 @@
 
       function render(fromLine, card_key) {
         if (fromLine) {
-          senderEl.textContent = fromLine + ' have a surprise for you';
+          const name = fromLine.replace(/^from\s+/i, '');
+          senderEl.textContent = name + ' have a surprise for you';
         }
         flavourEl.textContent = getFlavour(card_key);
         introScreen.classList.add('is-ready');
