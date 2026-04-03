@@ -20,7 +20,15 @@
   <style>
     html, body {
       min-height: 100vh;
+      margin: 0;
+    }
+
+    body {
       background: #fcf8f5;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 20% 30%, rgba(200,180,140,.13) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 50% at 80% 70%, rgba(190,160,120,.10) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 40% at 50% 10%, rgba(220,200,160,.08) 0%, transparent 60%);
     }
 
     .cc-inapp-banner {
@@ -47,7 +55,7 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      padding: 5rem 2rem 3rem;
+      padding: 3rem 2rem 2.5rem;
       text-align: center;
       box-sizing: border-box;
       opacity: 0;
@@ -56,25 +64,26 @@
     .cc-intro.is-ready { opacity: 1; }
 
     .cc-intro__logo {
-      width: 110px;
-      margin-bottom: 3rem;
-      opacity: 0.8;
+      width: 90px;
+      margin-bottom: 2rem;
+      opacity: 0.65;
     }
 
     .cc-intro__sender {
       font-family: 'Dancing Script', cursive;
-      font-size: clamp(1.9rem, 6.5vw, 3rem);
+      font-size: clamp(2.4rem, 8vw, 3.8rem);
       font-weight: 500;
       color: #5a4a3a;
       line-height: 1.2;
-      margin-bottom: 0.65rem;
+      margin-bottom: 0.6rem;
+      max-width: 640px;
     }
 
     .cc-intro__flavour {
       font-family: 'Inter', system-ui, sans-serif;
       font-size: clamp(0.95rem, 3vw, 1.05rem);
       color: #9a8a78;
-      margin-bottom: 2.75rem;
+      margin-bottom: 2.25rem;
       line-height: 1.5;
     }
 
@@ -86,7 +95,7 @@
     }
 
     .cc-intro__powered {
-      margin-top: 3.5rem;
+      margin-top: 2.5rem;
       font-size: 0.75rem;
       color: #c0b0a0;
       letter-spacing: 0.05em;
