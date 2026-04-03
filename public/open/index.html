@@ -56,6 +56,7 @@
       justify-content: center;
       min-height: 100vh;
       padding: 3rem 2rem 2.5rem;
+      gap: 0.25rem;
       text-align: center;
       box-sizing: border-box;
       opacity: 0;
@@ -75,8 +76,27 @@
       font-weight: 500;
       color: #5a4a3a;
       line-height: 1.2;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.5rem;
       max-width: 640px;
+    }
+
+    .cc-intro__sender-name {
+      display: block;
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(2.4rem, 8vw, 3.8rem);
+      font-weight: 500;
+      color: #5a4a3a;
+      line-height: 1.15;
+      margin-bottom: 0.3rem;
+    }
+
+    .cc-intro__sender-sub {
+      display: block;
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.4rem, 4.5vw, 2rem);
+      font-weight: 400;
+      color: #7a6a58;
+      line-height: 1.3;
     }
 
     .cc-intro__flavour {
@@ -152,7 +172,7 @@
       function render(fromLine, card_key) {
         if (fromLine) {
           const name = fromLine.replace(/^from\s+/i, '');
-          senderEl.textContent = name + ' have a surprise for you';
+          senderEl.innerHTML = `<span class="cc-intro__sender-name">${name}</span><span class="cc-intro__sender-sub">have a surprise for you</span>`;
         }
         flavourEl.textContent = getFlavour(card_key);
         introScreen.classList.add('is-ready');
