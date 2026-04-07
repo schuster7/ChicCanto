@@ -1016,24 +1016,36 @@ button.btn::-moz-focus-inner {
 }
 
 .btn.nav {
-  background: transparent;
-  border: 1px solid rgba(128, 128, 128, 0.35);
-  color: inherit;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  color: #5a5a62;
   padding: 5px 14px;
   border-radius: 99px;
-  font-size: 13px;
-  font-weight: 500;
-  opacity: 0.75;
-  transition: opacity 150ms ease, background 150ms ease;
+  font-size: 12px;
+  font-weight: 400;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
 .btn.nav:hover {
-  background: rgba(128, 128, 128, 0.12);
-  opacity: 1;
+  background: #202023;
+  color: #ffffff;
+  border-color: transparent;
 }
 
 .btn.nav:active {
-  opacity: 0.6;
+  opacity: 0.8;
+}
+
+[data-color-mode="dark"] .btn.nav {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.80);
+}
+
+[data-color-mode="dark"] .btn.nav:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.40);
 }
 
 .btn.outline {
