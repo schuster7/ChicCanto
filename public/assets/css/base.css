@@ -1015,6 +1015,27 @@ button.btn::-moz-focus-inner {
   border: none;
 }
 
+.btn.nav {
+  background: transparent;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  color: inherit;
+  padding: 5px 14px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.75;
+  transition: opacity 150ms ease, background 150ms ease;
+}
+
+.btn.nav:hover {
+  background: rgba(128, 128, 128, 0.12);
+  opacity: 1;
+}
+
+.btn.nav:active {
+  opacity: 0.6;
+}
+
 .btn.outline {
   background: #d4d4dd;
   color: #5a5a62;

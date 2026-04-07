@@ -316,7 +316,7 @@ function renderCardHeaderActions(card, revealed){
     const mkBtn = (label) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'btn ghost';
+      b.className = 'btn nav';
       b.textContent = label;
       return b;
     };
@@ -359,7 +359,7 @@ function renderCardHeaderActions(card, revealed){
 
     // Preview-only: let testers jump to activation at any time.
     const activateA = document.createElement('a');
-    activateA.className = 'btn ghost';
+    activateA.className = 'btn nav';
     activateA.href = '/activate/';
     activateA.textContent = 'Activate';
     el.appendChild(activateA);
@@ -373,7 +373,7 @@ function renderCardHeaderActions(card, revealed){
   const mkBtn = (label) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'btn ghost';
+    b.className = 'btn nav';
     b.textContent = label;
     return b;
   };

@@ -1715,17 +1715,6 @@ function _renderSeqShareScreen(root, card){
           </div>
         </div>
 
-        <div class="seq-continue-wrap is-visible" style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;">
-          <button class="btn" type="button" id="seqSaveBtn"
-                  style="background:${accentColor};color:#fff;border-color:transparent;border-radius:50px;padding:0.75rem 2rem;">
-            Save as image
-          </button>
-          <button class="btn" type="button" id="seqShareBtn"
-                  style="background:${accentColor};color:#fff;border-color:transparent;border-radius:50px;padding:0.75rem 2rem;">
-            Share
-          </button>
-        </div>
-
       </div>
     </div>
   `;
@@ -1785,14 +1774,33 @@ function _renderSeqShareScreen(root, card){
 
   document.addEventListener('click', closeEmoji, { once: false });
 
-  root.querySelector('#seqSaveBtn')?.addEventListener('click', () => {
-    recipientMsg = msgArea ? msgArea.value.trim() : '';
-    _exportSeqStacked(card, recipientMsg);
-  });
-  root.querySelector('#seqShareBtn')?.addEventListener('click', async function(){
-    const msg = msgArea ? msgArea.value.trim() : '';
-    await _seqShare(card, msg, this);
-  });
+  const actionsEl = document.getElementById('cardActions');
+  if (actionsEl) {
+    actionsEl.innerHTML = '';
+
+    const mkNavBtn = (label) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn nav';
+      b.textContent = label;
+      return b;
+    };
+
+    const saveBtn = mkNavBtn('Save as image');
+    saveBtn.addEventListener('click', () => {
+      const msg = msgArea ? msgArea.value.trim() : '';
+      _exportSeqStacked(card, msg);
+    });
+
+    const shareBtn = mkNavBtn('Share');
+    shareBtn.addEventListener('click', async function() {
+      const msg = msgArea ? msgArea.value.trim() : '';
+      await _seqShare(card, msg, this);
+    });
+
+    actionsEl.appendChild(saveBtn);
+    actionsEl.appendChild(shareBtn);
+  }
 }
 
 
