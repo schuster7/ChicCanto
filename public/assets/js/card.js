@@ -2295,7 +2295,7 @@ function applyPageTheme(cardKey, cardStyle, { allowDarkMode = false, isSetup = f
 
     // Set color mode for UI theming
     const colorMode = theme.colorMode || 'dark';
-    root.dataset.colorMode = colorMode;
+    root.dataset.colorMode = (allowDarkMode && colorMode === 'dark') ? 'dark' : 'light';
 
     if (theme.pageBg){
       root.style.setProperty('--page-bg', theme.pageBg);
