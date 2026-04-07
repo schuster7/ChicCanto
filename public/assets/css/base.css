@@ -440,13 +440,17 @@ a.btn {
 /* Site header */
 .site-header {
   position: sticky;
-  top: 0;
+  top: 8px;
   z-index: 20;
   height: var(--header-h);
   display: flex;
   align-items: center;
-  width: 100%;
-  background: rgba(255, 255, 255, .60);
+  width: min(var(--page-max), calc(100% - 44px));
+  margin-inline: auto;
+  border-radius: var(--radius);
+  background: var(--ui-header-bg);
+  border: 1px solid var(--ui-header-border);
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
 }
 
 .site-header__inner {
@@ -1076,6 +1080,8 @@ button.btn::-moz-focus-inner {
   }
 
   .site-header {
+    width: min(var(--page-max), calc(100% - 24px));
+    top: 6px;
     height: 36px;
   }
 
@@ -1791,6 +1797,8 @@ button.btn::-moz-focus-inner {
   }
 
   .site-header {
+    width: min(var(--page-max), calc(100% - 24px));
+    top: 6px;
     height: 36px;
   }
 
