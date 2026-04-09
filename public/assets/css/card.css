@@ -532,14 +532,14 @@ border-radius: var(--scratch-tile-radius);
     transparent 100%
   );
 
-  transform: translateX(0) rotate(18deg);
-  animation: ccTileSheen 420ms ease-out 1;
+  transform: translateX(0) rotate(45deg);
+  animation: ccTileSheen 700ms ease-out 1;
 }
 
 @keyframes ccTileSheen{
-  0%   { transform: translateX(0) rotate(18deg); opacity: 0; }
+  0%   { transform: translateX(0) rotate(45deg); opacity: 0; }
   10%  { opacity: 1; }
-  100% { transform: translateX(260%) rotate(18deg); opacity: 0; }
+  100% { transform: translateX(260%) rotate(45deg); opacity: 0; }
 }
 
 /* Never show sheen in export */
