@@ -954,7 +954,7 @@ function render(container, token, card){
 
   const params = new URLSearchParams(window.location.search);
   const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
-  const hasSetupAccess = PREVIEW_MODE ? true : !!(setupParam && card.setup_key && setupParam === card.setup_key);
+  const hasSetupAccess = !PREVIEW_MODE && !!(setupParam && card.setup_key && setupParam === card.setup_key);
 
   applyPageTheme(card.card_key, card.card_style, { allowDarkMode: false, isSetup: hasSetupAccess });
 
@@ -1151,7 +1151,7 @@ function renderSetup(root, card, container){
           <div class="stack">
             <p class="muted no-m">See exactly what your recipient will experience. Nothing is saved or sent.</p>
             <div class="sharebar__actions" style="margin-top: 12px;">
-              <a class="btn outline" href="/card/?preview=1">Open sample card</a>
+              <a class="btn outline" href="/card/?preview=1" target="_blank" rel="noopener">Open sample card</a>
             </div>
           </div>
         </section>
