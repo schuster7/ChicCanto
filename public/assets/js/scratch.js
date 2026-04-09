@@ -47,9 +47,9 @@ function getFoilPalette(){
       }
     : {
         base: '#6a6f7a',
-        hi:   '#f5f6f8',
+        hi:   '#bebebe',
         mid:  '#aeb3bd',
-        dark: '#3c4048',
+        dark: '#7a7a7a',
         text: 'rgba(255,255,255,0.72)'
       };
 
@@ -77,8 +77,8 @@ function resizeCanvasToElement(canvas){
 
 function paintFoilBase(ctx, rect, pal){
   const g = ctx.createLinearGradient(0, 0, rect.width, rect.height);
-  g.addColorStop(0, '#7a7a7a');
-  g.addColorStop(1, '#bebebe');
+  g.addColorStop(0, pal.dark);
+  g.addColorStop(1, pal.hi);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, rect.width, rect.height);
 }
