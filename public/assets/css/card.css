@@ -1348,6 +1348,34 @@ border-radius: var(--scratch-tile-radius);
   color: #fff;
   border-color: #333;
 }
+
+.preview-back-bar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+}
+
+.preview-back-bar .btn {
+  background: rgba(255, 255, 255, .92);
+  color: #333;
+  border: 1px solid rgba(0, 0, 0, .12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 40px;
+  padding: 10px 24px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.preview-back-bar .btn:hover {
+  background: #333;
+  color: #fff;
+  border-color: #333;
+}
+
 @media (max-width: 699px){
   .cc-try-scratch-modal{
     padding: 0;

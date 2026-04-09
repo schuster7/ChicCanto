@@ -1984,15 +1984,11 @@ function clearLegendState(){
     }
 
     if (PREVIEW_MODE) {
-      const legendEl = boardEl.closest('.card-screen')?.querySelector('.card-legend');
-      if (legendEl && !legendEl.querySelector('.preview-back-btn')) {
-        const backBtn = document.createElement('a');
-        backBtn.className = 'btn outline preview-back-btn';
-        backBtn.href = 'javascript:history.back()';
-        backBtn.textContent = 'Looks good? Go back to setup';
-        backBtn.style.marginTop = '12px';
-        backBtn.style.width = '100%';
-        legendEl.appendChild(backBtn);
+      if (!document.querySelector('.preview-back-bar')) {
+        const bar = document.createElement('div');
+        bar.className = 'preview-back-bar';
+        bar.innerHTML = '<a class="btn preview-back-btn" href="javascript:history.back()">Looks good? Go back to setup</a>';
+        document.body.appendChild(bar);
       }
     }
   }
@@ -2151,6 +2147,10 @@ export async function bootCard(){
 
   // Preview mode is only when explicitly requested and there is no real token in the URL.
   PREVIEW_MODE = params.has('preview') && !token;
+
+  if (PREVIEW_MODE) {
+    document.documentElement.dataset.colorMode = 'dark';
+  }
 
   // Public preview: allow scratch without a shareable token in the URL.
   if (!token && PREVIEW_MODE){
