@@ -76,33 +76,11 @@ function resizeCanvasToElement(canvas){
 }
 
 function paintFoilBase(ctx, rect, pal){
-  // Ibelick-style metallic gradient: 45deg + many stops
   const g = ctx.createLinearGradient(0, 0, rect.width, rect.height);
-
-  g.addColorStop(0.00, pal.dark);
-  g.addColorStop(0.05, pal.mid);
-  g.addColorStop(0.10, pal.hi);
-  g.addColorStop(0.30, pal.mid);
-  g.addColorStop(0.50, pal.base);
-  g.addColorStop(0.70, pal.mid);
-  g.addColorStop(0.80, pal.hi);
-  g.addColorStop(0.95, pal.mid);
-  g.addColorStop(1.00, pal.dark);
-
+  g.addColorStop(0, '#7a7a7a');
+  g.addColorStop(1, '#bebebe');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, rect.width, rect.height);
-
-  // Subtle vertical grain lines (keep, but soften a bit)
-  ctx.globalAlpha = 0.08;
-  ctx.lineWidth = 1;
-  for (let x = 0; x < rect.width; x += 10){
-    ctx.strokeStyle = (x % 20 === 0) ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.16)';
-    ctx.beginPath();
-    ctx.moveTo(x + 0.5, 0);
-    ctx.lineTo(x + 0.5, rect.height);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
 }
 
 
@@ -135,19 +113,19 @@ function paintCover(ctx, rect, { sheenX = null, hintStyle } = {}){
   if (typeof sheenX === 'number') {
     const w = rect.width;
     const h = rect.height;
-    const skew = h * 0.6;
-    const bandHalfW = Math.max(18, w * 0.10);
+    const skew = w;
+    const bandHalfW = Math.max(8, w * 0.20);
     ctx.save();
-    ctx.transform(1, 0, skew / h, 1, 0, 0);
-    const mappedX = sheenX - (skew / 2);
+    ctx.transform(1, 0, -skew / h, 1, 0, 0);
+    const mappedX = sheenX + skew / 2;
     ctx.beginPath();
     ctx.rect(mappedX - bandHalfW, 0, bandHalfW * 2, h);
     ctx.clip();
     const sg = ctx.createLinearGradient(mappedX - bandHalfW, 0, mappedX + bandHalfW, 0);
     sg.addColorStop(0.0, 'rgba(255,255,255,0)');
-    sg.addColorStop(0.3, 'rgba(255,255,255,0.18)');
-    sg.addColorStop(0.5, 'rgba(255,255,255,0.32)');
-    sg.addColorStop(0.7, 'rgba(255,255,255,0.18)');
+    sg.addColorStop(0.3, 'rgba(255,255,255,0.055)');
+    sg.addColorStop(0.5, 'rgba(255,255,255,0.10)');
+    sg.addColorStop(0.7, 'rgba(255,255,255,0.055)');
     sg.addColorStop(1.0, 'rgba(255,255,255,0)');
     ctx.globalCompositeOperation = 'screen';
     ctx.fillStyle = sg;
@@ -205,13 +183,13 @@ export function attachScratchTile(canvas, { onScratched, hintStyle }){
       if (scratched || hasInteracted) return;
 
       const elapsed = t - start;
-      const period = 2800; // ms
+      const period = 2500;
       const p = (elapsed % period) / period;
 
       // Sweep fully off-canvas -> fully off-canvas (prevents cut-off/popping)
       const w = rect.width;
-      const bandHalfW = Math.max(18, w * 0.10);
-      const skew = rect.height * 0.6;
+      const bandHalfW = Math.max(8, w * 0.20);
+      const skew = w;
       const startX = -bandHalfW * 2 - skew;
       const endX = w + bandHalfW * 2;
       const x = startX + (endX - startX) * p;
