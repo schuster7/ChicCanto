@@ -39,10 +39,10 @@ function getFoilPalette(){
 
   const defaults = mode === 'gold'
     ? {
-        base: '#8a6a1f',
-        hi:   '#f7e7a7',
-        mid:  '#caa24a',
-        dark: '#5a4210',
+        base: '#c9a050',
+        hi:   '#efcd65',
+        mid:  '#c9a050',
+        dark: '#8d6a36',
         text: 'rgba(255,255,255,0.82)'
       }
     : {
