@@ -2151,6 +2151,10 @@ export async function bootCard(){
 
   if (PREVIEW_MODE) {
     document.documentElement.dataset.colorMode = 'dark';
+    document.body.style.background = '#06080a';
+    document.body.style.backgroundImage = 'linear-gradient(180deg, #0a0c10, #06080a)';
+    document.body.style.backgroundSize = 'auto';
+    document.body.style.animation = 'none';
   }
 
   // Public preview: allow scratch without a shareable token in the URL.
