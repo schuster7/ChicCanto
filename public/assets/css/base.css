@@ -623,6 +623,10 @@ p.muted.no-m {
   font-size: var(--fs-xs);
 }
 
+[data-color-mode="dark"] .preview-line .muted {
+  color: rgba(238, 240, 246, 0.60);
+}
+
 /* Landing Page */
 
 /* Pure splash screen: no scroll, full viewport */
