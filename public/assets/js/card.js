@@ -1129,7 +1129,6 @@ function renderSetup(root, card, container){
                   <div class="sharebar__actions">
                     <button class="btn" id="copyBtn" type="button">Copy</button>
                     <button class="btn" id="shareBtn" type="button">Share</button>
-                    <button class="btn" id="openBtn" type="button">Open as recipient</button>
                   </div>
 
                   <div class="sharebar__lock" id="changeRow" hidden>
@@ -1143,13 +1142,25 @@ function renderSetup(root, card, container){
             </div>
           </div>
         </section>
+
+        <section aria-label="Sample card" class="flow-panel--combined panel panel--glass panel--padded" style="margin-top: var(--gap-xl);">
+          <div class="panel-meta">
+            <div>Try the experience</div>
+            <div class="flow-panel__hint">No code needed</div>
+          </div>
+          <div class="stack">
+            <p class="muted no-m">See exactly what your recipient will experience. Nothing is saved or sent.</p>
+            <div class="sharebar__actions" style="margin-top: 12px;">
+              <a class="btn outline" href="/preview/">Open sample card</a>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
 `;
 const shareUrlEl = qs('#shareUrl', root);
   const copyBtn = qs('#copyBtn', root);
   const shareBtn = qs('#shareBtn', root);
-  const openBtn = qs('#openBtn', root);
   const changeRow = qs('#changeRow', root);
   const changeBtn = qs('#changeBtn', root);
   const lockHintEl = qs('#lockHint', root);
@@ -1226,8 +1237,6 @@ function _ensureCancelModal(){
       shareBtn.disabled = true;
     }
 
-    openBtn.disabled = true;
-
     changeRow.style.display = 'none';
     lockHintEl.textContent = '';
   }
@@ -1240,8 +1249,6 @@ function _ensureCancelModal(){
     if (shareBtn){
       shareBtn.disabled = false;
     }
-
-    openBtn.disabled = false;
 
     changeRow.style.display = 'none';
     lockHintEl.textContent = '';
@@ -1260,8 +1267,6 @@ function _ensureCancelModal(){
   if (shareBtn){
     shareBtn.disabled = true;
   }
-
-  openBtn.disabled = true;
 
   // Hide the old bottom-row cancel UI during the pending state.
   changeRow.style.display = 'none';
@@ -1434,20 +1439,6 @@ function _ensureCancelModal(){
     });
   }
 
-  // Open recipient link in a new tab/window so the sender can keep setup open.
-// IMPORTANT: do not fall back to same-tab navigation, because some in-app browsers
-// can return null from window.open() even when they still open a new view.
-if (openBtn){
-  openBtn.onclick = () => {
-    if (!shareUrl) return;
-    try{
-      window.open(shareUrl, '_blank', 'noopener,noreferrer');
-    }catch{
-      // If window.open is blocked, we intentionally do nothing here.
-      // The user can use Copy/Share instead.
-    }
-  };
-}
 }
 
 
