@@ -135,40 +135,24 @@ function paintCover(ctx, rect, { sheenX = null, hintStyle } = {}){
   if (typeof sheenX === 'number') {
     const w = rect.width;
     const h = rect.height;
-    // Angle matches the foil base gradient (top-left to bottom-right, ~30deg).
-    // The band travels along the x-axis; we skew it by offsetting x differently
-    // at top and bottom edges to produce the diagonal.
-    const skew = h * 0.6; // horizontal offset between top and bottom edges
-    const bandHalfW = Math.max(18, w * 0.10); // tight band, ~10% of tile width
-
-    // Band centre positions at top and bottom edges
-    const xTop = sheenX;
-    const xBot = sheenX + skew;
-
+    const skew = h * 0.6;
+    const bandHalfW = Math.max(18, w * 0.10);
     ctx.save();
-
-    // Clip to a parallelogram covering only the band
+    ctx.transform(1, 0, skew / h, 1, 0, 0);
+    const mappedX = sheenX - (skew / 2);
     ctx.beginPath();
-    ctx.moveTo(xTop - bandHalfW, 0);
-    ctx.lineTo(xTop + bandHalfW, 0);
-    ctx.lineTo(xBot + bandHalfW, h);
-    ctx.lineTo(xBot - bandHalfW, h);
-    ctx.closePath();
+    ctx.rect(mappedX - bandHalfW, 0, bandHalfW * 2, h);
     ctx.clip();
-
-    // Gradient runs perpendicular to the band edges — left to right across the band
-    const sg = ctx.createLinearGradient(xTop - bandHalfW, 0, xTop + bandHalfW, 0);
-    sg.addColorStop(0.0,  'rgba(255,255,255,0)');
-    sg.addColorStop(0.3,  'rgba(255,255,255,0.18)');
-    sg.addColorStop(0.5,  'rgba(255,255,255,0.32)');
-    sg.addColorStop(0.7,  'rgba(255,255,255,0.18)');
-    sg.addColorStop(1.0,  'rgba(255,255,255,0)');
-
+    const sg = ctx.createLinearGradient(mappedX - bandHalfW, 0, mappedX + bandHalfW, 0);
+    sg.addColorStop(0.0, 'rgba(255,255,255,0)');
+    sg.addColorStop(0.3, 'rgba(255,255,255,0.18)');
+    sg.addColorStop(0.5, 'rgba(255,255,255,0.32)');
+    sg.addColorStop(0.7, 'rgba(255,255,255,0.18)');
+    sg.addColorStop(1.0, 'rgba(255,255,255,0)');
     ctx.globalCompositeOperation = 'screen';
     ctx.fillStyle = sg;
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillRect(mappedX - bandHalfW, 0, bandHalfW * 2, h);
     ctx.globalCompositeOperation = 'source-over';
-
     ctx.restore();
   }
 
