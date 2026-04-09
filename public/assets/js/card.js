@@ -956,7 +956,7 @@ function render(container, token, card){
   const setupParam = params.get('setup') || params.get('setup_key') || params.get('setupKey') || '';
   const hasSetupAccess = !PREVIEW_MODE && !!(setupParam && card.setup_key && setupParam === card.setup_key);
 
-  applyPageTheme(card.card_key, card.card_style, { allowDarkMode: false, isSetup: hasSetupAccess });
+  applyPageTheme(card.card_key, card.card_style, { allowDarkMode: PREVIEW_MODE, isSetup: hasSetupAccess });
 
   // If a setup param is present, cache it for this token so we can recover sender setup
   // even if the backend redacts setup_key in intermediate responses (KV propagation, etc.).
@@ -1987,7 +1987,8 @@ function clearLegendState(){
       if (!document.querySelector('.preview-back-bar')) {
         const bar = document.createElement('div');
         bar.className = 'preview-back-bar';
-        bar.innerHTML = '<a class="btn preview-back-btn" href="javascript:history.back()">Looks good? Go back to setup</a>';
+        bar.innerHTML = '<button class="btn preview-back-btn" type="button">Looks good? Go back to setup</button>';
+        bar.querySelector('button').addEventListener('click', () => { try { window.close(); } catch(e) {} });
         document.body.appendChild(bar);
       }
     }
