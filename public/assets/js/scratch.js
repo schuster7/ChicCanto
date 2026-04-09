@@ -140,7 +140,7 @@ function paintCover(ctx, rect, { sheenX = null, hintStyle } = {}){
     const x0 = sheenX;
 
     // Sheen gradient: subtle diagonal band (Ibelick-style)
-    const sg = ctx.createLinearGradient(x0 - stripeW, 0, x0 + stripeW, h);
+    const sg = ctx.createLinearGradient(x0 - stripeW * 0.3, 0, x0 + stripeW * 0.3, h);
     sg.addColorStop(0.00, 'rgba(255,255,255,0)');
     sg.addColorStop(0.20, 'rgba(255,255,255,0)');
     sg.addColorStop(0.40, 'rgba(255,255,255,0)');
@@ -205,7 +205,7 @@ export function attachScratchTile(canvas, { onScratched, hintStyle }){
       if (scratched || hasInteracted) return;
 
       const elapsed = t - start;
-      const period = 1400; // ms
+      const period = 2600; // ms
       const p = (elapsed % period) / period;
 
       // Sweep fully off-canvas -> fully off-canvas (prevents cut-off/popping)
