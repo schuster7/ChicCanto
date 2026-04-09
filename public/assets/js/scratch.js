@@ -132,28 +132,44 @@ function paintCover(ctx, rect, { sheenX = null, hintStyle } = {}){
   // Foil base
   paintFoilBase(ctx, rect, pal);
 
-  // Optional moving sheen stripe (guides the user where to scratch).
-  if (typeof sheenX === 'number'){
+  if (typeof sheenX === 'number') {
     const w = rect.width;
     const h = rect.height;
-    const stripeW = Math.max(40, Math.min(110, w * 0.22));
-    const x0 = sheenX;
+    // Angle matches the foil base gradient (top-left to bottom-right, ~30deg).
+    // The band travels along the x-axis; we skew it by offsetting x differently
+    // at top and bottom edges to produce the diagonal.
+    const skew = h * 0.6; // horizontal offset between top and bottom edges
+    const bandHalfW = Math.max(18, w * 0.10); // tight band, ~10% of tile width
 
-    // Sheen gradient: subtle diagonal band (Ibelick-style)
-    const sg = ctx.createLinearGradient(x0 - stripeW * 0.3, 0, x0 + stripeW * 0.3, h);
-    sg.addColorStop(0.00, 'rgba(255,255,255,0)');
-    sg.addColorStop(0.20, 'rgba(255,255,255,0)');
-    sg.addColorStop(0.40, 'rgba(255,255,255,0)');
-    sg.addColorStop(0.50, 'rgba(255,255,255,0.14)');
-    sg.addColorStop(0.55, 'rgba(255,255,255,0.14)');
-    sg.addColorStop(0.70, 'rgba(255,255,255,0)');
-    sg.addColorStop(1.00, 'rgba(255,255,255,0)');
+    // Band centre positions at top and bottom edges
+    const xTop = sheenX;
+    const xBot = sheenX + skew;
 
+    ctx.save();
+
+    // Clip to a parallelogram covering only the band
+    ctx.beginPath();
+    ctx.moveTo(xTop - bandHalfW, 0);
+    ctx.lineTo(xTop + bandHalfW, 0);
+    ctx.lineTo(xBot + bandHalfW, h);
+    ctx.lineTo(xBot - bandHalfW, h);
+    ctx.closePath();
+    ctx.clip();
+
+    // Gradient runs perpendicular to the band edges — left to right across the band
+    const sg = ctx.createLinearGradient(xTop - bandHalfW, 0, xTop + bandHalfW, 0);
+    sg.addColorStop(0.0,  'rgba(255,255,255,0)');
+    sg.addColorStop(0.3,  'rgba(255,255,255,0.18)');
+    sg.addColorStop(0.5,  'rgba(255,255,255,0.32)');
+    sg.addColorStop(0.7,  'rgba(255,255,255,0.18)');
+    sg.addColorStop(1.0,  'rgba(255,255,255,0)');
 
     ctx.globalCompositeOperation = 'screen';
     ctx.fillStyle = sg;
     ctx.fillRect(0, 0, w, h);
     ctx.globalCompositeOperation = 'source-over';
+
+    ctx.restore();
   }
 
   // Hint text
@@ -205,14 +221,15 @@ export function attachScratchTile(canvas, { onScratched, hintStyle }){
       if (scratched || hasInteracted) return;
 
       const elapsed = t - start;
-      const period = 2600; // ms
+      const period = 2800; // ms
       const p = (elapsed % period) / period;
 
       // Sweep fully off-canvas -> fully off-canvas (prevents cut-off/popping)
       const w = rect.width;
-      const stripeW = Math.max(40, Math.min(110, w * 0.22));
-      const startX = -stripeW * 2;
-      const endX = w + stripeW * 2;
+      const bandHalfW = Math.max(18, w * 0.10);
+      const skew = rect.height * 0.6;
+      const startX = -bandHalfW * 2 - skew;
+      const endX = w + bandHalfW * 2;
       const x = startX + (endX - startX) * p;
 
       // Redraw full cover each frame (only while untouched).
