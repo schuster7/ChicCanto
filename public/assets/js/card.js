@@ -1982,6 +1982,19 @@ function clearLegendState(){
         allTiles[i].classList.add('cc-winner');
       }
     }
+
+    if (PREVIEW_MODE) {
+      const legendEl = boardEl.closest('.card-screen')?.querySelector('.card-legend');
+      if (legendEl && !legendEl.querySelector('.preview-back-btn')) {
+        const backBtn = document.createElement('a');
+        backBtn.className = 'btn outline preview-back-btn';
+        backBtn.href = 'javascript:history.back()';
+        backBtn.textContent = 'Looks good? Go back to setup';
+        backBtn.style.marginTop = '12px';
+        backBtn.style.width = '100%';
+        legendEl.appendChild(backBtn);
+      }
+    }
   }
 
   async function onTileScratched(i, el){
