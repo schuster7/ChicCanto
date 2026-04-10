@@ -50,6 +50,13 @@ function getFoilPalette(){
       mid:  '#a05c32',
       base: '#a05c32',
       text: 'rgba(255,255,255,0.80)'
+    },
+    rose: {
+      dark: '#e6a5a5',
+      hi:   '#f7cac9',
+      mid:  '#eebaba',
+      base: '#eebaba',
+      text: 'rgba(255,255,255,0.80)'
     }
   };
   const d = defaults[mode] || defaults.silver;
