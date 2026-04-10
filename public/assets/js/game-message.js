@@ -1171,7 +1171,7 @@ function _renderSeqSetup(root, card, container, { previewMode = false } = {}){
       const dueYVal    = root.querySelector('#seqDueYear')?.value  || '';
       const dueMonth   = (dueMVal && dueYVal) ? `${dueYVal}-${dueMVal}` : null;
       const fakeCard = {
-        card_key:       'gender-reveal',
+        card_key:       'gender-reveal1',
         current_step:   0,
         language:       selectedLang,
         gender:         selectedGender,
