@@ -25,42 +25,41 @@ function ensureBrush(){
  *   --scratch-foil-base, --scratch-foil-hi, --scratch-foil-mid, --scratch-foil-dark, --scratch-foil-text
  */
 
-function getFoilMode(){
-  const el = document.documentElement;
-  const mode = (el?.dataset?.foil || '').toLowerCase().trim();
-  return (mode === 'gold') ? 'gold' : 'silver';
-}
-
 function getFoilPalette(){
-  const cs = getComputedStyle(document.documentElement);
-
-  // Allow CSS overrides; fall back to reasonable defaults.
-  const mode = getFoilMode();
-
-  const defaults = mode === 'gold'
-    ? {
-        base: '#c9a050',
-        hi:   '#efcd65',
-        mid:  '#c9a050',
-        dark: '#8d6a36',
-        text: 'rgba(255,255,255,0.82)'
-      }
-    : {
-        base: '#6a6f7a',
-        hi:   '#bebebe',
-        mid:  '#aeb3bd',
-        dark: '#7a7a7a',
-        text: 'rgba(255,255,255,0.72)'
-      };
-
+  const root = document.documentElement;
+  const cs = getComputedStyle(root);
+  const mode = (root.dataset.foil || 'silver').toLowerCase().trim();
+  const defaults = {
+    silver: {
+      dark: '#7a7a7a',
+      hi:   '#bebebe',
+      mid:  '#a0a0a0',
+      base: '#a0a0a0',
+      text: 'rgba(255,255,255,0.72)'
+    },
+    gold: {
+      dark: '#8d6a36',
+      hi:   '#efcd65',
+      mid:  '#c9a050',
+      base: '#c9a050',
+      text: 'rgba(255,255,255,0.82)'
+    },
+    bronze: {
+      dark: '#6b3a1f',
+      hi:   '#d4894a',
+      mid:  '#a05c32',
+      base: '#a05c32',
+      text: 'rgba(255,255,255,0.80)'
+    }
+  };
+  const d = defaults[mode] || defaults.silver;
   const pick = (name, fallback) => (cs.getPropertyValue(name) || '').trim() || fallback;
-
   return {
-    base: pick('--scratch-foil-base', defaults.base),
-    hi:   pick('--scratch-foil-hi', defaults.hi),
-    mid:  pick('--scratch-foil-mid', defaults.mid),
-    dark: pick('--scratch-foil-dark', defaults.dark),
-    text: pick('--scratch-foil-text', defaults.text),
+    dark: pick('--scratch-foil-dark', d.dark),
+    hi:   pick('--scratch-foil-hi',   d.hi),
+    mid:  pick('--scratch-foil-mid',  d.mid),
+    base: pick('--scratch-foil-base', d.base),
+    text: pick('--scratch-foil-text', d.text),
     mode
   };
 }

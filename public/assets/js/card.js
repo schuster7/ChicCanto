@@ -1765,6 +1765,12 @@ function renderScratch(root, card){
   // Scratch foil (silver default, gold for birthday themes)
   const foil = (theme && theme.foil) ? theme.foil : (String(cardKey).includes('birthday') ? 'gold' : 'silver');
   document.documentElement.dataset.foil = foil;
+  const root = document.documentElement;
+  if (theme && theme.foilDark) root.style.setProperty('--scratch-foil-dark', theme.foilDark);
+  if (theme && theme.foilHi)   root.style.setProperty('--scratch-foil-hi',   theme.foilHi);
+  if (theme && theme.foilMid)  root.style.setProperty('--scratch-foil-mid',  theme.foilMid);
+  if (theme && theme.foilBase) root.style.setProperty('--scratch-foil-base', theme.foilBase);
+  if (theme && theme.foilText) root.style.setProperty('--scratch-foil-text', theme.foilText);
   const titleSrc = (theme && theme.titleSrc) ? theme.titleSrc : '/assets/cards/men-novice1/title.svg';
 
   const bgDesktopSrc = (theme && theme.bgDesktopSrc) ? theme.bgDesktopSrc : '/assets/cards/men-novice1/bg-desktop.jpg';
