@@ -953,7 +953,7 @@ if (!PREVIEW_MODE && hasSetupAccess && token && card && card.setup_key){
 
 const previewCta = PREVIEW_MODE ? `
   <div class="preview-line" role="note" aria-label="Preview notice">
-    <span class="muted">Preview mode. Scratch for free. Activate to create a recipient link.</span>
+    <span class="muted">Preview mode. Scratch the card exactly as your recipient will.</span>
   </div>
 ` : '';
 
