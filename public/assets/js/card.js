@@ -1151,7 +1151,7 @@ function renderSetup(root, card, container){
           <div class="stack">
             <p class="muted no-m">See exactly what your recipient will experience. Nothing is saved or sent.</p>
             <div class="sharebar__actions" style="margin-top: 12px;">
-              <a class="btn outline" href="/card/?preview=1" target="_blank" rel="noopener">Open sample card</a>
+              <a class="btn outline" href="/card/?preview=1&card_key=${cardKey}" target="_blank" rel="noopener">Open sample card</a>
             </div>
           </div>
         </section>
