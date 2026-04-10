@@ -33,7 +33,6 @@ export const CARD_THEMES = {
     key: 'women-novice1',
     colorMode: 'dark',
     presentation: 'card',
-    foil: 'rose',
     legendPanelBg: 'rgba(86, 29, 63, 0.8)',
     legendPanelBorder: '#e676ac',
     legendPanelBlur: '1px',
