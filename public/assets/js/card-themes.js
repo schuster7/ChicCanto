@@ -387,8 +387,8 @@ export const CARD_THEMES = {
   // Locked design. Sender picks language, boy/girl, and optional custom message.
   // Recipient scratches 2 hearts in sequence: news → gender reveal.
 
-  'gender-reveal': {
-    key: 'gender-reveal',
+  'gender-reveal1': {
+    key: 'gender-reveal1',
     gameType: 'message',
     messageMode: 'sequential',
     colorMode: 'light',
