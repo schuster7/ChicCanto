@@ -335,6 +335,13 @@ function renderCardHeaderActions(card, revealed){
     shareBtn.style.cursor = 'not-allowed';
     el.appendChild(shareBtn);
 
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'btn nav';
+    closeBtn.textContent = 'Close';
+    closeBtn.addEventListener('click', () => { try { window.close(); } catch(e) {} });
+    el.appendChild(closeBtn);
+
     return;
   }
 
@@ -1960,6 +1967,15 @@ function clearLegendState(){
       }
     }
 
+    if (PREVIEW_MODE) {
+      if (!document.querySelector('.preview-back-bar')) {
+        const bar = document.createElement('div');
+        bar.className = 'preview-back-bar';
+        bar.innerHTML = '<button class="btn preview-back-btn" type="button">Done? Go back to setup</button>';
+        bar.querySelector('button').addEventListener('click', () => { try { window.close(); } catch(e) {} });
+        document.body.appendChild(bar);
+      }
+    }
   }
 
   async function onTileScratched(i, el){
@@ -2123,13 +2139,6 @@ export async function bootCard(){
     document.body.style.backgroundImage = 'linear-gradient(180deg, #0a0c10, #06080a)';
     document.body.style.backgroundSize = 'auto';
     document.body.style.animation = 'none';
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'cc-try-scratch-modal__close';
-    closeBtn.type = 'button';
-    closeBtn.ariaLabel = 'Close';
-    closeBtn.textContent = '\u00d7';
-    closeBtn.addEventListener('click', () => { try { window.close(); } catch(e) {} });
-    document.body.appendChild(closeBtn);
   }
 
   // Public preview: allow scratch without a shareable token in the URL.
