@@ -323,46 +323,17 @@ function renderCardHeaderActions(card, revealed){
 
     const saveBtn = mkBtn('Save image');
     saveBtn.id = 'savePngBtn';
-    saveBtn.addEventListener('click', async () => {
-      if (saveBtn.disabled) return;
-      try{
-        saveBtn.disabled = true;
-        const prev = saveBtn.textContent;
-        saveBtn.textContent = 'Saving...';
-        await exportRevealedPng(card);
-        saveBtn.textContent = prev;
-      }catch (err){
-        console.error('Image export failed:', err);
-        alert('Could not save image. Please try again.');
-      }finally{
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save image';
-      }
-    }, { passive: true });
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = '0.5';
+    saveBtn.style.cursor = 'not-allowed';
     el.appendChild(saveBtn);
 
     const shareBtn = mkBtn('Share result');
     shareBtn.id = 'shareResultBtn';
-    shareBtn.addEventListener('click', async () => {
-      try{
-        // In preview, sharing the URL is not meaningful, but you may still want the share sheet.
-        // If you prefer, change this to share text only.
-        const url = makeAbsoluteCardLink(card.token);
-        const opt = resolveOptionFromCard(card);
-        const label = opt && opt.label ? `Scratch card result: ${opt.label}` : 'Scratch card result';
-        await safeShareLink(url, label);
-      }catch (e){
-        console.error('Share error:', e);
-      }
-    }, { passive: true });
+    shareBtn.disabled = true;
+    shareBtn.style.opacity = '0.5';
+    shareBtn.style.cursor = 'not-allowed';
     el.appendChild(shareBtn);
-
-    // Preview-only: let testers jump to activation at any time.
-    const activateA = document.createElement('a');
-    activateA.className = 'btn nav';
-    activateA.href = '/activate/';
-    activateA.textContent = 'Activate';
-    el.appendChild(activateA);
 
     return;
   }
@@ -1989,15 +1960,6 @@ function clearLegendState(){
       }
     }
 
-    if (PREVIEW_MODE) {
-      if (!document.querySelector('.preview-back-bar')) {
-        const bar = document.createElement('div');
-        bar.className = 'preview-back-bar';
-        bar.innerHTML = '<button class="btn preview-back-btn" type="button">Looks good? Go back to setup</button>';
-        bar.querySelector('button').addEventListener('click', () => { try { window.close(); } catch(e) {} });
-        document.body.appendChild(bar);
-      }
-    }
   }
 
   async function onTileScratched(i, el){
@@ -2161,6 +2123,13 @@ export async function bootCard(){
     document.body.style.backgroundImage = 'linear-gradient(180deg, #0a0c10, #06080a)';
     document.body.style.backgroundSize = 'auto';
     document.body.style.animation = 'none';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'cc-try-scratch-modal__close';
+    closeBtn.type = 'button';
+    closeBtn.ariaLabel = 'Close';
+    closeBtn.textContent = '\u00d7';
+    closeBtn.addEventListener('click', () => { try { window.close(); } catch(e) {} });
+    document.body.appendChild(closeBtn);
   }
 
   // Public preview: allow scratch without a shareable token in the URL.
