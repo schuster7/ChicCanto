@@ -1149,7 +1149,7 @@ function renderSetup(root, card, container){
             <div class="flow-panel__hint">No code needed</div>
           </div>
           <div class="stack">
-            <p class="muted no-m">Try the card exactly as your recipient will. The sample uses a random prize, which may differ from your chosen one.</p>
+            <p class="muted no-m small">Try the card exactly as your recipient will. The sample uses a random prize, which may differ from your chosen one.</p>
             <div class="sharebar__actions" style="margin-top: 12px;">
               <a class="btn outline" href="/card/?preview=1&card_key=${cardKey}" target="_blank" rel="noopener">Open sample card</a>
             </div>
