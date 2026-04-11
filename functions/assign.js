@@ -61,7 +61,8 @@ function cardKeyToCodePrefix(card_key){
 }
 
 function escHtml(s){
-  return String(s).replace(/&/g, ‘&amp;’).replace(/</g, ‘&lt;’).replace(/>/g, ‘&gt;’).replace(/”/g, ‘&quot;’);
+  const map = {38:’&amp;’,60:’&lt;’,62:’&gt;’,34:’&quot;’};
+  return String(s).replace(/[&<>”]/g, (c) => map[c.charCodeAt(0)] || c);
 }
 
 function buildHtmlEmail({ greetingHtml, introLine, codeBlocks, faq }){
