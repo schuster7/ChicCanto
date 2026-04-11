@@ -1,96 +1,80 @@
 # ChicCanto - Project Context
 
 ## What is this?
-ChicCanto is a digital scratch card platform sold on Etsy. Buyers purchase physical scratch cards that include an activation code. The code unlocks a digital card experience: the buyer configures it (picks a prize or writes a message), shares a link, and the recipient scratches to reveal the outcome in their browser.
+ChicCanto is a digital scratch card platform sold on Etsy. Buyers activate a code online, configure their card, and share a recipient link. The recipient scratches to reveal the outcome in their browser. No app, no account.
 
 ## Tech Stack
-- **Frontend**: Vanilla HTML/CSS/JS (ES modules), no framework, no bundler, no npm dependencies for frontend
+- **Frontend**: Vanilla HTML/CSS/JS (ES modules), no framework, no bundler
 - **Backend**: Cloudflare Pages Functions (serverless, V8 isolates — NOT Node.js)
-- **Storage**: Cloudflare Workers KV (eventually consistent key-value store)
-- **Deployment**: Git push to main → automatic Cloudflare Pages deploy. No build step.
-- **Static hosting**: `public/` directory served as-is
+- **Storage**: Cloudflare Workers KV
+- **Deployment**: git push to main triggers automatic Cloudflare Pages deploy. No build step.
+- **Domain**: chiccanto.com (custom domain on Cloudflare Pages)
 
 ## Game Types
-1. **match3** — 9 scratch tiles, match 3 icons to win a prize (the "naughty" cards). Code lives in `card.js`.
-2. **message** — Single heart-shaped scratch area hides a custom message. Code lives in `game-message.js`.
+1. **match3** — 9 scratch tiles, match 3 icons to win a prize (the naughty cards). Code in `card.js`.
+2. **message** — Single shaped scratch area hides a custom message. Code in `game-message.js`.
+3. **sequential** — Multi-step scratch reveal. First product: gender-reveal1. Code in `game-message.js`. All product behaviour is config-driven via the `steps[]` array in `card-themes.js` — no JS changes needed for new sequential products.
 
-Both game types share the same frame: page backgrounds, header, export pipeline, border FX, activation/fulfillment flow.
+All three types share the same frame: page backgrounds, header, activation/fulfillment flow.
 
-## Folder Structure
-```
-public/assets/cards/
-  naughty/          # Match-3 naughty scratch cards
-    {card_key}/     # Each card is self-contained
-      bg-desktop.jpg
-      bg-mobile.jpg
-      title.svg
-      thumb.jpg
-      tiles/        # Prize icons for this card
-        blowjob.svg, handjob.svg, etc.
-  custom/           # Message-reveal cards
-    heart-gold/
-      bg-desktop.jpg
-      bg-mobile.jpg
-
-public/assets/img/
-  masks/            # Shared scratch area shapes
-    heart.svg
-  logo1.svg
-  brush.png
-  noise.png
-```
+## Product Mechanics (locked)
+New products require only a new theme entry in `card-themes.js` plus design assets. No JS changes.
+- **Themed cards** (match3 / message): fixed end-to-end config, buyer has minimal choices.
+- **Sequential cards**: `steps[]` array drives the full multi-step flow generically.
 
 ## Key Files
 | File | Purpose |
 |------|---------|
-| `public/assets/js/card.js` | Main card logic — frame (boot, routing, export, FX, page theme) + match-3 game |
-| `public/assets/js/game-message.js` | Message-reveal game module |
-| `public/assets/js/card-themes.js` | Per-card visual config: backgrounds, prizes, page themes, game type |
+| `public/assets/js/card.js` | Main card logic: boot, routing, match-3 game, export, FX, page theme |
+| `public/assets/js/game-message.js` | message + sequential game module |
+| `public/assets/js/card-themes.js` | Single source of truth for all card visuals and product config |
 | `public/assets/js/config.js` | Prize tier mapping, scratch settings, tile path construction |
-| `public/assets/js/scratch.js` | Generic canvas scratch interaction (foil, brush, threshold) |
-| `public/assets/js/store.js` | Client storage adapter (localStorage + API) |
+| `public/assets/js/scratch.js` | Canvas scratch interaction (foil, brush, threshold) |
+| `public/assets/js/store.js` | Client storage adapter (localStorage + Cloudflare KV API) |
 | `public/assets/js/redeem.js` | Activation page logic |
-| `public/assets/js/fulfill.js` | Admin fulfillment page logic |
-| `public/assets/js/landing.js` | Landing page animation |
-| `public/assets/css/base.css` | Global styles, page backgrounds, layout |
-| `public/assets/css/card.css` | Card-specific styles: scratch game, message card, FX |
+| `public/assets/js/fulfill.js` | Admin fulfilment page logic |
+| `public/assets/css/base.css` | Global styles, color mode system, page backgrounds |
+| `public/assets/css/card.css` | Card styles: scratch game, message card, sequential flow, FX |
 | `functions/token/[token].js` | GET/PUT card record API |
 | `functions/assign.js` | Admin: assign activation code to order |
 | `functions/redeem.js` | Buyer: redeem activation code, create card tokens |
 | `functions/auth.js` | Admin login/session |
+| `functions/_lib/cards.js` | Shared backend helpers (token gen, setup key gen) |
 
-## Non-Negotiables
-- **Uploaded zip = source of truth.** Never assume file contents from memory.
-- **Full file delivery as .txt with timestamp filenames** (e.g., `card.js_20260315-150000.txt`), never diffs unless asked.
-- **Regression prevention**: Confirm all existing features work before delivering core files.
-- **Include exact git commands** with every delivery.
-- **Security rules**: setup_key never in recipient links, sender-only fields require setup key on PUT, activation codes locked to card_key.
+## Current Products (all live)
+| card_key | Type |
+|----------|------|
+| men-novice1 | match3 |
+| men-advanced1 | match3 |
+| women-novice1 | match3 |
+| women-advanced1 | match3 |
+| men-novice-birthday1 | match3 |
+| women-novice-birthday1 | match3 |
+| custom-card | message |
+| gender-reveal1 | sequential |
 
-## Card Theme System
-Each card type is a key in `card-themes.js`. The theme controls:
-- `gameType`: 'match3' (default) or 'message'
-- Background images, title SVG, thumbnail
-- Page background colors (CSS custom properties on `<html>`)
-- Legend panel styling (match-3 only)
-- Prize options and tile icons (match-3 only)
-- Scratch mask, message config (message cards only)
-- Foil style: 'gold' or 'silver'
+## Known Open Bugs (do not fix until ordered)
+- **isFinal hardcoded in `_onSeqStepScratched`** (~line 1398 of `game-message.js`): `const isFinal = stepIndex === 1`. Must be fixed before adding any sequential product with more than 2 steps.
+- **Token PUT endpoint has no rate limiting.** Low severity.
+- **Export DOM indexing in `_inlineStylesDeep` is fragile** to DOM order changes.
 
-Adding a new card = new theme entry + design assets. No code changes.
+## Planned Work (do not start until ordered)
+- **Make.com automation for Etsy order fulfilment**: requires extracting session cookie helpers from `assign.js`, `auth.js`, `replace-assignment.js`, `void-assignment.js` into `functions/_lib/auth.js`, plus an API key auth path on `/assign` for machine calls.
+- **isFinal fix in `_onSeqStepScratched`** (required before next sequential product).
+- **Future**: scratch platform may move to `app.chiccanto.com` when a Shopify storefront takes `chiccanto.com` root. Requires adding `app.chiccanto.com` as a second custom domain on the Cloudflare Pages project and setting up path redirects for `/open/`, `/card/`, `/activate/` from `chiccanto.com`.
 
-## Per-Card Page Backgrounds
-CSS custom properties on `:root` in `base.css`:
-`--page-bg`, `--page-bg1`, `--page-glow-a1/a2/a3`, `--page-glow-b1/b2`, `--page-glow-a-opacity`, `--page-glow-b-opacity`
-Set by `applyPageTheme()` in `card.js` from theme values. Body gradient and animated glow layers reference these.
+## Working Conventions
+- **Uploaded zip = only source of truth.** Never use prior chat file versions.
+- Read the zip before planning or writing any prompt.
+- Deliver work as a single consolidated Claude Code prompt in plain text only — no markdown code blocks, no rendered HTML, no bullet points that break copy/paste.
+- End every Claude Code prompt with: `git add -A && git commit -m "..." && git push origin main`
+- Use `/effort medium` by default, `/effort high` for big changes.
+- Plan before coding. No code until explicitly ordered.
 
-## Export Pipeline (match-3 only, not used for message cards)
-Background JPEG fetched → painted on canvas → SVG foreignObject overlay → ChicCanto logo at top → promo text at bottom → JPEG at 0.92 quality. Per-card `pageBg` used for padding color.
-
-## Testing
-- Local: `npx serve public` (static only, no backend)
-- Preview mode: `/card/?preview` (match-3) or `/card/?preview&card_key=custom-card1` (message)
-- Mobile via LAN: `http://192.168.0.48:3000`
-- Backend requires live deployment (Cloudflare Pages Functions + KV)
+## Security Rules
+- `setup_key` never appears in recipient links.
+- Sender-only fields (`configured`, `message`, `title`, `from_line`, `card_style`, `scratch_shape`, `language`, `gender`, `custom_message`, `due_month`) require valid setup key on PUT.
+- Activation codes are locked to one `card_key` and one `order_id`.
 
 ## Environment
 | Name | Type | Purpose |
