@@ -1,3 +1,5 @@
+import { verifySessionCookie, verifyApiKey } from './_lib/auth.js';
+
 // Cloudflare Pages Function route: POST /assign
 // Assigns activation code(s) to an Etsy order, server-side.
 // Manual fulfillment v1: user selects card_key + quantity (1 or 4).
@@ -58,24 +60,74 @@ function cardKeyToCodePrefix(card_key){
   return MAP[k] || 'CC-CARD';
 }
 
-function buildMessage({ codes, origin, buyerName }){
+function escHtml(s){
+  return String(s).replace(/&/g, ‘&amp;’).replace(/</g, ‘&lt;’).replace(/>/g, ‘&gt;’).replace(/”/g, ‘&quot;’);
+}
+
+function buildHtmlEmail({ greetingHtml, introLine, codeBlocks, faq }){
+  const codeBlocksHtml = codeBlocks.map((item) => {
+    const label = item.label
+      ? `<p style=”margin:0 0 6px;font-size:13px;color:#888;text-align:center;”>${escHtml(item.label)}</p>`
+      : ‘’;
+    return label +
+      `<div style=”text-align:center;margin:24px 0 8px;”>` +
+      `<div style=”display:inline-block;background:#f5f0e8;border:1px solid #e0d5c5;border-radius:8px;padding:16px 24px;”>` +
+      `<span style=”font-family:’Courier New’,Courier,monospace;font-size:22px;font-weight:bold;letter-spacing:0.12em;color:#2c2420;”>${escHtml(item.code)}</span>` +
+      `</div></div>` +
+      `<div style=”text-align:center;margin:12px 0 20px;”>` +
+      `<a href=”${item.link}” style=”background:#2c2420;color:#ffffff;padding:14px 32px;border-radius:50px;font-size:16px;font-weight:600;text-decoration:none;display:inline-block;”>Activate your card</a>` +
+      `</div>` +
+      `<p style=”margin:0 0 24px;text-align:center;font-size:12px;color:#999;”>Or copy this link into your browser:<br/>` +
+      `<a href=”${item.link}” style=”color:#999;word-break:break-all;”>${item.link}</a></p>`;
+  }).join(‘’);
+
+  return `<!DOCTYPE html><html><head><meta charset=”utf-8”/></head>` +
+    `<body style=”margin:0;padding:0;background:#f9f6f1;font-family:Georgia,serif;”>` +
+    `<table width=”100%” cellpadding=”0” cellspacing=”0” role=”presentation” style=”background:#f9f6f1;”>` +
+    `<tr><td align=”center” style=”padding:24px 16px;”>` +
+    `<table width=”600” cellpadding=”0” cellspacing=”0” role=”presentation” style=”max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;”>` +
+    `<tr><td style=”background:#2c2420;padding:20px 24px;text-align:center;”>` +
+    `<span style=”font-family:Georgia,serif;font-size:28px;color:#ffffff;font-style:italic;”>ChicCanto</span>` +
+    `</td></tr>` +
+    `<tr><td style=”padding:40px;font-size:16px;color:#2c2420;line-height:1.6;”>` +
+    `<p style=”margin:0 0 16px;”>${greetingHtml}</p>` +
+    `<p style=”margin:0 0 24px;color:#555;”>Thanks for your order, and welcome to ChicCanto.</p>` +
+    `<p style=”margin:0 0 8px;color:#555;”>${escHtml(introLine)}</p>` +
+    codeBlocksHtml +
+    `<p style=”margin:0 0 16px;font-size:14px;color:#555;line-height:1.6;”>` +
+    `<strong>Sharing tip:</strong> Use the recipient link you get after setup. It opens an &#8220;Open&#8221; page first, ` +
+    `because scratching does not work inside Messenger or Instagram&#8217;s in-app browser. The page will guide them to open it in their browser.</p>` +
+    `<p style=”margin:0;font-size:14px;color:#555;”>Need help? <a href=”${faq}” style=”color:#2c2420;text-decoration:underline;”>FAQ</a></p>` +
+    `</td></tr>` +
+    `<tr><td style=”background:#2c2420;padding:20px 24px;text-align:center;”>` +
+    `<p style=”margin:0 0 6px;font-size:14px;color:#ffffff;”>Have fun,<br/>ChicCanto</p>` +
+    `<p style=”margin:0;font-size:12px;color:#9a918a;”>Questions? support@chiccanto.com</p>` +
+    `</td></tr>` +
+    `</table></td></tr></table></body></html>`;
+}
+
+function buildMessage({ codes, origin, buyerName, buyerEmail }){
   const base = `${origin}/`;
   const faq = `${base}faq/`;
 
-  const name = String(buyerName || '').trim();
-  const greeting = name ? `Hi ${name},` : 'Hi,';
+  const name = String(buyerName || ‘’).trim();
+  const greeting = name ? `Hi ${name},` : ‘Hi,’;
+  const greetingHtml = name ? `Hi ${escHtml(name)},` : ‘Hi,’;
 
   const list = (Array.isArray(codes) ? codes : [])
-    .map((c) => String(c || '').trim())
+    .map((c) => String(c || ‘’).trim())
     .filter(Boolean);
 
   const buildActivationLink = (code) => `${base}?code=${encodeURIComponent(code)}`;
 
-  if (list.length <= 1){
-    const assignedCode = list[0] || '';
-    const activationLinkWithCode = buildActivationLink(assignedCode);
+  let text;
+  let html;
 
-    return (
+  if (list.length <= 1){
+    const assignedCode = list[0] || ‘’;
+    const activationLink = buildActivationLink(assignedCode);
+
+    text =
 `${greeting}
 
 Thanks for your order, and welcome to ChicCanto.
@@ -85,7 +137,7 @@ Your activation code: ${assignedCode}
 Quick start (recommended):
 Open this link and your code will be filled in automatically:
 
-${activationLinkWithCode}
+${activationLink}
 
 Manual option:
 1. Open: ${base}
@@ -102,25 +154,31 @@ Need help?
 FAQ: ${faq}
 
 Have fun,
-ChicCanto`
-    );
-  }
+ChicCanto`;
 
-  const codeLines = list.map((code, i) => `Card ${i + 1} code: ${code}`);
-  const linkLines = list.map((code, i) => `Card ${i + 1}: ${buildActivationLink(code)}`);
+    html = buildHtmlEmail({
+      greetingHtml,
+      introLine: ‘Your scratch card is ready to set up.’,
+      codeBlocks: [{ code: assignedCode, link: activationLink }],
+      faq,
+    });
 
-  return (
+  } else {
+    const codeLines = list.map((code, i) => `Card ${i + 1} code: ${code}`);
+    const linkLines = list.map((code, i) => `Card ${i + 1}: ${buildActivationLink(code)}`);
+
+    text =
 `${greeting}
 
 Thanks for your order, and welcome to ChicCanto.
 
 Your ${list.length} activation codes (one per card):
-${codeLines.join('\n')}
+${codeLines.join(‘\n’)}
 
 Quick start (recommended):
 Open a link below and the matching code will be filled in automatically:
 
-${linkLines.join('\n')}
+${linkLines.join(‘\n’)}
 
 Manual option:
 1. Open: ${base}
@@ -137,8 +195,21 @@ Need help?
 FAQ: ${faq}
 
 Have fun,
-ChicCanto`
-  );
+ChicCanto`;
+
+    html = buildHtmlEmail({
+      greetingHtml,
+      introLine: `Your ${list.length} scratch cards are ready to set up.`,
+      codeBlocks: list.map((code, i) => ({
+        code,
+        link: buildActivationLink(code),
+        label: `Card ${i + 1}`,
+      })),
+      faq,
+    });
+  }
+
+  return { text, html };
 }
 
 
@@ -230,15 +301,17 @@ export async function onRequestPost(context){
     return json({ ok: false, error: 'Server misconfigured: missing CARDS_KV binding.' }, 500);
   }
 
-  // Auth: require a valid signed session cookie (set by POST /auth).
-  const sessionSecret = String(env.FULFILL_SESSION_SECRET || '').trim();
-  if (!sessionSecret){
-    return json({ ok: false, error: 'Server misconfigured: missing FULFILL_SESSION_SECRET.' }, 500);
-  }
-
-  const authed = await verifySessionCookie(request, sessionSecret);
-  if (!authed){
-    return json({ ok: false, error: 'Unauthorized.' }, 401);
+  // Auth: accept a valid session cookie OR a valid API key.
+  const apiKeyAuthed = await verifyApiKey(request, env);
+  if (!apiKeyAuthed){
+    const sessionSecret = String(env.FULFILL_SESSION_SECRET || '').trim();
+    if (!sessionSecret){
+      return json({ ok: false, error: 'Server misconfigured: missing FULFILL_SESSION_SECRET.' }, 500);
+    }
+    const sessionAuthed = await verifySessionCookie(request, sessionSecret);
+    if (!sessionAuthed){
+      return json({ ok: false, error: 'Unauthorized.' }, 401);
+    }
   }
 
   const body = await readJson(request);
@@ -250,6 +323,7 @@ export async function onRequestPost(context){
   const card_key = normalizeCardKey(body.card_key);
   const quantity = normalizeQuantity(body.quantity);
   const buyer_name = (typeof body.buyer_name === 'string') ? body.buyer_name.trim() : '';
+  const buyer_email = (typeof body.buyer_email === 'string') ? body.buyer_email.trim() : '';
 
   if (!order_id){
     return json({ ok: false, error: 'Missing order_id.' }, 400);
@@ -282,7 +356,7 @@ export async function onRequestPost(context){
     const existing_quantity = Number(existingOrder.quantity || quantity || codes.length || 1);
     const assignment_conflict = (existing_card_key !== card_key) || (existing_quantity !== quantity);
     const assignmentState = await inspectAssignmentState(env, codes);
-    const message_text = buildMessage({ codes, origin, buyerName: buyer_name || existingOrder.buyer_name || '' });
+    const msg = buildMessage({ codes, origin, buyerName: buyer_name || existingOrder.buyer_name || '', buyerEmail: buyer_email });
     return json({
       ok: true,
       existing: true,
@@ -295,8 +369,10 @@ export async function onRequestPost(context){
       requested_card_key: card_key,
       requested_quantity: quantity,
       codes,
-      etsy_message: message_text,
-      message_text,
+      etsy_message: msg.text,
+      message_text: msg.text,
+      message_html: msg.html,
+      ...(buyer_email ? { buyer_email } : {}),
     });
   }
 
@@ -344,7 +420,7 @@ export async function onRequestPost(context){
   await env.CARDS_KV.put(orderKey, JSON.stringify(orderRec));
   await env.CARDS_KV.put(orderIndexKey, JSON.stringify(orderRec));
 
-  const message_text = buildMessage({ codes, origin, buyerName: buyer_name });
+  const msg = buildMessage({ codes, origin, buyerName: buyer_name, buyerEmail: buyer_email });
   return json({
     ok: true,
     existing: false,
@@ -352,92 +428,9 @@ export async function onRequestPost(context){
     card_key,
     quantity,
     codes,
-    etsy_message: message_text,
-    message_text,
+    etsy_message: msg.text,
+    message_text: msg.text,
+    message_html: msg.html,
+    ...(buyer_email ? { buyer_email } : {}),
   });
-}
-
-
-// --- session cookie verification ---
-
-const SESSION_COOKIE_NAME = 'cc_fulfill';
-
-function getCookie(request, name){
-  const header = request.headers.get('Cookie') || '';
-  const parts = header.split(/;\s*/);
-  for (const part of parts){
-    const eq = part.indexOf('=');
-    if (eq === -1) continue;
-    const k = part.slice(0, eq).trim();
-    if (k === name) return part.slice(eq + 1);
-  }
-  return '';
-}
-
-function base64UrlToUint8Array(b64url){
-  const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
-  const pad = b64.length % 4;
-  const padded = pad ? b64 + '='.repeat(4 - pad) : b64;
-  const bin = atob(padded);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
-async function hmacSha256(secret, data){
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    enc.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(data));
-  return new Uint8Array(sig);
-}
-
-function timingSafeEqual(a, b){
-  if (a.length !== b.length) return false;
-  let out = 0;
-  for (let i = 0; i < a.length; i++) out |= (a[i] ^ b[i]);
-  return out === 0;
-}
-
-async function verifySessionCookie(request, sessionSecret){
-  const token = String(getCookie(request, SESSION_COOKIE_NAME) || '').trim();
-  if (!token) return false;
-
-  const dot = token.lastIndexOf('.');
-  if (dot === -1) return false;
-
-  const payloadB64 = token.slice(0, dot);
-  const sigB64 = token.slice(dot + 1);
-
-  let payloadJson = '';
-  try{
-    payloadJson = new TextDecoder().decode(base64UrlToUint8Array(payloadB64));
-  } catch {
-    return false;
-  }
-
-  let payload;
-  try{
-    payload = JSON.parse(payloadJson);
-  } catch {
-    return false;
-  }
-
-  const exp = Number(payload?.exp);
-  if (!Number.isFinite(exp) || exp <= Date.now()) return false;
-
-  const expectedSig = await hmacSha256(sessionSecret, payloadB64);
-  let providedSig;
-  try{
-    providedSig = base64UrlToUint8Array(sigB64);
-  } catch {
-    return false;
-  }
-
-  return timingSafeEqual(expectedSig, providedSig);
 }
