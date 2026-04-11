@@ -8,7 +8,12 @@
       "Bash(cp \"E:/Sites/ChicCanto/game-message.js_20260318-140000.txt\" \"E:/Sites/ChicCanto/public/assets/js/game-message.js\")",
       "Bash(cp \"E:/Sites/ChicCanto/store.js_20260318-140000.txt\" \"E:/Sites/ChicCanto/public/assets/js/store.js\")",
       "Bash(cp \"E:/Sites/ChicCanto/card.js_20260318-140000.txt\" \"E:/Sites/ChicCanto/public/assets/js/card.js\")",
-      "Bash(cp \"E:/Sites/ChicCanto/token_token.js_20260318-140000.txt\" \"E:/Sites/ChicCanto/functions/token/[token].js\")"
+      "Bash(cp \"E:/Sites/ChicCanto/token_token.js_20260318-140000.txt\" \"E:/Sites/ChicCanto/functions/token/[token].js\")",
+      "Bash(python -c ':*)",
+      "Bash(python3 --version)",
+      "Bash(node --version)",
+      "Bash(node -e ':*)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

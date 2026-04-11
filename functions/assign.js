@@ -61,48 +61,48 @@ function cardKeyToCodePrefix(card_key){
 }
 
 function escHtml(s){
-  const map = {38:’&amp;’,60:’&lt;’,62:’&gt;’,34:’&quot;’};
-  return String(s).replace(/[&<>”]/g, (c) => map[c.charCodeAt(0)] || c);
+  const map = {38:'&amp;',60:'&lt;',62:'&gt;',34:'&quot;'};
+  return String(s).replace(/[&<>"]/g, (c) => map[c.charCodeAt(0)] || c);
 }
 
 function buildHtmlEmail({ greetingHtml, introLine, codeBlocks, faq }){
   const codeBlocksHtml = codeBlocks.map((item) => {
     const label = item.label
-      ? `<p style=”margin:0 0 6px;font-size:13px;color:#888;text-align:center;”>${escHtml(item.label)}</p>`
-      : ‘’;
+      ? `<p style="margin:0 0 6px;font-size:13px;color:#888;text-align:center;">${escHtml(item.label)}</p>`
+      : '';
     return label +
-      `<div style=”text-align:center;margin:24px 0 8px;”>` +
-      `<div style=”display:inline-block;background:#f5f0e8;border:1px solid #e0d5c5;border-radius:8px;padding:16px 24px;”>` +
-      `<span style=”font-family:’Courier New’,Courier,monospace;font-size:22px;font-weight:bold;letter-spacing:0.12em;color:#2c2420;”>${escHtml(item.code)}</span>` +
+      `<div style="text-align:center;margin:24px 0 8px;">` +
+      `<div style="display:inline-block;background:#f5f0e8;border:1px solid #e0d5c5;border-radius:8px;padding:16px 24px;">` +
+      `<span style="font-family:'Courier New',Courier,monospace;font-size:22px;font-weight:bold;letter-spacing:0.12em;color:#2c2420;">${escHtml(item.code)}</span>` +
       `</div></div>` +
-      `<div style=”text-align:center;margin:12px 0 20px;”>` +
-      `<a href=”${item.link}” style=”background:#2c2420;color:#ffffff;padding:14px 32px;border-radius:50px;font-size:16px;font-weight:600;text-decoration:none;display:inline-block;”>Activate your card</a>` +
+      `<div style="text-align:center;margin:12px 0 20px;">` +
+      `<a href="${item.link}" style="background:#2c2420;color:#ffffff;padding:14px 32px;border-radius:50px;font-size:16px;font-weight:600;text-decoration:none;display:inline-block;">Activate your card</a>` +
       `</div>` +
-      `<p style=”margin:0 0 24px;text-align:center;font-size:12px;color:#999;”>Or copy this link into your browser:<br/>` +
-      `<a href=”${item.link}” style=”color:#999;word-break:break-all;”>${item.link}</a></p>`;
-  }).join(‘’);
+      `<p style="margin:0 0 24px;text-align:center;font-size:12px;color:#999;">Or copy this link into your browser:<br/>` +
+      `<a href="${item.link}" style="color:#999;word-break:break-all;">${item.link}</a></p>`;
+  }).join('');
 
-  return `<!DOCTYPE html><html><head><meta charset=”utf-8”/></head>` +
-    `<body style=”margin:0;padding:0;background:#f9f6f1;font-family:Georgia,serif;”>` +
-    `<table width=”100%” cellpadding=”0” cellspacing=”0” role=”presentation” style=”background:#f9f6f1;”>` +
-    `<tr><td align=”center” style=”padding:24px 16px;”>` +
-    `<table width=”600” cellpadding=”0” cellspacing=”0” role=”presentation” style=”max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;”>` +
-    `<tr><td style=”background:#2c2420;padding:20px 24px;text-align:center;”>` +
-    `<span style=”font-family:Georgia,serif;font-size:28px;color:#ffffff;font-style:italic;”>ChicCanto</span>` +
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/></head>` +
+    `<body style="margin:0;padding:0;background:#f9f6f1;font-family:Georgia,serif;">` +
+    `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f9f6f1;">` +
+    `<tr><td align="center" style="padding:24px 16px;">` +
+    `<table width="600" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;">` +
+    `<tr><td style="background:#2c2420;padding:20px 24px;text-align:center;">` +
+    `<span style="font-family:Georgia,serif;font-size:28px;color:#ffffff;font-style:italic;">ChicCanto</span>` +
     `</td></tr>` +
-    `<tr><td style=”padding:40px;font-size:16px;color:#2c2420;line-height:1.6;”>` +
-    `<p style=”margin:0 0 16px;”>${greetingHtml}</p>` +
-    `<p style=”margin:0 0 24px;color:#555;”>Thanks for your order, and welcome to ChicCanto.</p>` +
-    `<p style=”margin:0 0 8px;color:#555;”>${escHtml(introLine)}</p>` +
+    `<tr><td style="padding:40px;font-size:16px;color:#2c2420;line-height:1.6;">` +
+    `<p style="margin:0 0 16px;">${greetingHtml}</p>` +
+    `<p style="margin:0 0 24px;color:#555;">Thanks for your order, and welcome to ChicCanto.</p>` +
+    `<p style="margin:0 0 8px;color:#555;">${escHtml(introLine)}</p>` +
     codeBlocksHtml +
-    `<p style=”margin:0 0 16px;font-size:14px;color:#555;line-height:1.6;”>` +
+    `<p style="margin:0 0 16px;font-size:14px;color:#555;line-height:1.6;">` +
     `<strong>Sharing tip:</strong> Use the recipient link you get after setup. It opens an &#8220;Open&#8221; page first, ` +
     `because scratching does not work inside Messenger or Instagram&#8217;s in-app browser. The page will guide them to open it in their browser.</p>` +
-    `<p style=”margin:0;font-size:14px;color:#555;”>Need help? <a href=”${faq}” style=”color:#2c2420;text-decoration:underline;”>FAQ</a></p>` +
+    `<p style="margin:0;font-size:14px;color:#555;">Need help? <a href="${faq}" style="color:#2c2420;text-decoration:underline;">FAQ</a></p>` +
     `</td></tr>` +
-    `<tr><td style=”background:#2c2420;padding:20px 24px;text-align:center;”>` +
-    `<p style=”margin:0 0 6px;font-size:14px;color:#ffffff;”>Have fun,<br/>ChicCanto</p>` +
-    `<p style=”margin:0;font-size:12px;color:#9a918a;”>Questions? support@chiccanto.com</p>` +
+    `<tr><td style="background:#2c2420;padding:20px 24px;text-align:center;">` +
+    `<p style="margin:0 0 6px;font-size:14px;color:#ffffff;">Have fun,<br/>ChicCanto</p>` +
+    `<p style="margin:0;font-size:12px;color:#9a918a;">Questions? support@chiccanto.com</p>` +
     `</td></tr>` +
     `</table></td></tr></table></body></html>`;
 }
@@ -111,12 +111,12 @@ function buildMessage({ codes, origin, buyerName, buyerEmail }){
   const base = `${origin}/`;
   const faq = `${base}faq/`;
 
-  const name = String(buyerName || ‘’).trim();
-  const greeting = name ? `Hi ${name},` : ‘Hi,’;
-  const greetingHtml = name ? `Hi ${escHtml(name)},` : ‘Hi,’;
+  const name = String(buyerName || '').trim();
+  const greeting = name ? `Hi ${name},` : 'Hi,';
+  const greetingHtml = name ? `Hi ${escHtml(name)},` : 'Hi,';
 
   const list = (Array.isArray(codes) ? codes : [])
-    .map((c) => String(c || ‘’).trim())
+    .map((c) => String(c || '').trim())
     .filter(Boolean);
 
   const buildActivationLink = (code) => `${base}?code=${encodeURIComponent(code)}`;
@@ -125,7 +125,7 @@ function buildMessage({ codes, origin, buyerName, buyerEmail }){
   let html;
 
   if (list.length <= 1){
-    const assignedCode = list[0] || ‘’;
+    const assignedCode = list[0] || '';
     const activationLink = buildActivationLink(assignedCode);
 
     text =
@@ -147,7 +147,7 @@ Manual option:
 This is quick, private, and works on both phone and desktop.
 
 Sharing tip (important):
-Use the recipient link you get after setup. It opens an “Open” page first, because scratching does not work inside Messenger or Instagram’s in-app browser. The page will guide them to open it in their browser.
+Use the recipient link you get after setup. It opens an "Open" page first, because scratching does not work inside Messenger or Instagram's in-app browser. The page will guide them to open it in their browser.
 
 Need the link again later? Just redeem the same code.
 
@@ -159,7 +159,7 @@ ChicCanto`;
 
     html = buildHtmlEmail({
       greetingHtml,
-      introLine: ‘Your scratch card is ready to set up.’,
+      introLine: 'Your scratch card is ready to set up.',
       codeBlocks: [{ code: assignedCode, link: activationLink }],
       faq,
     });
@@ -174,12 +174,12 @@ ChicCanto`;
 Thanks for your order, and welcome to ChicCanto.
 
 Your ${list.length} activation codes (one per card):
-${codeLines.join(‘\n’)}
+${codeLines.join('\n')}
 
 Quick start (recommended):
 Open a link below and the matching code will be filled in automatically:
 
-${linkLines.join(‘\n’)}
+${linkLines.join('\n')}
 
 Manual option:
 1. Open: ${base}
@@ -188,7 +188,7 @@ Manual option:
 This is quick, private, and works on both phone and desktop.
 
 Sharing tip (important):
-Use the recipient link you get after setup. It opens an “Open” page first, because scratching does not work inside Messenger or Instagram’s in-app browser. The page will guide them to open it in their browser.
+Use the recipient link you get after setup. It opens an "Open" page first, because scratching does not work inside Messenger or Instagram's in-app browser. The page will guide them to open it in their browser.
 
 Need the link again later? Just redeem the same code.
 
