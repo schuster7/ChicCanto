@@ -304,7 +304,7 @@ async function sendActivationEmail(env, { buyerEmail, messageHtml, subject }){
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'ChicCanto moment@chiccanto.com',
+        from: 'ChicCanto <moment@chiccanto.com>',
         to: [buyerEmail],
         subject,
         html: messageHtml,
