@@ -59,7 +59,7 @@ New products require only a new theme entry in `card-themes.js` plus design asse
 - **Export DOM indexing in `_inlineStylesDeep` is fragile** to DOM order changes.
 
 ## Planned Work (do not start until ordered)
-- **Make.com automation for Etsy order fulfilment**: requires extracting session cookie helpers from `assign.js`, `auth.js`, `replace-assignment.js`, `void-assignment.js` into `functions/_lib/auth.js`, plus an API key auth path on `/assign` for machine calls.
+- **Make.com automation DONE** — Etsy Watch Shop Receipts triggers POST /assign. Email sent directly from /assign via Resend. Make.com scenario is 2 modules only.
 - **isFinal fix in `_onSeqStepScratched`** (required before next sequential product).
 - **Future**: scratch platform may move to `app.chiccanto.com` when a Shopify storefront takes `chiccanto.com` root. Requires adding `app.chiccanto.com` as a second custom domain on the Cloudflare Pages project and setting up path redirects for `/open/`, `/card/`, `/activate/` from `chiccanto.com`.
 
@@ -82,3 +82,4 @@ New products require only a new theme entry in `card-themes.js` plus design asse
 | CARDS_KV | KV binding | All persistent state |
 | FULFILL_KEY | Secret | Admin password |
 | FULFILL_SESSION_SECRET | Secret | HMAC key for session cookies |
+| RESEND_API_KEY | Secret | Resend API key for transactional email |

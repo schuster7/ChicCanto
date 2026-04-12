@@ -295,6 +295,35 @@ async function generateUniqueCode(env, prefix){
   throw new Error('Failed to generate a unique code.');
 }
 
+async function sendActivationEmail(env, { buyerEmail, messageHtml, subject }){
+  try{
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'ChicCanto moment@chiccanto.com',
+        to: [buyerEmail],
+        subject,
+        html: messageHtml,
+      }),
+    });
+    if (res.status >= 200 && res.status < 300){
+      return { ok: true };
+    }
+    let error = `HTTP ${res.status}`;
+    try{
+      const body = await res.text();
+      if (body) error = `${error}: ${body.slice(0, 500)}`;
+    } catch {}
+    return { ok: false, error };
+  } catch (e){
+    return { ok: false, error: String((e && e.message) || e || 'fetch failed') };
+  }
+}
+
 export async function onRequestPost(context){
   const { request, env } = context;
 
@@ -358,6 +387,19 @@ export async function onRequestPost(context){
     const assignment_conflict = (existing_card_key !== card_key) || (existing_quantity !== quantity);
     const assignmentState = await inspectAssignmentState(env, codes);
     const msg = buildMessage({ codes, origin, buyerName: buyer_name || existingOrder.buyer_name || '', buyerEmail: buyer_email });
+
+    let email_sent;
+    let email_error;
+    if (buyer_email && env.RESEND_API_KEY){
+      const emailResult = await sendActivationEmail(env, {
+        buyerEmail: buyer_email,
+        messageHtml: msg.html,
+        subject: 'Your ChicCanto scratch card is ready 🎉',
+      });
+      email_sent = !!emailResult.ok;
+      if (!emailResult.ok && emailResult.error) email_error = emailResult.error;
+    }
+
     return json({
       ok: true,
       existing: true,
@@ -374,6 +416,8 @@ export async function onRequestPost(context){
       message_text: msg.text,
       message_html: msg.html,
       ...(buyer_email ? { buyer_email } : {}),
+      ...(email_sent !== undefined ? { email_sent } : {}),
+      ...(email_error ? { email_error } : {}),
     });
   }
 
@@ -422,6 +466,19 @@ export async function onRequestPost(context){
   await env.CARDS_KV.put(orderIndexKey, JSON.stringify(orderRec));
 
   const msg = buildMessage({ codes, origin, buyerName: buyer_name, buyerEmail: buyer_email });
+
+  let email_sent;
+  let email_error;
+  if (buyer_email && env.RESEND_API_KEY){
+    const emailResult = await sendActivationEmail(env, {
+      buyerEmail: buyer_email,
+      messageHtml: msg.html,
+      subject: 'Your ChicCanto scratch card is ready 🎉',
+    });
+    email_sent = !!emailResult.ok;
+    if (!emailResult.ok && emailResult.error) email_error = emailResult.error;
+  }
+
   return json({
     ok: true,
     existing: false,
@@ -433,5 +490,7 @@ export async function onRequestPost(context){
     message_text: msg.text,
     message_html: msg.html,
     ...(buyer_email ? { buyer_email } : {}),
+    ...(email_sent !== undefined ? { email_sent } : {}),
+    ...(email_error ? { email_error } : {}),
   });
 }
