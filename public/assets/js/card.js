@@ -2120,6 +2120,11 @@ function renderRevealed(root, card){
 }
 
 export async function bootCard(){
+  // Screenshot mode: must be first so the class is present before any paint.
+  if (new URLSearchParams(window.location.search).has('screenshot')) {
+    document.documentElement.classList.add('screenshot-mode');
+  }
+
   // Landing page stays dark
   if (document.body.dataset.page === 'landing') {
     document.documentElement.dataset.colorMode = 'dark';

@@ -1720,3 +1720,18 @@ border-radius: var(--scratch-tile-radius);
     min-height: 85vh;
   }
 }
+
+/* ── Screenshot mode (?screenshot=1) ── */
+/* Hides decorative layers so screenshots show only the card itself.
+   All hiding is visibility:hidden so layout is preserved. */
+html.screenshot-mode .site-header {
+  visibility: hidden;
+}
+html.screenshot-mode .scratch-glow,
+html.screenshot-mode .scratch-fx::before {
+  visibility: hidden;
+}
+html.screenshot-mode body::before,
+html.screenshot-mode body::after {
+  visibility: hidden;
+}
