@@ -201,7 +201,9 @@ export function attachScratchTile(canvas, { onScratched, hintStyle }){
       const x = startX + (endX - startX) * p;
 
       // Redraw full cover each frame (only while untouched).
-      paintCover(ctx, rect, { sheenX: x, hintStyle });
+      // In screenshot mode the sheen band is suppressed so captures are clean.
+      const sheenArg = document.documentElement.classList.contains('screenshot-mode') ? null : x;
+      paintCover(ctx, rect, { sheenX: sheenArg, hintStyle });
 
       rafId = requestAnimationFrame(loop);
     };
