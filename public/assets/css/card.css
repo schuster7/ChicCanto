@@ -1735,3 +1735,7 @@ html.screenshot-mode body::before,
 html.screenshot-mode body::after {
   visibility: hidden;
 }
+html.screenshot-mode .scratch-fx {
+  outline: 1px solid rgba(255,255,255,0.75);
+  filter: drop-shadow(0 0 24px rgba(255,255,255,0.75));
+}
