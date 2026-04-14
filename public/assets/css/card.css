@@ -1737,5 +1737,5 @@ html.screenshot-mode body::after {
 }
 html.screenshot-mode .scratch-fx {
   outline: 1px solid rgba(255,255,255,0.75);
-  filter: drop-shadow(0 0 24px rgba(255,255,255,0.75));
+  filter: drop-shadow(0 8px 32px rgba(0,0,0,0.35));
 }
