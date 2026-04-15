@@ -167,10 +167,10 @@ export const CARD_THEMES = {
     pageGlowB1: 'rgba(140, 80, 200, .06)',
     pageGlowB2: 'rgba(100, 50, 160, .08)',
     prizeOptions: [
-      { tier: 't1', label: '69', icon: '69' },
-      { tier: 't2', label: 'Blindfold', icon: 'blindfold' },
+      { tier: 't1', label: 'Tie Her Up', icon: 'tie-her-up' },
+      { tier: 't2', label: '69', icon: '69' },
       { tier: 't3', label: 'Spanking', icon: 'spanking' },
-      { tier: 't4', label: 'Tie Her Up', icon: 'tie-her-up' },
+      { tier: 't4', label: 'Blindfold', icon: 'blindfold' },
     ],
   },
 
