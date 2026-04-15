@@ -23,8 +23,8 @@ export const CARD_THEMES = {
     pageGlowB2: 'rgba(140, 120, 80, .06)',
     prizeOptions: [
       { tier: 't1', label: 'Blowjob', icon: 'blowjob' },
-      { tier: 't2', label: 'Handjob', icon: 'handjob' },
-      { tier: 't3', label: 'Anal', icon: 'anal' },
+      { tier: 't2', label: 'Anal', icon: 'anal' },
+      { tier: 't3', label: 'Handjob', icon: 'handjob' },
       { tier: 't4', label: 'His Fantasy', icon: 'fantasy' },
     ],
   },
@@ -111,8 +111,8 @@ export const CARD_THEMES = {
     pageGlowB2: 'rgba(160, 130, 40, .06)',
     prizeOptions: [
       { tier: 't1', label: 'Blowjob', icon: 'blowjob' },
-      { tier: 't2', label: 'Handjob', icon: 'handjob' },
-      { tier: 't3', label: 'Anal', icon: 'anal' },
+      { tier: 't2', label: 'Anal', icon: 'anal' },
+      { tier: 't3', label: 'Handjob', icon: 'handjob' },
       { tier: 't4', label: 'His Fantasy', icon: 'fantasy' },
     ],
   },
