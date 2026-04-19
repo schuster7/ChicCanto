@@ -489,6 +489,92 @@ export const CARD_THEMES = {
     },
   },
 
+  // ─── Baby Name Reveal — panels message-mode card ────────────────────
+  // Sender types a name; recipient scratches one tile per character.
+  // Characters converge into a centered wordmark on completion.
+
+  'baby-name1': {
+    key: 'baby-name1',
+    gameType: 'message',
+    messageMode: 'panels',
+    presentation: 'fullscreen',
+    colorMode: 'light',
+    genderVariants: true,
+    defaultGender: 'neutral',
+
+    // Sender UI labels
+    panelLabel: 'Baby name',
+    panelPlaceholder: 'e.g. OLIVER',
+    panelMaxLength: 12,
+    panelAllowedPattern: /^[\p{L}\s\p{M}]*$/u,
+
+    // Tile / wordmark typography
+    panelCharFont: "'Dancing Script', cursive",
+    panelCharWeight: 500,
+    panelCharColor: {
+      neutral: '#8a7a6a',
+      boy: '#445f75',
+      girl: '#6d3f64',
+    },
+
+    // Title (above tiles)
+    titleText: 'Guess the name',
+    titleFont: "'Dancing Script', cursive",
+    titleWeight: 400,
+    titleColor: {
+      neutral: '#8a7a6a',
+      boy: '#445f75',
+      girl: '#6d3f64',
+    },
+
+    // Accent (buttons, wordmark)
+    accentColor: {
+      neutral: '#8a7a6a',
+      boy: '#445f75',
+      girl: '#6d3f64',
+    },
+
+    // Message font (subtitle / custom_message)
+    messageFont: "'Dancing Script', cursive",
+    messageWeight: 400,
+
+    // Foil (same neutral aesthetic as gender-reveal1)
+    foil: 'neutral',
+    foilBase: '#c8bfb4',
+    foilHi:   '#d8d0c6',
+    foilMid:  '#c0b8ac',
+    foilDark: '#b8b0a4',
+    foilText: 'rgba(80,65,50,0.45)',
+
+    // Backgrounds — PLACEHOLDER: copied from gender-reveal1, swap before going live
+    thumbSrc: '/assets/cards/baby-name1/thumb.jpg',
+    bgDesktopSrc: '/assets/cards/baby-name1/bg-desktop.jpg',
+    bgMobileSrc: '/assets/cards/baby-name1/bg-mobile.jpg',
+    bgVariants: {
+      neutral: {
+        desktop: '/assets/cards/baby-name1/neutral/bg-desktop.jpg',
+        mobile: '/assets/cards/baby-name1/neutral/bg-mobile.jpg',
+      },
+      boy: {
+        desktop: '/assets/cards/baby-name1/boy/bg-desktop.jpg',
+        mobile: '/assets/cards/baby-name1/boy/bg-mobile.jpg',
+      },
+      girl: {
+        desktop: '/assets/cards/baby-name1/girl/bg-desktop.jpg',
+        mobile: '/assets/cards/baby-name1/girl/bg-mobile.jpg',
+      },
+    },
+
+    // Page theme (light, matches gender-reveal1 palette)
+    pageBg:  '#fcf8f5',
+    pageBg1: '#fcf8f5',
+    pageGlowA1: 'rgba(252,248,245,0)',
+    pageGlowA2: 'rgba(252,248,245,0)',
+    pageGlowA3: 'rgba(252,248,245,0)',
+    pageGlowB1: 'rgba(252,248,245,0)',
+    pageGlowB2: 'rgba(252,248,245,0)',
+  },
+
 };  // closes CARD_THEMES
 
 
@@ -587,5 +673,33 @@ export function getResolvedMsgTheme(card_key, card_style, scratch_shape){
     borderRingSrc,
     styles: theme.styles,
     availableShapes: theme.availableShapes,
+  };
+}
+
+export function getPanelsConfig(card_key, gender){
+  const theme = getCardTheme(card_key);
+  if (!theme || theme.messageMode !== 'panels') return null;
+
+  const g = gender || theme.defaultGender || 'neutral';
+
+  const resolve = (val) => {
+    if (!val) return null;
+    if (typeof val === 'object' && !Array.isArray(val)) return val[g] || val.neutral || val.boy || null;
+    return val;
+  };
+
+  // Resolve background from bgVariants (gender-keyed) falling back to theme root
+  const variant = theme.bgVariants && theme.bgVariants[g];
+  const bgDesktopSrc = (variant && variant.desktop) || theme.bgDesktopSrc || '';
+  const bgMobileSrc = (variant && variant.mobile) || theme.bgMobileSrc || bgDesktopSrc;
+
+  return {
+    ...theme,
+    bgDesktopSrc,
+    bgMobileSrc,
+    panelCharColor: resolve(theme.panelCharColor),
+    titleColor: resolve(theme.titleColor),
+    accentColor: resolve(theme.accentColor),
+    _gender: g,
   };
 }

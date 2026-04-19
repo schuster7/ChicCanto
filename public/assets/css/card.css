@@ -1739,3 +1739,107 @@ html.screenshot-mode .scratch-fx {
   outline: 1px solid rgba(255,255,255,0.75);
   filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
 }
+
+/* ── Panels mode ── */
+
+.cc-panels-wrapper {
+  --panels-char-font: 'Dancing Script', cursive;
+  --panels-char-color: #8a7a6a;
+  --panels-char-weight: 500;
+  --panels-accent: #8a7a6a;
+}
+
+.cc-panels-title {
+  text-align: center;
+  font-size: clamp(1.4rem, 4.5vw, 2rem);
+  margin-bottom: 1.2rem;
+  opacity: 0.9;
+}
+
+.cc-panels-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.cc-panels-tile {
+  width: clamp(32px, 8vw, 60px);
+  aspect-ratio: 3 / 4;
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.cc-panels-tile-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  border-radius: 6px;
+}
+
+.cc-panels-char {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(1.2rem, 5vw, 2rem);
+  z-index: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+.cc-panels-space {
+  width: clamp(16px, 4vw, 30px);
+  flex-shrink: 0;
+}
+
+.cc-panels-wordmark-area {
+  text-align: center;
+  margin-top: 1.5rem;
+  min-height: 2rem;
+}
+
+.cc-panels-wordmark {
+  text-align: center;
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  letter-spacing: 0.04em;
+  opacity: 0.95;
+}
+
+.cc-panels-subtitle {
+  text-align: center;
+  font-size: clamp(1rem, 3.2vw, 1.2rem);
+  margin-top: 0.5rem;
+}
+
+.cc-panels-fromline {
+  text-align: center;
+  font-size: clamp(0.9rem, 2.8vw, 1.1rem);
+  margin-top: 0.35rem;
+}
+
+.cc-panels-reveal-overlay {
+  z-index: 5;
+}
+
+.cc-panels-clone-char {
+  will-change: transform;
+}
+
+@media (min-width: 700px) {
+  .cc-panels-tile {
+    width: clamp(40px, 5vw, 72px);
+  }
+  .cc-panels-space {
+    width: clamp(20px, 2.5vw, 36px);
+  }
+}

@@ -169,7 +169,9 @@
 
       function getFlavour(card_key) {
         if (!card_key) return "They've left something just for you";
+        if (card_key === 'baby-name1')     return "They are revealing a special name";
         if (card_key === 'gender-reveal')  return "They're about to share some big news";
+        // NOTE: 'gender-reveal' above is a pre-existing bug — the real key is 'gender-reveal1'
         if (card_key === 'custom-card')    return "They've hidden a message just for you";
         if (/novice|advanced|birthday/i.test(card_key)) return "They've got a prize waiting for you";
         return "They've left something just for you";

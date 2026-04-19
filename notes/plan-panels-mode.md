@@ -39,7 +39,7 @@ import { getCardTheme, getResolvedMsgTheme, getSeqStepConfig, getPanelsConfig } 
 | `_panelsRevealAnimation` | `(root, card, theme, resolved)` | Orchestrates fade-out + converge + subtitle/from fade-in + Continue |
 | `_exportPanelsStacked` | `(card, recipientMessage, returnBlob)` | 1080x1350 JPEG export |
 | `_panelsShare` | `(card, recipientMessage, btn)` | Web Share API / download helper |
-| `_openPanelsPreviewModal` | `(fakeCard)` | Sender "Try scratch yourself" modal |
+| `_openPanelsPreviewModal` | `(fakeCard)` | Sender "Try scratch yourself" modal (Amendment 4: full CSS state save/restore copied verbatim from `_openSeqPreviewModal` lines 1192-1257) |
 | `_titleCase` | `(str)` | Helper: lowercases then Title Cases a string |
 
 ### 2. `public/assets/js/card-themes.js`
@@ -219,8 +219,8 @@ if (card_key === 'baby-name1') return "They are revealing a special name";
 | Class | Purpose |
 |-------|---------|
 | `.cc-panels-wrapper` | Fullscreen wrapper (uses existing `has-fullscreen-card` body pattern) |
-| `.cc-panels-row` | CSS grid container for tiles. `grid-template-columns: repeat(auto-fit, minmax(0, 1fr))`, max 10 per row, wraps to 2 rows above 10 |
-| `.cc-panels-tile` | Individual tile. Aspect 3/4 portrait. Position: relative. Overflow: hidden |
+| `.cc-panels-row` | Flex container for tiles (Amendment 2): `display:flex; flex-wrap:wrap; justify-content:center; gap:6px`. No CSS grid — fixed-width tiles wrap naturally. |
+| `.cc-panels-tile` | Individual tile. Fixed width via `clamp(32px, 8vw, 60px)` on mobile, `clamp(40px, 5vw, 72px)` on desktop (min-width:700px). Aspect 3/4 portrait. Position: relative. Overflow: hidden |
 | `.cc-panels-char` | Character under foil. Absolutely positioned at center. Uses CSS vars `--panel-char-font`, `--panel-char-color`, `--panel-char-weight` |
 | `.cc-panels-title` | Title element above tiles |
 | `.cc-panels-wordmark` | Centered wordmark for post-reveal. Uses same CSS vars |
@@ -297,17 +297,19 @@ Post-configure: renders share UI block with Copy/Share buttons identical to sequ
    - Checks if all non-space indices are present in `scratched_indices`
 6. When all non-space indices are scratched, fire the reveal sequence.
 
-**Reveal sequence timing:**
-- t=0: All tiles fade to opacity 0 over 500ms
-- t=500: Tiles are `display:none`. Characters appear at their tile positions as free-standing elements
-- t=600: Characters animate from tile positions to a single centered wordmark using CSS `transform: translate(...)` with `transition: 700ms ease`
-- t=1300: Wordmark element visible at center, transitions done
+**Reveal sequence timing (Amendment 1 — convergence animation):**
+- t=0: All tiles fade to opacity 0 over 500ms. Lock `.cc-panels-row` height via `min-height` to prevent layout collapse.
+- t=500: Tiles are `display:none`. A `.cc-panels-reveal-overlay` (position:absolute, same size as row) is created. For each non-space character, clone the char element into the overlay, positioned at the original tile's `getBoundingClientRect()` offset relative to the overlay.
+- t=600: Cloned chars animate via CSS `transform: translate(dx, dy)` with `transition: 700ms ease` toward the center of the overlay, spaced to form the wordmark.
+- t=1300: All clones are removed. A static `.cc-panels-wordmark` element replaces them, showing the full word. The overlay is removed.
 - t=1600: Subtitle (`card.custom_message`) fades in over 300ms
 - t=1800: From-line (`card.from_line`) fades in over 200ms
 - t=2400: Continue button appears, styled with resolved `accentColor`
 - On Continue click: persists `revealed: true` via `setRevealedAndWait`, then renders `_renderPanelsShareScreen`
 
-**Resume handling:** If `card.revealed` is already true on first render, skip scratch UI and go straight to `_renderPanelsRevealed`. If `card.scratched_indices` has partial progress, force-reveal those tiles on render so progress is preserved across page refreshes.
+**Resume handling (Amendment 5 — partial scratch restore):** If `card.revealed` is already true on first render, skip scratch UI and go straight to `_renderPanelsRevealed`. If `card.scratched_indices` has partial progress: on initial render, check each tile index against `scratched_indices` — for already-scratched tiles, skip `attachScratchTile` and show the character directly (no foil). After rendering, run the completion check immediately to handle the edge case where all tiles were scratched but the page was closed before the reveal animation.
+
+**Defensive fallback (Amendment 3):** In both `_renderPanelsScratch` and `_renderPanelsRevealed`, if `card.panel_text` is null, empty, or not a string, render a user-friendly "This card isn't ready yet" message instead of crashing. This covers the case where a recipient opens the link before the sender has configured it.
 
 ---
 
@@ -371,7 +373,7 @@ if (panel_text !== undefined) card.panel_text = panel_text;
 
 2. **Character convergence animation:** Using JS-calculated CSS transforms rather than FLIP or Web Animations API. Each character gets `position: absolute` with coordinates matching its tile position, then transitions to the wordmark center. Simpler, no dependencies, works with existing patterns.
 
-3. **Tile layout:** CSS grid with `repeat(auto-fit, ...)` for up to 10 tiles per row. For names >10 chars, wrap to second row. This handles the full range of panelMaxLength=12 cleanly.
+3. **Tile layout (Amendment 2):** Fixed-width tiles in a flex-wrap container, not CSS grid auto-fit. Mobile width: `clamp(32px, 8vw, 60px)`, Desktop width: `clamp(40px, 5vw, 72px)`. Tiles wrap naturally for long names. This is simpler and more predictable than grid auto-fit.
 
 4. **Tile scratch threshold:** Reusing the existing `SCRATCH_THRESHOLD` (0.55) from `config.js` via `attachScratchTile`. No per-tile threshold override needed since the tiles are small and 55% scratch feels natural.
 

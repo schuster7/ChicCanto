@@ -56,6 +56,7 @@ function cardKeyToCodePrefix(card_key){
     'women-advanced1': 'CC-WOM-ADV1',
     'custom-card': 'CC-CUSTOM',
     'gender-reveal1': 'CC-GENDER',
+    'baby-name1': 'CC-NAME1',
   };
   return MAP[k] || 'CC-CARD';
 }

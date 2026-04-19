@@ -131,6 +131,10 @@ function applyAllowedUpdates(existing, body, { allowSender = false } = {}){
     if ('due_month' in body){
       next.due_month = (body.due_month == null) ? null : String(body.due_month).slice(0, 7);
     }
+    // Panels mode fields (sender-only).
+    if ('panel_text' in body){
+      next.panel_text = (body.panel_text == null) ? null : String(body.panel_text).slice(0, 32);
+    }
   }
 
   // Recipient-writable fields.

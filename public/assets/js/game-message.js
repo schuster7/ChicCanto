@@ -4,7 +4,7 @@
 // v2: style picker, shape picker, "From" sign-off, dark-luxury border ring.
 
 import { attachScratchTile } from './scratch.js';
-import { getCardTheme, getResolvedMsgTheme, getSeqStepConfig } from './card-themes.js';
+import { getCardTheme, getResolvedMsgTheme, getSeqStepConfig, getPanelsConfig } from './card-themes.js';
 import { getCard, saveCard, setConfiguredAndWait, setRevealedAndWait } from './store.js';
 import { copyText } from './utils.js';
 
@@ -88,6 +88,9 @@ export function renderMessageSetup(root, card, container, { previewMode = false 
   const baseTheme = getCardTheme(card.card_key) || {};
   if (baseTheme.messageMode === 'sequential'){
     return _renderSeqSetup(root, card, container, { previewMode });
+  }
+  if (baseTheme.messageMode === 'panels'){
+    return _renderPanelsSetup(root, card, container, { previewMode });
   }
   const maxMsgDefault = baseTheme.messageMaxLength || 200;
   function _maxMsgForShape(shape){
@@ -519,6 +522,9 @@ export function renderMessageScratch(root, card){
   if (theme.messageMode === 'sequential'){
     return _renderSeqScratch(root, card);
   }
+  if (theme.messageMode === 'panels'){
+    return _renderPanelsScratch(root, card);
+  }
   const resolved = getResolvedMsgTheme(card.card_key, card.card_style, card.scratch_shape) || {};
   const message = card.message || '';
   const visibleTitle = card.visible_title || '';
@@ -779,6 +785,9 @@ export function renderMessageRevealed(root, card){
   const theme = getCardTheme(card.card_key) || {};
   if (theme.messageMode === 'sequential'){
     return _renderSeqRevealed(root, card);
+  }
+  if (theme.messageMode === 'panels'){
+    return _renderPanelsRevealed(root, card);
   }
   const resolved = getResolvedMsgTheme(card.card_key, card.card_style, card.scratch_shape) || {};
   const message = card.message || '';
@@ -2052,6 +2061,1071 @@ async function _exportSeqStacked(card, recipientMessage = '', returnBlob = false
     const a = document.createElement('a');
     a.href     = dataUrl;
     a.download = `gender-reveal-${gender}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }catch(e){
+    console.error('Export failed:', e);
+    alert('Export failed. Please try again.');
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Panels message-mode ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+function _titleCase(str){
+  return String(str || '').toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
+}
+
+function _renderPanelsNotReady(root){
+  root.innerHTML = `
+    <section class="flow-screen">
+      <div class="flow-intro">
+        <h1 class="flow-title">This card isn't ready yet</h1>
+        <p class="flow-lead muted">The sender hasn't finished setting it up. Check back soon!</p>
+      </div>
+    </section>
+  `;
+}
+
+
+// ── Setup (sender) ────────────────────────────────────────────────────────────
+
+function _renderPanelsSetup(root, card, container, { previewMode = false } = {}){
+  const theme = getCardTheme(card.card_key) || {};
+  const isConfigured = !!card.configured;
+
+  // ── Configured: show share UI ──
+  if (isConfigured){
+    const gender = card.gender || theme.defaultGender || 'neutral';
+    const panelText = card.panel_text || '';
+
+    root.innerHTML = `
+      <section class="flow-screen seq-setup">
+        <div class="flow-intro">
+          <h1 class="flow-title">Your Baby Name Reveal is ready!</h1>
+          <p class="flow-lead muted">Revealing <strong>${_escHtml(panelText)}</strong>. Share the link with your recipient.</p>
+        </div>
+        <div class="seq-setup__form panel panel--glass panel--padded">
+          ${card.custom_message ? `<p class="seq-setup__summary muted">Subtitle: <em>${_escHtml(card.custom_message)}</em></p>` : ''}
+          ${card.from_line ? `<p class="seq-setup__summary muted">From: <em>${_escHtml(card.from_line)}</em></p>` : ''}
+          <div class="msg-setup__actions">
+            <button class="btn primary" type="button" data-action="copy-link">Copy recipient link</button>
+            <button class="btn" type="button" data-action="share-link">Share</button>
+          </div>
+        </div>
+      </section>
+    `;
+
+    const recipientUrl = `${window.location.origin}/open/?token=${card.token}`;
+
+    root.querySelector('[data-action="copy-link"]')?.addEventListener('click', async function(){
+      try{
+        await copyText(recipientUrl);
+        this.textContent = 'Copied!';
+        this.disabled = true;
+        setTimeout(() => { this.textContent = 'Copy recipient link'; this.disabled = false; }, 1200);
+      }catch(_){}
+    });
+
+    root.querySelector('[data-action="share-link"]')?.addEventListener('click', async function(){
+      try{
+        if (navigator.share){
+          await navigator.share({ url: recipientUrl, text: 'I have a surprise for you!' });
+        } else {
+          await copyText(recipientUrl);
+          this.textContent = 'Link copied!';
+          setTimeout(() => { this.textContent = 'Share'; }, 1200);
+        }
+      }catch(_){}
+    });
+
+    return;
+  }
+
+  // ── Not configured: show setup form ──
+  const maxName = theme.panelMaxLength || 12;
+  const maxSubtitle = 60;
+  const maxFrom = 40;
+
+  root.innerHTML = `
+    <section class="flow-screen seq-setup">
+      <div class="flow-intro">
+        <h1 class="flow-title">Set up your Baby Name Reveal</h1>
+        <p class="flow-lead muted">Type the name, pick the gender variant, and add an optional subtitle.</p>
+      </div>
+      <div class="seq-setup__form panel panel--glass panel--padded">
+
+        ${theme.genderVariants ? `
+        <div class="msg-setup__field">
+          <label class="msg-setup__field-label">It&#8217;s a&hellip;</label>
+          <div class="seq-btn-group seq-gender-group" id="panelsGenderBtns">
+            <button type="button" class="btn seq-gender-btn" data-gender="boy">
+              <span class="seq-gender-btn__emoji">👦</span>
+              <span class="seq-gender-btn__label">BOY</span>
+            </button>
+            <button type="button" class="btn seq-gender-btn" data-gender="girl">
+              <span class="seq-gender-btn__emoji">👧</span>
+              <span class="seq-gender-btn__label">GIRL</span>
+            </button>
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="msg-setup__field">
+          <div class="msg-setup__field-header">
+            <label for="panelsNameInput">${_escHtml(theme.panelLabel || 'Name')}:</label>
+            <span class="msg-setup__counter"><span id="panelsNameCount">${maxName}</span> left</span>
+          </div>
+          <input type="text" id="panelsNameInput" class="input" maxlength="${maxName}"
+            placeholder="${_escHtml(theme.panelPlaceholder || 'e.g. OLIVER')}" autocomplete="off">
+        </div>
+
+        <div class="msg-setup__field">
+          <div class="msg-setup__field-header">
+            <label for="panelsSubtitle">Subtitle <span class="muted">(optional):</span></label>
+            <span class="msg-setup__counter"><span id="panelsSubCount">${maxSubtitle}</span> left</span>
+          </div>
+          <input type="text" id="panelsSubtitle" class="input" maxlength="${maxSubtitle}"
+            placeholder="e.g. Coming soon! ✨">
+          <p class="msg-setup__hint muted" style="margin-top:0.25rem">Shown below the name reveal.</p>
+        </div>
+
+        <div class="msg-setup__field">
+          <div class="msg-setup__field-header">
+            <label for="panelsFromLine">From <span class="muted">(optional):</span></label>
+            <span class="msg-setup__counter"><span id="panelsFromCount">${maxFrom}</span> left</span>
+          </div>
+          <input type="text" id="panelsFromLine" class="input" maxlength="${maxFrom}"
+            placeholder="e.g. Sarah &amp; Tom 💙">
+        </div>
+
+        <div class="msg-setup__actions">
+          <button class="btn outline" type="button" data-action="try-scratch" disabled>Try scratch yourself</button>
+          <button type="button" class="btn" data-action="confirm" disabled>Confirm &amp; create link</button>
+        </div>
+        <p class="msg-setup__hint muted">Once confirmed, the name cannot be changed.</p>
+
+      </div>
+    </section>
+  `;
+
+  let selectedGender = theme.genderVariants ? null : (theme.defaultGender || 'neutral');
+
+  const nameInput  = root.querySelector('#panelsNameInput');
+  const nameCount  = root.querySelector('#panelsNameCount');
+  const subInput   = root.querySelector('#panelsSubtitle');
+  const subCount   = root.querySelector('#panelsSubCount');
+  const fromInput  = root.querySelector('#panelsFromLine');
+  const fromCount  = root.querySelector('#panelsFromCount');
+  const confirmBtn = root.querySelector('[data-action="confirm"]');
+  const tryBtn     = root.querySelector('[data-action="try-scratch"]');
+
+  function _updateConfirmState(){
+    const nameVal = (nameInput ? nameInput.value.trim() : '');
+    const nameOk  = nameVal.length >= 2;
+    const genderOk = !theme.genderVariants || !!selectedGender;
+    const enabled = nameOk && genderOk;
+    if (confirmBtn) confirmBtn.disabled = !enabled;
+    if (tryBtn) tryBtn.disabled = !enabled;
+  }
+
+  // ── Gender picker ──
+  for (const btn of root.querySelectorAll('.seq-gender-btn')){
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.seq-gender-btn').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      selectedGender = btn.dataset.gender;
+      _updateConfirmState();
+    });
+  }
+
+  // ── Name input ──
+  if (nameInput){
+    const pattern = theme.panelAllowedPattern || /^[\p{L}\s\p{M}]*$/u;
+    let lastGood = '';
+    nameInput.addEventListener('input', () => {
+      if (!pattern.test(nameInput.value)){
+        nameInput.value = lastGood;
+      } else {
+        lastGood = nameInput.value;
+      }
+      if (nameCount) nameCount.textContent = String(maxName - nameInput.value.length);
+      _updateConfirmState();
+    });
+  }
+
+  // ── Subtitle counter ──
+  if (subInput){
+    subInput.addEventListener('input', () => {
+      if (subCount) subCount.textContent = String(maxSubtitle - subInput.value.length);
+    });
+  }
+
+  // ── From counter ──
+  if (fromInput){
+    fromInput.addEventListener('input', () => {
+      if (fromCount) fromCount.textContent = String(maxFrom - fromInput.value.length);
+    });
+  }
+
+  // ── Confirm (double-click) ──
+  if (confirmBtn){
+    let confirmPending = false;
+    let confirmTimer   = null;
+
+    function _resetConfirm(){
+      confirmPending = false;
+      if (confirmTimer) clearTimeout(confirmTimer);
+      confirmTimer = null;
+      confirmBtn.textContent = 'Confirm & create link';
+      confirmBtn.classList.remove('is-confirming');
+      _updateConfirmState();
+    }
+
+    confirmBtn.addEventListener('click', async () => {
+      const nameVal = nameInput ? nameInput.value.trim() : '';
+      if (nameVal.length < 2) return;
+      if (theme.genderVariants && !selectedGender) return;
+
+      if (!confirmPending){
+        confirmPending = true;
+        confirmBtn.textContent = 'Are you sure? Tap again to lock';
+        confirmBtn.classList.add('is-confirming');
+        confirmTimer = setTimeout(_resetConfirm, 4000);
+        return;
+      }
+
+      if (confirmTimer) clearTimeout(confirmTimer);
+      confirmPending = false;
+      confirmBtn.disabled = true;
+      confirmBtn.classList.remove('is-confirming');
+      confirmBtn.textContent = 'Saving\u2026';
+
+      const panelText = _titleCase(nameVal);
+      const subtitle  = subInput ? subInput.value.trim() : '';
+      const fromLine  = fromInput ? fromInput.value.trim() : '';
+
+      try{
+        card.panel_text     = panelText;
+        card.gender         = selectedGender || theme.defaultGender || 'neutral';
+        card.custom_message = subtitle || null;
+        card.from_line      = fromLine || null;
+        card.configured     = true;
+        card.scratched_indices = [];
+
+        if (previewMode){
+          await saveCard(card);
+        } else {
+          await setConfiguredAndWait(card.token, {
+            panel_text:     panelText,
+            gender:         selectedGender || theme.defaultGender || 'neutral',
+            custom_message: subtitle || null,
+            from_line:      fromLine || null,
+            configured:     true,
+          });
+        }
+
+        _renderPanelsSetup(root, card, container, { previewMode });
+      }catch(e){
+        _resetConfirm();
+        console.error('Failed to save panels card:', e);
+      }
+    });
+  }
+
+  // ── Try scratch yourself ──
+  if (tryBtn){
+    tryBtn.addEventListener('click', () => {
+      const nameVal = nameInput ? nameInput.value.trim() : '';
+      if (nameVal.length < 2) return;
+      if (theme.genderVariants && !selectedGender) return;
+
+      const fakeCard = {
+        card_key:    card.card_key,
+        panel_text:  _titleCase(nameVal),
+        gender:      selectedGender || theme.defaultGender || 'neutral',
+        custom_message: subInput ? subInput.value.trim() || null : null,
+        from_line:   fromInput ? fromInput.value.trim() || null : null,
+        configured:  true,
+        token:       'preview',
+        scratched_indices: [],
+      };
+      _openPanelsPreviewModal(fakeCard);
+    });
+  }
+}
+
+
+// ── Panels preview modal (sender) ─────────────────────────────────────────────
+
+function _openPanelsPreviewModal(fakeCard){
+  const existing = document.getElementById('panelsPreviewOverlay');
+  if (existing) existing.remove();
+
+  const hadFullscreen = document.body.classList.contains('has-fullscreen-card');
+
+  // Save CSS state to restore on close (verbatim from _openSeqPreviewModal)
+  const rootEl     = document.documentElement;
+  const pageProps  = ['--page-bg','--page-bg1','--page-glow-a1','--page-glow-a2','--page-glow-a3','--page-glow-b1','--page-glow-b2','--page-glow-a-opacity','--page-glow-b-opacity'];
+  const foilProps  = ['--scratch-foil-base','--scratch-foil-hi','--scratch-foil-mid','--scratch-foil-dark','--scratch-foil-text'];
+  const savedPage  = {};
+  const savedFoil  = {};
+  for (const p of pageProps) savedPage[p] = rootEl.style.getPropertyValue(p) || null;
+  for (const p of foilProps) savedFoil[p] = rootEl.style.getPropertyValue(p) || null;
+  const savedColorMode  = rootEl.dataset.colorMode  || null;
+  const savedFoilKey    = rootEl.dataset.foil        || null;
+  const savedBodyBg     = document.body.style.background   || null;
+  const savedBodyTrans  = document.body.style.transition   || null;
+  const savedRootBg     = rootEl.style.background          || null;
+
+  const overlay = document.createElement('div');
+  overlay.id        = 'panelsPreviewOverlay';
+  overlay.className = 'cc-try-scratch-modal';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'cc-try-scratch-modal__close';
+  closeBtn.type      = 'button';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.textContent = '\u00d7';
+
+  const contentRoot = document.createElement('div');
+  contentRoot.style.cssText = 'display:contents';
+
+  overlay.appendChild(closeBtn);
+  overlay.appendChild(contentRoot);
+  document.body.appendChild(overlay);
+
+  function closeOverlay(){
+    overlay.remove();
+    if (!hadFullscreen) document.body.classList.remove('has-fullscreen-card');
+    for (const p of pageProps){
+      if (savedPage[p]) rootEl.style.setProperty(p, savedPage[p]);
+      else rootEl.style.removeProperty(p);
+    }
+    for (const p of foilProps){
+      if (savedFoil[p]) rootEl.style.setProperty(p, savedFoil[p]);
+      else rootEl.style.removeProperty(p);
+    }
+    if (savedColorMode) rootEl.dataset.colorMode = savedColorMode;
+    else delete rootEl.dataset.colorMode;
+    if (savedFoilKey) rootEl.dataset.foil = savedFoilKey;
+    else delete rootEl.dataset.foil;
+    if (savedBodyBg) document.body.style.background = savedBodyBg;
+    else document.body.style.removeProperty('background');
+    if (savedBodyTrans) document.body.style.transition = savedBodyTrans;
+    else document.body.style.removeProperty('transition');
+    if (savedRootBg) rootEl.style.background = savedRootBg;
+    else rootEl.style.removeProperty('background');
+  }
+
+  closeBtn.addEventListener('click', closeOverlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeOverlay(); });
+
+  _renderPanelsScratch(contentRoot, fakeCard, { isPreview: true, closePreview: closeOverlay });
+}
+
+
+// ── Scratch (recipient) ───────────────────────────────────────────────────────
+
+function _renderPanelsScratch(root, card, options = {}){
+  document.body.classList.add('has-fullscreen-card');
+  const theme = getCardTheme(card.card_key) || {};
+  const gender = card.gender || theme.defaultGender || 'neutral';
+  const resolved = getPanelsConfig(card.card_key, gender);
+  if (!resolved) return;
+
+  // Defensive fallback (Amendment 3)
+  const panelText = (typeof card.panel_text === 'string' && card.panel_text.trim())
+    ? card.panel_text.trim()
+    : null;
+  if (!panelText){
+    _renderPanelsNotReady(root);
+    return;
+  }
+
+  _applySeqStepPageTheme(theme);
+  _clearFoilOverrides();
+  _applyFoilOverrides(theme);
+
+  const chars = [...panelText];
+  const nonSpaceIndices = [];
+  chars.forEach((ch, i) => { if (ch !== ' ') nonSpaceIndices.push(i); });
+
+  const scratched = Array.isArray(card.scratched_indices) ? [...card.scratched_indices] : [];
+  const accentColor = resolved.accentColor || '#8a7a6a';
+  const titleColor  = resolved.titleColor  || accentColor;
+  const charColor   = resolved.panelCharColor || accentColor;
+  const charFont    = resolved.panelCharFont || "'Dancing Script', cursive";
+  const charWeight  = resolved.panelCharWeight || 500;
+  const titleText   = theme.titleText || '';
+
+  // Build tiles HTML
+  let tilesHtml = '';
+  chars.forEach((ch, i) => {
+    if (ch === ' '){
+      tilesHtml += `<div class="cc-panels-space"></div>`;
+    } else {
+      const alreadyScratched = scratched.includes(i);
+      tilesHtml += `
+        <div class="cc-panels-tile" data-index="${i}">
+          <div class="cc-panels-char" style="font-family:${charFont};font-weight:${charWeight};color:${charColor};">${_escHtml(ch)}</div>
+          ${alreadyScratched ? '' : `<canvas class="cc-panels-tile-canvas" data-tile-index="${i}"></canvas>`}
+        </div>`;
+    }
+  });
+
+  root.innerHTML = `
+    <div class="msg-card-wrapper cc-panels-wrapper" data-presentation="fullscreen"
+         style="--panels-char-font:${charFont};--panels-char-color:${charColor};--panels-char-weight:${charWeight};--panels-accent:${accentColor};">
+      <div class="scratch-fx">
+        <div class="scratch-stage msg-stage" data-export-root="1" data-presentation="fullscreen">
+          <picture class="card-bg" aria-hidden="true">
+            <source media="(min-width: 700px)" srcset="${resolved.bgDesktopSrc || ''}">
+            <img src="${resolved.bgMobileSrc || resolved.bgDesktopSrc || ''}" alt="" draggable="false" loading="eager">
+          </picture>
+          <div class="msg-card__content">
+            ${titleText ? `<div class="cc-panels-title" style="font-family:${theme.titleFont || 'inherit'};font-weight:${theme.titleWeight || 400};color:${titleColor};">${_escHtml(titleText)}</div>` : ''}
+            <div class="cc-panels-row">
+              ${tilesHtml}
+            </div>
+            <div class="cc-panels-wordmark-area"></div>
+            <div class="seq-continue-wrap" id="panelsContinueWrap">
+              <button class="btn seq-continue-btn" type="button" id="panelsContinueBtn"
+                      style="background:${accentColor};color:#fff;border-color:transparent;">Continue</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Attach scratch to each un-scratched tile canvas
+  const canvases = root.querySelectorAll('.cc-panels-tile-canvas');
+  for (const canvas of canvases){
+    const idx = Number(canvas.dataset.tileIndex);
+    attachScratchTile(canvas, {
+      onScratched: () => _onPanelTileScratched(root, card, idx, nonSpaceIndices.length, theme, resolved, options),
+      hintStyle: 'thin',
+    });
+  }
+
+  // Amendment 5: immediate completion check for restored state
+  if (scratched.length > 0 && scratched.length >= nonSpaceIndices.length){
+    _onPanelTileScratched(root, card, -1, nonSpaceIndices.length, theme, resolved, options);
+  }
+}
+
+
+async function _onPanelTileScratched(root, card, tileIndex, totalNonSpace, theme, resolved, options = {}){
+  const scratched = Array.isArray(card.scratched_indices) ? card.scratched_indices : [];
+  if (tileIndex >= 0 && !scratched.includes(tileIndex)){
+    scratched.push(tileIndex);
+    card.scratched_indices = scratched;
+    if (!options.isPreview) saveCard(card);
+  }
+
+  if (scratched.length < totalNonSpace) return;
+
+  // All tiles scratched — fire reveal animation
+  await _panelsRevealAnimation(root, card, theme, resolved, options);
+}
+
+
+async function _panelsRevealAnimation(root, card, theme, resolved, options = {}){
+  const panelText = card.panel_text || '';
+  const chars = [...panelText];
+  const accentColor = resolved.accentColor || '#8a7a6a';
+  const charColor   = resolved.panelCharColor || accentColor;
+  const charFont    = resolved.panelCharFont || "'Dancing Script', cursive";
+  const charWeight  = resolved.panelCharWeight || 500;
+
+  const row = root.querySelector('.cc-panels-row');
+  const tiles = root.querySelectorAll('.cc-panels-tile');
+  const wordmarkArea = root.querySelector('.cc-panels-wordmark-area');
+
+  if (!row) return;
+
+  // Lock row height to prevent collapse
+  const rowRect = row.getBoundingClientRect();
+  row.style.minHeight = rowRect.height + 'px';
+
+  // t=0: fade out all tiles
+  for (const tile of tiles){
+    tile.style.transition = 'opacity 500ms ease';
+    tile.style.opacity = '0';
+  }
+  // Also fade spaces
+  const spaces = root.querySelectorAll('.cc-panels-space');
+  for (const sp of spaces){
+    sp.style.transition = 'opacity 500ms ease';
+    sp.style.opacity = '0';
+  }
+
+  // t=500: hide tiles, create overlay with cloned chars at tile positions
+  await new Promise(r => setTimeout(r, 500));
+
+  for (const tile of tiles) tile.style.display = 'none';
+  for (const sp of spaces) sp.style.display = 'none';
+
+  // Create overlay positioned over the row
+  const overlay = document.createElement('div');
+  overlay.className = 'cc-panels-reveal-overlay';
+  overlay.style.cssText = `position:absolute;left:0;top:0;width:100%;height:${rowRect.height}px;pointer-events:none;`;
+  row.style.position = 'relative';
+  row.appendChild(overlay);
+
+  // Collect char elements from tiles (now hidden) and clone them into overlay
+  const charEls = [];
+  const tileRects = [];
+  const overlayRect = overlay.getBoundingClientRect();
+
+  // We need to place clones at where tiles *were*. Since tiles are hidden,
+  // we stored the tile positions before hiding. Let's recalculate using row position.
+  // Actually we need the rects before hiding. Let me re-approach:
+  // We'll re-show tiles briefly, measure, then hide again.
+  for (const tile of tiles) { tile.style.display = ''; tile.style.opacity = '0'; }
+  for (const sp of spaces) { sp.style.display = ''; sp.style.opacity = '0'; }
+
+  const tileArray = [...tiles];
+  for (const tile of tileArray){
+    const rect = tile.getBoundingClientRect();
+    tileRects.push({
+      left: rect.left - overlayRect.left,
+      top: rect.top - overlayRect.top,
+      width: rect.width,
+      height: rect.height,
+    });
+  }
+
+  for (const tile of tiles) tile.style.display = 'none';
+  for (const sp of spaces) sp.style.display = 'none';
+
+  // Compute wordmark target positions (centered in overlay, spaced letter-by-letter)
+  const wordmarkFontSize = Math.min(48, Math.max(24, Math.round(280 / chars.length)));
+  const letterSpacing = wordmarkFontSize * 0.65;
+  // Filter to only non-space chars for the converge
+  const nonSpaceChars = [];
+  let tileIdx = 0;
+  chars.forEach((ch, i) => {
+    if (ch !== ' '){
+      nonSpaceChars.push({ ch, origIndex: i, tileArrayIndex: tileIdx });
+      tileIdx++;
+    } else {
+      // spaces get included in wordmark layout but have no tile
+    }
+  });
+
+  // Calculate total wordmark width including spaces
+  const wordChars = chars.map(ch => ch === ' ' ? { isSpace: true } : { isSpace: false, ch });
+  const totalWordWidth = wordChars.reduce((sum, wc) => sum + (wc.isSpace ? letterSpacing * 0.6 : letterSpacing), 0);
+  const startX = (overlayRect.width - totalWordWidth) / 2;
+  const centerY = (rowRect.height - wordmarkFontSize) / 2;
+
+  // Map each non-space char to its target X
+  let curX = startX;
+  const targetPositions = {};
+  let tIdx = 0;
+  for (const wc of wordChars){
+    if (wc.isSpace){
+      curX += letterSpacing * 0.6;
+    } else {
+      targetPositions[tIdx] = { x: curX, y: centerY };
+      tIdx++;
+      curX += letterSpacing;
+    }
+  }
+
+  // Create clone elements at tile positions
+  for (let i = 0; i < nonSpaceChars.length; i++){
+    const { ch, tileArrayIndex } = nonSpaceChars[i];
+    const src = tileRects[tileArrayIndex];
+    if (!src) continue;
+
+    const clone = document.createElement('div');
+    clone.className = 'cc-panels-clone-char';
+    clone.textContent = ch;
+    Object.assign(clone.style, {
+      position: 'absolute',
+      left: (src.left + src.width / 2) + 'px',
+      top: (src.top + src.height / 2) + 'px',
+      transform: 'translate(-50%, -50%)',
+      fontFamily: charFont,
+      fontWeight: String(charWeight),
+      fontSize: wordmarkFontSize + 'px',
+      color: charColor,
+      transition: 'none',
+      opacity: '1',
+      whiteSpace: 'nowrap',
+    });
+    overlay.appendChild(clone);
+    charEls.push({ el: clone, srcLeft: src.left + src.width / 2, srcTop: src.top + src.height / 2, targetIdx: i });
+  }
+
+  // t=600: animate clones to wordmark positions
+  await new Promise(r => setTimeout(r, 100));
+
+  for (const { el, srcLeft, srcTop, targetIdx } of charEls){
+    const target = targetPositions[targetIdx];
+    if (!target) continue;
+    const dx = (target.x + letterSpacing / 2) - srcLeft;
+    const dy = (target.y + wordmarkFontSize / 2) - srcTop;
+    el.style.transition = 'transform 700ms ease';
+    el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  }
+
+  // t=1300: remove clones, show static wordmark
+  await new Promise(r => setTimeout(r, 700));
+
+  overlay.remove();
+  row.style.display = 'none';
+
+  if (wordmarkArea){
+    wordmarkArea.innerHTML = `
+      <div class="cc-panels-wordmark" style="font-family:${charFont};font-weight:${charWeight};color:${charColor};font-size:${wordmarkFontSize}px;">
+        ${_escHtml(panelText)}
+      </div>
+    `;
+    wordmarkArea.style.opacity = '1';
+  }
+
+  // t=1600: subtitle fades in
+  if (card.custom_message){
+    await new Promise(r => setTimeout(r, 300));
+    const sub = document.createElement('div');
+    sub.className = 'cc-panels-subtitle';
+    sub.textContent = card.custom_message;
+    Object.assign(sub.style, {
+      fontFamily: theme.messageFont || "'Dancing Script', cursive",
+      fontWeight: String(theme.messageWeight || 400),
+      color: accentColor,
+      opacity: '0',
+      transition: 'opacity 300ms ease',
+    });
+    wordmarkArea.appendChild(sub);
+    sub.getBoundingClientRect();
+    sub.style.opacity = '0.85';
+  }
+
+  // t=1800: from-line fades in
+  if (card.from_line){
+    await new Promise(r => setTimeout(r, 200));
+    const fl = document.createElement('div');
+    fl.className = 'cc-panels-fromline';
+    fl.textContent = card.from_line;
+    Object.assign(fl.style, {
+      fontFamily: theme.messageFont || "'Dancing Script', cursive",
+      fontWeight: String(theme.messageWeight || 400),
+      color: accentColor,
+      opacity: '0',
+      transition: 'opacity 200ms ease',
+    });
+    wordmarkArea.appendChild(fl);
+    fl.getBoundingClientRect();
+    fl.style.opacity = '0.7';
+  }
+
+  // t=2400: Continue button appears
+  await new Promise(r => setTimeout(r, 600));
+
+  if (options.isPreview){
+    const backWrap = document.createElement('div');
+    backWrap.className = 'cc-try-scratch-modal__back is-visible';
+    backWrap.innerHTML = '<button class="btn" type="button">Looks good? Go back to setup</button>';
+    backWrap.querySelector('.btn').addEventListener('click', () => {
+      if (options.closePreview) options.closePreview();
+    });
+    root.appendChild(backWrap);
+  } else {
+    const continueWrap = root.querySelector('#panelsContinueWrap');
+    if (continueWrap) continueWrap.classList.add('is-visible');
+
+    // Persist reveal
+    try{
+      await setRevealedAndWait(card.token, {});
+      card.revealed = true;
+    }catch(e){
+      console.error('Failed to persist panels reveal:', e);
+    }
+
+    const continueBtn = root.querySelector('#panelsContinueBtn');
+    if (continueBtn){
+      continueBtn.addEventListener('click', () => {
+        continueBtn.disabled = true;
+        const wrapper = root.querySelector('.cc-panels-wrapper');
+        if (wrapper){
+          wrapper.style.transition = 'opacity 300ms ease';
+          wrapper.style.opacity = '0';
+        }
+        setTimeout(() => { _renderPanelsShareScreen(root, card); }, 300);
+      });
+    }
+  }
+}
+
+
+// ── Revealed (returning visitor) ──────────────────────────────────────────────
+
+function _renderPanelsRevealed(root, card){
+  _renderPanelsShareScreen(root, card);
+}
+
+
+// ── Share screen (post-reveal) ───────────────────────────────────────────────
+
+function _renderPanelsShareScreen(root, card){
+  const theme    = getCardTheme(card.card_key) || {};
+  const gender   = card.gender || theme.defaultGender || 'neutral';
+  const resolved = getPanelsConfig(card.card_key, gender);
+  if (!resolved) return;
+
+  // Defensive fallback (Amendment 3)
+  const panelText = (typeof card.panel_text === 'string' && card.panel_text.trim())
+    ? card.panel_text.trim()
+    : '';
+  if (!panelText){
+    _renderPanelsNotReady(root);
+    return;
+  }
+
+  const accentColor = resolved.accentColor || '#8a7a6a';
+  const charFont    = resolved.panelCharFont || "'Dancing Script', cursive";
+  const charWeight  = resolved.panelCharWeight || 500;
+  const charColor   = resolved.panelCharColor || accentColor;
+
+  document.body.classList.add('has-fullscreen-card');
+  _applySeqStepPageTheme(theme);
+
+  let recipientMsg = '';
+
+  root.innerHTML = `
+    <div class="msg-card-wrapper cc-panels-wrapper seq-share-screen" data-presentation="fullscreen"
+         style="--panels-accent:${accentColor};">
+      <div class="seq-share-stage msg-stage" data-presentation="fullscreen"
+           style="display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem 1.5rem;gap:1rem;">
+
+        <picture class="card-bg" aria-hidden="true">
+          <source media="(min-width: 700px)" srcset="${resolved.bgDesktopSrc || ''}">
+          <img src="${resolved.bgMobileSrc || resolved.bgDesktopSrc || ''}" alt="" draggable="false" loading="eager">
+        </picture>
+
+        <div class="cc-panels-wordmark" style="font-family:${charFont};font-weight:${charWeight};color:${charColor};font-size:clamp(2rem,8vw,3.5rem);margin-top:2rem;">
+          ${_escHtml(panelText)}
+        </div>
+
+        ${card.custom_message ? `<div class="cc-panels-subtitle" style="
+          font-family:${theme.messageFont || "'Dancing Script', cursive"};
+          font-weight:${theme.messageWeight || 400};
+          color:${accentColor};
+          opacity:0.85;
+          font-size:clamp(1rem,3.2vw,1.2rem);
+          text-align:center;
+        ">${_escHtml(card.custom_message)}</div>` : ''}
+
+        ${card.from_line ? `<div class="cc-panels-fromline" style="
+          font-family:${theme.messageFont || "'Dancing Script', cursive"};
+          font-weight:${theme.messageWeight || 400};
+          color:${accentColor};
+          opacity:0.7;
+          font-size:clamp(0.9rem,2.8vw,1.1rem);
+          text-align:center;
+        ">${_escHtml(card.from_line)}</div>` : ''}
+
+        <div style="width:100%;max-width:480px;box-sizing:border-box;padding:0 0.5rem;position:relative;">
+          <textarea id="panelsShareMsg" class="input" maxlength="110" rows="3"
+            placeholder="Add a personal message..."
+            style="width:100%;font-family:'Inter',sans-serif;font-size:1rem;resize:none;background:rgba(255,255,255,0.35);border-color:rgba(255,255,255,0.5);color:${accentColor};white-space:pre-wrap;word-break:break-word;box-sizing:border-box;overflow-y:auto;"></textarea>
+          <div id="panelsShareMsgFooter" style="display:none;justify-content:space-between;align-items:center;margin-top:0.3rem;">
+            <button type="button" id="panelsEmojiToggle" style="background:none;border:none;cursor:pointer;padding:0.1rem;line-height:1;opacity:0.75;"><img src="/assets/img/emoji-select1.svg" alt="emoji" style="width:1.5rem;height:1.5rem;display:block;"></button>
+            <span id="panelsShareMsgCount" style="font-size:0.78rem;color:${accentColor};opacity:0.6;">110</span>
+          </div>
+          <div id="panelsEmojiPanel" style="display:none;position:absolute;left:0.5rem;bottom:calc(100% + 0.3rem);background:rgba(255,255,255,0.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;padding:0.6rem;box-shadow:0 4px 20px rgba(0,0,0,0.10);z-index:100;width:260px;">
+            <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0.3rem;">
+              ${['💙','💗','💜','🤍','❤️','💛','👶','🍼','🧸','👼','🤰','🌱','🎉','🎊','✨','🥂','🎈','🎁','🥰','🤗','😍','👸','😊','🙏','🌸','🌈','⭐','🌙','🦋','🌻','💫','🍀','🌟','🎀','🍭','📸'].map(e =>
+                `<button type="button" data-emoji="${e}" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:0.2rem;border-radius:6px;line-height:1;">${e}</button>`
+              ).join('')}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  // Wire emoji + message area (same pattern as sequential)
+  const msgArea     = root.querySelector('#panelsShareMsg');
+  const msgFooter   = root.querySelector('#panelsShareMsgFooter');
+  const msgCount    = root.querySelector('#panelsShareMsgCount');
+  const emojiToggle = root.querySelector('#panelsEmojiToggle');
+  const emojiPanel  = root.querySelector('#panelsEmojiPanel');
+
+  let emojiOpen = false;
+  function closeEmoji(){ emojiOpen = false; if (emojiPanel) emojiPanel.style.display = 'none'; if (emojiToggle) emojiToggle.style.opacity = '0.7'; }
+
+  if (msgArea){
+    msgArea.addEventListener('input', () => {
+      recipientMsg = msgArea.value;
+      const remaining = 110 - msgArea.value.length;
+      if (msgArea.value.length > 0){ msgFooter.style.display = 'flex'; msgCount.textContent = String(remaining); }
+      else { msgFooter.style.display = 'none'; closeEmoji(); }
+    });
+  }
+
+  if (emojiToggle){
+    emojiToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      emojiOpen = !emojiOpen;
+      emojiPanel.style.display = emojiOpen ? 'block' : 'none';
+      emojiToggle.style.opacity = emojiOpen ? '1' : '0.7';
+    });
+  }
+
+  if (emojiPanel){
+    emojiPanel.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const btn = e.target.closest('[data-emoji]');
+      if (!btn || !msgArea) return;
+      const pos = msgArea.selectionStart ?? msgArea.value.length;
+      const val = msgArea.value;
+      const emoji = btn.dataset.emoji;
+      if ((val + emoji).length > 110) return;
+      msgArea.value = val.slice(0, pos) + emoji + val.slice(pos);
+      msgArea.dispatchEvent(new Event('input'));
+      msgArea.focus();
+      msgArea.selectionStart = msgArea.selectionEnd = pos + emoji.length;
+    });
+  }
+
+  document.addEventListener('click', closeEmoji, { once: false });
+
+  // Wire card actions buttons
+  const actionsEl = document.getElementById('cardActions');
+  if (actionsEl){
+    actionsEl.innerHTML = '';
+
+    const mkNavBtn = (label) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn nav';
+      b.textContent = label;
+      return b;
+    };
+
+    const saveBtn = mkNavBtn('Save as image');
+    saveBtn.addEventListener('click', () => {
+      const msg = msgArea ? msgArea.value.trim() : '';
+      _exportPanelsStacked(card, msg);
+    });
+
+    const shareBtn = mkNavBtn('Share');
+    shareBtn.addEventListener('click', async function(){
+      const msg = msgArea ? msgArea.value.trim() : '';
+      await _panelsShare(card, msg, this);
+    });
+
+    actionsEl.appendChild(saveBtn);
+    actionsEl.appendChild(shareBtn);
+  }
+}
+
+
+// ── Share helper ─────────────────────────────────────────────────────────────
+
+async function _panelsShare(card, recipientMsg, btn){
+  const origText = btn ? btn.textContent : 'Share';
+  if (btn){ btn.disabled = true; btn.textContent = 'Sharing\u2026'; }
+  try{
+    const blob = await _exportPanelsStacked(card, recipientMsg, true);
+    const gender = card.gender || 'neutral';
+    const file = new File([blob], `baby-name-${gender}.jpg`, { type: 'image/jpeg' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      await navigator.share({ files: [file] });
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `baby-name-${gender}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  }catch(e){
+    if (e && e.name === 'AbortError') return;
+  }finally{
+    if (btn){ btn.disabled = false; btn.textContent = origText; }
+  }
+}
+
+
+// ── JPEG export (1080×1350 4:5) ──────────────────────────────────────────────
+
+async function _exportPanelsStacked(card, recipientMessage = '', returnBlob = false){
+  const theme    = getCardTheme(card.card_key) || {};
+  const gender   = card.gender || theme.defaultGender || 'neutral';
+  const resolved = getPanelsConfig(card.card_key, gender);
+  if (!resolved) return null;
+
+  const panelText   = card.panel_text || '';
+  const accentColor = resolved.accentColor || '#8a7a6a';
+  const charFont    = resolved.panelCharFont || "'Dancing Script', cursive";
+  const charWeight  = resolved.panelCharWeight || 500;
+  const charColor   = resolved.panelCharColor || accentColor;
+
+  const W = 1080;
+  const H = 1350;
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  try{ await document.fonts.ready; }catch(_){}
+
+  function _loadImg(src){
+    return new Promise(resolve => {
+      if (!src){ resolve(null); return; }
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload  = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+
+  const [bgImg, logoImg] = await Promise.all([
+    _loadImg(resolved.bgMobileSrc),
+    _loadImg('/assets/img/logo1_white.png'),
+  ]);
+
+  // Background (cover fill)
+  if (bgImg){
+    const bw = bgImg.naturalWidth || W;
+    const bh = bgImg.naturalHeight || H;
+    const scale = Math.max(W / bw, H / bh);
+    const dw = bw * scale;
+    const dh = bh * scale;
+    const dx = (W - dw) / 2;
+    const dy = (H - dh) / 2;
+    try{ ctx.drawImage(bgImg, dx, dy, dw, dh); }catch(_){}
+  } else {
+    ctx.fillStyle = theme.pageBg || '#fcf8f5';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  const scriptFont = charFont.replace(/'/g, '');
+  const interFont  = "'Inter', system-ui, sans-serif";
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Wordmark at ~40% vertical
+  const WORDMARK_SIZE = Math.min(100, Math.max(48, Math.round(700 / panelText.length)));
+  const wordmarkY = H * 0.40;
+
+  ctx.globalAlpha = 1;
+  ctx.fillStyle   = charColor;
+  ctx.font        = `${charWeight} ${WORDMARK_SIZE}px ${scriptFont}`;
+  try{ ctx.fillText(panelText, W / 2, wordmarkY); }catch(_){}
+
+  let y = wordmarkY + WORDMARK_SIZE * 0.8;
+
+  // Subtitle
+  if (card.custom_message){
+    const SUB_SIZE = 48;
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle   = accentColor;
+    ctx.font        = `${theme.messageWeight || 400} ${SUB_SIZE}px ${scriptFont}`;
+    try{ ctx.fillText(card.custom_message, W / 2, y + SUB_SIZE / 2); }catch(_){}
+    y += SUB_SIZE + 20;
+  }
+
+  // From line
+  if (card.from_line){
+    const FROM_SIZE = 40;
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle   = accentColor;
+    ctx.font        = `${theme.messageWeight || 400} ${FROM_SIZE}px ${scriptFont}`;
+    try{ ctx.fillText(card.from_line, W / 2, y + FROM_SIZE / 2); }catch(_){}
+    y += FROM_SIZE + 30;
+  }
+
+  // Recipient message (frosted panel)
+  if (recipientMessage){
+    const PANEL_W   = 800;
+    const PANEL_X   = (W - PANEL_W) / 2;
+    const PADDING_X = 52;
+    const PADDING_Y = 40;
+    const MAX_FONT  = 40;
+    const MIN_FONT  = 28;
+    const msgFont   = Math.max(MIN_FONT, MAX_FONT - Math.floor(recipientMessage.length / 4.5));
+    const lineH     = msgFont * 1.45;
+    const maxTextW  = PANEL_W - PADDING_X * 2;
+
+    ctx.font = `300 ${msgFont}px ${interFont}`;
+    const words    = recipientMessage.split(' ');
+    const msgLines = [];
+    let current    = '';
+    for (const word of words){
+      const test = current ? current + ' ' + word : word;
+      if (ctx.measureText(test).width > maxTextW && current){ msgLines.push(current); current = word; }
+      else current = test;
+    }
+    if (current) msgLines.push(current);
+
+    const textBlockH = msgLines.length * lineH;
+    const PANEL_H    = textBlockH + PADDING_Y * 2;
+    const r          = 28;
+
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle   = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(PANEL_X + r, y);
+    ctx.lineTo(PANEL_X + PANEL_W - r, y);
+    ctx.quadraticCurveTo(PANEL_X + PANEL_W, y, PANEL_X + PANEL_W, y + r);
+    ctx.lineTo(PANEL_X + PANEL_W, y + PANEL_H - r);
+    ctx.quadraticCurveTo(PANEL_X + PANEL_W, y + PANEL_H, PANEL_X + PANEL_W - r, y + PANEL_H);
+    ctx.lineTo(PANEL_X + r, y + PANEL_H);
+    ctx.quadraticCurveTo(PANEL_X, y + PANEL_H, PANEL_X, y + PANEL_H - r);
+    ctx.lineTo(PANEL_X, y + r);
+    ctx.quadraticCurveTo(PANEL_X, y, PANEL_X + r, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.globalAlpha  = 0.82;
+    ctx.fillStyle    = accentColor;
+    ctx.font         = `300 ${msgFont}px ${interFont}`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    const textStartY = y + PADDING_Y + lineH / 2;
+    for (let i = 0; i < msgLines.length; i++){
+      try{ ctx.fillText(msgLines[i], W / 2, textStartY + i * lineH); }catch(_){}
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Logo pinned bottom
+  if (logoImg){
+    const logoW = 140;
+    const logoH = Math.round(logoW * logoImg.naturalHeight / logoImg.naturalWidth);
+    const lx = (W - logoW) / 2;
+    const by = H - 60 - logoH;
+    ctx.globalAlpha = 0.85;
+    try{ ctx.drawImage(logoImg, lx, by, logoW, logoH); }catch(_){}
+    ctx.globalAlpha = 1;
+  }
+
+  if (returnBlob){
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+  }
+
+  try{
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    const a = document.createElement('a');
+    a.href     = dataUrl;
+    a.download = `baby-name-${gender}.jpg`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
