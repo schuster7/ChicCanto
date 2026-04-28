@@ -129,7 +129,11 @@
     }
 
     #cc-logo path {
-      fill: rgba(0,0,0,0.82);
+      fill: none;
+      stroke: rgba(0,0,0,0.78);
+      stroke-width: 1.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .cc-bottom {
@@ -412,15 +416,19 @@
       window.location.href = cardUrl;
     });
 
-    function reset(fromLine) {
-      gsap.set('#ccLine1', { opacity: 0, y: 20 });
-      gsap.set('#ccLine2', { opacity: 0, y: 20 });
-      if (fromLine) {
-        gsap.set('#ccSender', { opacity: 0, y: 20 });
-        gsap.set('#cc-logo',  { opacity: 0, y: 20 });
-      } else {
-        gsap.set('.cc-logo-wrap', { opacity: 0, y: 20 });
-      }
+    function reset() {
+      document.querySelectorAll('#cc-logo path').forEach(function (p) {
+        var len = p.getTotalLength();
+        p.style.strokeDasharray  = len;
+        p.style.strokeDashoffset = len;
+        p.style.fill        = 'none';
+        p.style.stroke      = 'rgba(0,0,0,0.78)';
+        p.style.strokeWidth = '1.2';
+        p.style.transition  = 'none';
+      });
+      gsap.set('#ccLine1',  { opacity: 0, y: 20 });
+      gsap.set('#ccLine2',  { opacity: 0, y: 20 });
+      gsap.set('#ccSender', { opacity: 0, y: 20 });
       gsap.set('#ccSub',    { opacity: 0, y: 20 });
       gsap.set('#ccCta',    { opacity: 0, y: 20 });
       gsap.set('#ccFooter', { opacity: 0, y: 20 });
@@ -444,33 +452,52 @@
         requestAnimationFrame(function () {
           document.documentElement.classList.remove('cc-preload');
         });
-        gsap.set('#ccLine1, #ccLine2, .cc-logo-wrap, #cc-logo, #ccSender, #ccSub, #ccCta, #ccInapp, #ccFooter', { opacity: 1, y: 0 });
+        document.querySelectorAll('#cc-logo path').forEach(function (p) {
+          p.style.fill        = 'rgba(0,0,0,0.82)';
+          p.style.stroke      = 'rgba(0,0,0,0)';
+          p.style.strokeWidth = '0';
+        });
+        gsap.set('#ccLine1, #ccLine2, #ccSender, #ccSub, #ccCta, #ccInapp, #ccFooter', { opacity: 1, y: 0 });
         return;
       }
 
-      reset(fromLine);
+      reset();
 
-      var logoTarget   = fromLine ? '#cc-logo'    : '.cc-logo-wrap';
-      var logoStart    = fromLine ? 1.35          : 1.15;
       var inappVisible = document.getElementById('ccInapp').style.display === 'block';
+      var logoStart    = fromLine ? 1.35 : 1.15;
+      var fillAt       = logoStart + 9 * 0.13 + 0.9 + 0.08;
 
       var tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-      tl.to('#ccLine1',   { opacity: 1, y: 0, duration: 0.75 }, 0.25);
-      tl.to('#ccLine2',   { opacity: 1, y: 0, duration: 0.75 }, 0.65);
+      tl.to('#ccLine1',  { opacity: 1, y: 0, duration: 0.75 }, 0.25);
+      tl.to('#ccLine2',  { opacity: 1, y: 0, duration: 0.75 }, 0.65);
 
       if (fromLine) {
         tl.to('#ccSender', { opacity: 1, y: 0, duration: 0.65 }, 1.0);
       }
 
-      tl.to(logoTarget, { opacity: 1, y: 0, duration: 0.9, ease: 'power2.out' }, logoStart);
+      tl.to('#cc-logo path', {
+        strokeDashoffset: 0,
+        duration: 0.9,
+        ease: 'power1.inOut',
+        stagger: 0.13
+      }, logoStart);
+
+      tl.call(function () {
+        document.querySelectorAll('#cc-logo path').forEach(function (p) {
+          p.style.transition  = 'stroke-width 0.6s ease, stroke 0.6s ease, fill 0.5s ease';
+          p.style.fill        = 'rgba(0,0,0,0.82)';
+          p.style.strokeWidth = '0';
+          p.style.stroke      = 'rgba(0,0,0,0)';
+        });
+      }, [], fillAt);
 
       if (inappVisible) {
-        tl.to('#ccInapp', { opacity: 1, y: 0, duration: 0.75 }, 2.2);
+        tl.to('#ccInapp', { opacity: 1, y: 0, duration: 0.75 }, fillAt + 0.5);
       }
-      tl.to('#ccSub',    { opacity: 1, y: 0, duration: 0.75 }, 2.2);
-      tl.to('#ccCta',    { opacity: 1, y: 0, duration: 0.75 }, 2.55);
-      tl.to('#ccFooter', { opacity: 1, y: 0, duration: 0.75 }, 2.55);
+      tl.to('#ccSub',    { opacity: 1, y: 0, duration: 0.75 }, fillAt + 0.5);
+      tl.to('#ccCta',    { opacity: 1, y: 0, duration: 0.75 }, fillAt + 0.65);
+      tl.to('#ccFooter', { opacity: 1, y: 0, duration: 0.75 }, fillAt + 0.65);
     }
 
     document.addEventListener('DOMContentLoaded', function () {
