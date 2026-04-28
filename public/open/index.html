@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<!-- /public/open/index.html -->
 <html lang="en" data-color-mode="light">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>ChicCanto | You've got a scratch card</title>
+  <title>ChicCanto</title>
   <meta name="description" content="Someone sent you a ChicCanto scratch card."/>
   <meta property="og:title" content="ChicCanto Scratch Card"/>
   <meta property="og:description" content="Someone sent you a scratch card — open it in your browser."/>
@@ -17,6 +16,7 @@
   <meta name="twitter:image" content="https://chiccanto.com/assets/img/preview-messenger.jpg"/>
   <link href="/favicon.ico" rel="icon"/>
   <link href="/assets/css/base.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
   <style>
     @font-face {
       font-family: 'Inter';
@@ -45,16 +45,21 @@
     html, body {
       margin: 0;
       padding: 0;
+      width: 100%;
       height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
-    body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    html.cc-preload .cc-screen,
+    html.cc-preload .cc-footer { visibility: hidden; }
+
+    .cc-bg {
+      position: fixed;
+      inset: 0;
       background: linear-gradient(334deg, #4a7aaa, #8ab0cc, #f0f6fc, #dce8f4, #6e9cbc);
       background-size: 300% 300%;
       animation: gradMove 10s ease infinite;
-      min-height: 100vh;
-      min-height: 100dvh;
     }
 
     @keyframes gradMove {
@@ -65,176 +70,171 @@
       100% { background-position: 0% 50%; }
     }
 
-    .cc-stage {
+    .cc-screen {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      height: 100svh;
       display: grid;
       grid-template-rows: 1fr auto 1fr;
-      min-height: 100vh;
-      min-height: 100dvh;
-      padding: clamp(3rem, 10vh, 6rem) 1.5rem;
+      align-items: center;
+      justify-items: center;
+      padding: clamp(3.5rem, 12vh, 7rem) 1.5rem;
     }
 
-    /* — Eyebrow — */
     .cc-eyebrow {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 0.35rem;
-      padding-bottom: clamp(1.5rem, 4vh, 3rem);
+      align-self: end;
+      text-align: center;
+      padding-bottom: clamp(2.5rem, 7vh, 5rem);
     }
 
     .cc-eyebrow__line1 {
-      font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+      display: block;
+      margin-bottom: 0.3rem;
+      font-size: clamp(0.82rem, 2vw, 1rem);
       font-weight: 400;
-      color: rgba(0,0,0,0.6);
-      letter-spacing: 0.01em;
+      color: rgba(0,0,0,0.42);
+      letter-spacing: 0.03em;
     }
 
     .cc-eyebrow__line2 {
-      font-size: clamp(1.4rem, 4.5vw, 1.8rem);
+      display: block;
+      font-size: clamp(1.1rem, 3.5vw, 1.5rem);
       font-weight: 700;
-      color: rgba(0,0,0,0.75);
-      letter-spacing: 0.12em;
+      color: rgba(0,0,0,0.72);
+      letter-spacing: 0.14em;
       text-transform: uppercase;
     }
 
-    /* — Logo — */
     .cc-logo-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.9rem;
+      align-self: center;
+      width: min(560px, 86vw);
     }
 
-    .cc-from {
-      font-size: clamp(0.78rem, 2.2vw, 0.88rem);
-      font-weight: 400;
-      color: rgba(0,0,0,0.55);
-      letter-spacing: 0.03em;
+    .cc-sender {
+      font-size: clamp(0.75rem, 2vw, 0.88rem);
+      font-weight: 500;
+      color: rgba(0,0,0,0.38);
+      letter-spacing: 0.08em;
+      text-align: center;
       display: none;
+      margin-bottom: 1.2rem;
     }
 
-    .cc-logo {
-      width: min(520px, 82vw);
+    #cc-logo {
+      width: 100%;
+      height: auto;
       display: block;
       overflow: visible;
     }
 
-    .cc-logo path {
-      fill: #1a2d42;
-      fill-opacity: 0;
-      stroke: #1a2d42;
+    #cc-logo path {
+      fill: none;
+      stroke: rgba(0,0,0,0.78);
       stroke-width: 1.2;
       stroke-linecap: round;
       stroke-linejoin: round;
-      stroke-opacity: 1;
-      transition: fill-opacity 0.45s ease, stroke-opacity 0.45s ease;
     }
 
-    .cc-logo path.is-filled {
-      fill-opacity: 1;
-      stroke-opacity: 0;
-    }
-
-    /* — CTA — */
-    .cc-cta {
+    .cc-bottom {
+      align-self: start;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      gap: 1rem;
-      padding-top: clamp(1.5rem, 4vh, 3rem);
+      gap: 0.9rem;
+      padding-top: clamp(2.5rem, 7vh, 5rem);
     }
 
     .cc-inapp {
-      background: rgba(180, 120, 20, 0.10);
-      border: 1px solid rgba(180, 120, 20, 0.28);
+      background: rgba(200,150,20,0.10);
+      border: 1px solid rgba(200,150,20,0.25);
       border-radius: 10px;
-      padding: 0.8rem 1.1rem;
-      max-width: 320px;
+      padding: 0.75rem 1rem;
       text-align: center;
+      width: 100%;
+      max-width: 380px;
       display: none;
     }
 
     .cc-inapp__title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: rgba(0,0,0,0.75);
-      margin-bottom: 0.25rem;
-      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: rgba(150,110,10,0.9);
+      margin-bottom: 0.2rem;
     }
 
     .cc-inapp__body {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 400;
-      color: rgba(0,0,0,0.65);
+      color: rgba(130,95,10,0.75);
       line-height: 1.55;
     }
 
     .cc-sub {
-      font-size: clamp(0.72rem, 2.1vw, 0.83rem);
+      font-size: clamp(0.72rem, 1.8vw, 0.82rem);
       font-weight: 400;
-      color: rgba(0,0,0,0.52);
-      text-align: center;
-      line-height: 1.55;
-      max-width: 300px;
-      margin: 0;
+      color: rgba(0,0,0,0.32);
+      letter-spacing: 0.04em;
+      white-space: nowrap;
     }
 
-    .cc-open-btn {
+    .cc-cta {
       background: #202023;
       color: #fff;
       border: none;
       border-radius: 12px;
       padding: 10px 24px;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      font-size: 1rem;
+      font-size: clamp(0.85rem, 2vw, 0.95rem);
       font-weight: 500;
+      line-height: 1.22;
       cursor: pointer;
-      line-height: 1.5;
-      display: inline-block;
+      transition: background 150ms ease;
     }
 
-    .cc-open-btn:hover {
-      background: #333338;
-    }
+    .cc-cta:hover { background: #333338; }
 
-    /* — Footer — */
     .cc-footer {
       position: fixed;
-      bottom: 0; left: 0; right: 0;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      left: 0;
+      right: 0;
       text-align: center;
-      padding: 0.65rem 1rem;
+      z-index: 20;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 0.75rem;
       font-size: 0.68rem;
       color: rgba(0,0,0,0.22);
     }
 
     .cc-footer a {
       color: rgba(0,0,0,0.22);
-      text-decoration: underline;
+      text-decoration: none;
     }
 
-    /* — Reduced motion — */
     @media (prefers-reduced-motion: reduce) {
-      body { animation: none; }
-      .cc-logo path { fill-opacity: 1; stroke-opacity: 0; }
+      .cc-bg { animation: none; }
     }
   </style>
 </head>
-
 <body>
-  <div class="cc-stage">
+  <script>document.documentElement.classList.add('cc-preload');</script>
 
-    <!-- Row 1: Eyebrow -->
-    <div class="cc-eyebrow" id="ccEyebrow">
-      <span class="cc-eyebrow__line1">You've been gifted a</span>
-      <span class="cc-eyebrow__line2">Moment</span>
+  <div class="cc-bg" aria-hidden="true"></div>
+
+  <div class="cc-screen">
+
+    <div class="cc-eyebrow">
+      <span class="cc-eyebrow__line1" id="ccLine1">You've been gifted a</span>
+      <span class="cc-eyebrow__line2" id="ccLine2">MOMENT</span>
     </div>
 
-    <!-- Row 2: Logo -->
     <div class="cc-logo-wrap">
-      <span class="cc-from" id="ccFrom"></span>
-      <svg class="cc-logo" id="ccLogo" viewBox="0 0 344.884 46.229" xmlns="http://www.w3.org/2000/svg" aria-label="ChicCanto">
+      <div class="cc-sender" id="ccSender"></div>
+      <svg id="cc-logo" viewBox="0 0 344.884 46.229" xmlns="http://www.w3.org/2000/svg" aria-label="ChicCanto">
         <!-- C -->
         <path id="lp0" d="M40.487,42.807c-0.424,0.321-1.107,0.671-2.049,1.051c-0.943,0.381-2.049,0.751-3.321,1.111
           c-1.272,0.359-2.709,0.66-4.31,0.9c-1.602,0.24-3.275,0.36-5.017,0.36c-3.722,0-7.161-0.48-10.316-1.441
@@ -352,145 +352,164 @@
       </svg>
     </div>
 
-    <!-- Row 3: CTA -->
-    <div class="cc-cta" id="ccCta">
+    <div class="cc-bottom" id="ccBottom">
       <div class="cc-inapp" id="ccInapp">
-        <span class="cc-inapp__title">Scratching won't work here</span>
-        <span class="cc-inapp__body" id="ccInappBody"></span>
+        <div class="cc-inapp__title">Scratching won't work here</div>
+        <div class="cc-inapp__body" id="ccInappBody"></div>
       </div>
-      <p class="cc-sub" id="ccSub">No app · No account · Free to open</p>
-      <button class="cc-open-btn" type="button" id="ccOpenBtn">Open your card →</button>
+      <div class="cc-sub" id="ccSub">No app · No account · Free to open</div>
+      <button class="cc-cta" type="button" id="ccCta">Open your card →</button>
     </div>
 
   </div>
 
   <footer class="cc-footer" id="ccFooter">
-    <a href="/privacy/">Privacy</a> &nbsp;·&nbsp; <a href="mailto:support@chiccanto.com">support@chiccanto.com</a>
+    <a href="/privacy/">Privacy</a>
+    <span aria-hidden="true">·</span>
+    <a href="mailto:support@chiccanto.com">support@chiccanto.com</a>
   </footer>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script>
-    (function () {
-      var params  = new URLSearchParams(window.location.search);
-      var token   = params.get('token');
-      var origin  = window.location.origin;
-      var cardUrl = token ? (origin + '/card/?token=' + encodeURIComponent(token)) : (origin + '/');
+  (function () {
+    'use strict';
 
-      var ua = navigator.userAgent || '';
+    var params  = new URLSearchParams(window.location.search);
+    var token   = params.get('token');
+    var cardUrl = token ? '/card/?token=' + encodeURIComponent(token) : '/';
+    var ua      = navigator.userAgent || '';
 
-      function detectInApp(ua) {
-        if (/(FBAN|FBAV|FB_IAB|FB4A|FBMD)/i.test(ua))     return 'Facebook';
-        if (/Instagram/i.test(ua))                          return 'Instagram';
-        if (/Messenger|MESSENGER/i.test(ua))                return 'Messenger';
-        if (/WhatsApp/i.test(ua))                           return 'WhatsApp';
-        if (/Snapchat/i.test(ua))                           return 'Snapchat';
-        if (/TikTok|BytedanceWebview/i.test(ua))            return 'TikTok';
-        if (/Twitter/i.test(ua))                            return 'X (Twitter)';
-        if (/LinkedIn/i.test(ua))                           return 'LinkedIn';
-        if (/Line\/|NAVER/i.test(ua))                       return 'LINE';
-        if (/MicroMessenger/i.test(ua))                     return 'WeChat';
-        if (/Android.*\bwv\b/i.test(ua))                    return '';
-        return null;
-      }
+    function detectInApp(ua) {
+      if (/(FBAN|FBAV|FB_IAB|FB4A|FBMD)/i.test(ua))                          return 'Facebook';
+      if (/Instagram/i.test(ua))                                               return 'Instagram';
+      if (/Messenger|MESSENGER/i.test(ua))                                     return 'Messenger';
+      if (/WhatsApp/i.test(ua))                                                return 'WhatsApp';
+      if (/Snapchat/i.test(ua))                                                return 'Snapchat';
+      if (/TikTok|musical\.ly/i.test(ua))                                      return 'TikTok';
+      if (/Twitter|XCom/i.test(ua))                                            return 'X';
+      if (/LinkedInApp/i.test(ua))                                             return 'LinkedIn';
+      if (/Line\//i.test(ua))                                                  return 'LINE';
+      if (/MicroMessenger/i.test(ua))                                          return 'WeChat';
+      if (/Android/i.test(ua) && /\bwv\b/.test(ua) && !/Chrome/i.test(ua))   return '';
+      return null;
+    }
 
-      var appName = detectInApp(ua);
-      if (appName !== null) {
-        var inappEl   = document.getElementById('ccInapp');
-        var inappBody = document.getElementById('ccInappBody');
-        inappEl.style.display = 'block';
-        if (appName) {
-          inappBody.textContent = 'You\'re viewing this inside ' + appName + '. Open the link in Safari or Chrome to use your card.';
-        } else {
-          inappBody.textContent = 'You\'re viewing this inside an in-app browser. Open the link in Safari or Chrome to use your card.';
-        }
-      }
+    function getSub(card_key) {
+      if (card_key === 'gender-reveal1')                              return 'Someone has news to share · No app · No account · Free to open';
+      if (card_key === 'custom-card')                                 return 'A message was hidden for you · No app · No account · Free to open';
+      if (/novice|advanced|birthday/i.test(card_key || ''))          return 'Scratch to win · No app · No account · Free to open';
+      return 'No app · No account · Free to open';
+    }
 
-      document.getElementById('ccOpenBtn').addEventListener('click', function () {
-        window.location.href = cardUrl;
+    var isHandheld = /Android|iPhone|iPad|iPod/i.test(ua);
+    var inAppName  = detectInApp(ua);
+
+    if (inAppName !== null && isHandheld) {
+      var inappEl   = document.getElementById('ccInapp');
+      var inappBody = document.getElementById('ccInappBody');
+      inappEl.style.display = 'block';
+      inappBody.textContent = inAppName
+        ? 'You’re viewing this inside ' + inAppName + '. Open the link in Safari or Chrome to use your card.'
+        : 'You’re viewing this inside an in-app browser. Open the link in Safari or Chrome to use your card.';
+    }
+
+    document.getElementById('ccCta').addEventListener('click', function () {
+      window.location.href = cardUrl;
+    });
+
+    function reset() {
+      var paths = document.querySelectorAll('#cc-logo path');
+      paths.forEach(function (p) {
+        var len = p.getTotalLength();
+        p.style.strokeDasharray  = len;
+        p.style.strokeDashoffset = len;
+        p.style.fill        = 'none';
+        p.style.stroke      = 'rgba(0,0,0,0.78)';
+        p.style.strokeWidth = '1.2';
+        p.style.transition  = 'none';
       });
+      gsap.set('#ccLine1',        { opacity: 0 });
+      gsap.set('#ccLine2',        { opacity: 0, y: 6 });
+      gsap.set('#ccSender',       { opacity: 0 });
+      gsap.set('#ccBottom',       { opacity: 0, y: 16 });
+      gsap.set('#ccFooter',       { opacity: 0 });
+      gsap.set('#cc-logo path',   { y: 0 });
+    }
 
-      function getSubCopy(card_key) {
-        var variant = 'Someone bought you a digital scratch card';
-        if (card_key === 'gender-reveal1')                       variant = 'Someone has news to share with you';
-        else if (card_key === 'custom-card')                     variant = 'A message was hidden for you';
-        else if (/novice|advanced|birthday/i.test(card_key || '')) variant = 'Scratch to win';
-        return variant + ' · No app · No account · Free to open';
+    function play(fromLine, card_key) {
+      if (fromLine) {
+        var senderEl = document.getElementById('ccSender');
+        senderEl.textContent = 'From ' + fromLine.replace(/^from\s+/i, '');
+        senderEl.style.display = 'block';
       }
+      document.getElementById('ccSub').textContent = getSub(card_key);
 
-      function render(fromLine, card_key) {
-        if (fromLine) {
-          var fromEl = document.getElementById('ccFrom');
-          fromEl.textContent = 'From ' + fromLine.replace(/^from\s+/i, '');
-          fromEl.style.display = 'block';
-        }
-        document.getElementById('ccSub').textContent = getSubCopy(card_key);
-        runAnimation();
-      }
-
-      function runAnimation() {
-        var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var paths   = document.querySelectorAll('#ccLogo path');
-
-        if (reduced) {
-          paths.forEach(function (p) { p.classList.add('is-filled'); });
-          gsap.set('#ccEyebrow', { opacity: 1, y: 0 });
-          gsap.set('#ccCta',     { opacity: 1, y: 0 });
-          gsap.set('#ccFooter',  { opacity: 1 });
-          return;
-        }
-
-        // Measure path lengths and set up dash arrays
-        paths.forEach(function (p) {
-          var len = p.getTotalLength();
-          p.style.strokeDasharray  = len;
-          p.style.strokeDashoffset = len;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        requestAnimationFrame(function () {
+          document.documentElement.classList.remove('cc-preload');
         });
-
-        // Set initial invisible state via GSAP so it owns the transform
-        gsap.set('#ccEyebrow', { opacity: 0, y: 12 });
-        gsap.set('#ccCta',     { opacity: 0, y: 18 });
-        gsap.set('#ccFooter',  { opacity: 0 });
-
-        var tl = gsap.timeline();
-
-        // Eyebrow fades up
-        tl.to('#ccEyebrow', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 0.2);
-
-        // Letter draw-on: stagger 0.11s, 0.5s each
-        tl.to('#ccLogo path', {
-          strokeDashoffset: 0,
-          duration: 0.5,
-          ease: 'power1.inOut',
-          stagger: 0.11
-        }, 0.5);
-
-        // Stroke → fill crossfade (triggered via callback after last letter done)
-        var fillStart = 0.5 + (paths.length - 1) * 0.11 + 0.5 + 0.08;
-        tl.call(function () {
-          paths.forEach(function (p) { p.classList.add('is-filled'); });
-        }, [], fillStart);
-
-        // CTA slides up
-        tl.to('#ccCta', { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, fillStart + 0.4);
-
-        // Footer fades in
-        tl.to('#ccFooter', { opacity: 1, duration: 0.4, ease: 'power1.out' }, fillStart + 0.55);
-      }
-
-      if (!token) {
-        render(null, null);
+        document.querySelectorAll('#cc-logo path').forEach(function (p) {
+          p.style.fill        = 'rgba(0,0,0,0.82)';
+          p.style.stroke      = 'rgba(0,0,0,0)';
+          p.style.strokeWidth = '0';
+        });
+        gsap.set('#ccLine1, #ccLine2, #ccSender, #ccBottom, #ccFooter', { opacity: 1, y: 0 });
         return;
       }
 
+      reset();
+
+      requestAnimationFrame(function () {
+        document.documentElement.classList.remove('cc-preload');
+      });
+
+      var tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
+
+      tl.to('#ccLine1', { opacity: 1, duration: 0.8 }, 0.3);
+      tl.to('#ccLine2', { opacity: 1, y: 0, duration: 0.7 }, 0.9);
+
+      if (fromLine) {
+        tl.to('#ccSender', { opacity: 1, duration: 0.6 }, 1.4);
+      }
+
+      tl.to('#cc-logo path', {
+        strokeDashoffset: 0,
+        duration: 0.9,
+        ease: 'power1.inOut',
+        stagger: 0.13
+      }, 1.6);
+
+      var fillAt = 1.6 + 8 * 0.13 + 0.9 + 0.1;
+
+      tl.call(function () {
+        document.querySelectorAll('#cc-logo path').forEach(function (p) {
+          p.style.transition  = 'stroke-width 0.6s ease, stroke 0.6s ease, fill 0.5s ease';
+          p.style.fill        = 'rgba(0,0,0,0.82)';
+          p.style.strokeWidth = '0';
+          p.style.stroke      = 'rgba(0,0,0,0)';
+        });
+      }, [], fillAt);
+
+      tl.to('#ccBottom', { opacity: 1, y: 0, duration: 0.7 }, fillAt + 0.5);
+      tl.to('#ccFooter', { opacity: 1, duration: 0.5 },       fillAt + 0.7);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      if (!token) {
+        play(null, null);
+        return;
+      }
       fetch('/token/' + encodeURIComponent(token))
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (data) {
-          var fromLine = data && data.from_line ? data.from_line : null;
-          var card_key = data && data.card_key  ? data.card_key  : null;
-          render(fromLine, card_key);
+          play(
+            data && data.from_line ? data.from_line : null,
+            data && data.card_key  ? data.card_key  : null
+          );
         })
-        .catch(function () { render(null, null); });
-    })();
+        .catch(function () { play(null, null); });
+    });
+
+  })();
   </script>
 </body>
 </html>
