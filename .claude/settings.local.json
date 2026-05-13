@@ -13,7 +13,13 @@
       "Bash(python3 --version)",
       "Bash(node --version)",
       "Bash(node -e ':*)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(cp gender-reveal1/thumb.jpg baby-name1/thumb.jpg)",
+      "Bash(cp gender-reveal1/bg-desktop.jpg baby-name1/bg-desktop.jpg)",
+      "Bash(cp gender-reveal1/bg-mobile.jpg baby-name1/bg-mobile.jpg)",
+      "Bash(cp gender-reveal1/step2-boy/bg-desktop.jpg baby-name1/boy/bg-desktop.jpg)",
+      "Bash(cp gender-reveal1/step2-boy/bg-mobile.jpg baby-name1/boy/bg-mobile.jpg)",
+      "Bash(node -e ' *)"
     ]
   }
 }

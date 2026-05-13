@@ -1337,7 +1337,7 @@ button.btn::-moz-focus-inner {
 
 .card-screen__body .card-legend h2 {
   margin: 0;
-  font-size: clamp(15px, 3vw, 36px);
+  font-size: clamp(15px, 3vw, 30px);
   letter-spacing: 0;
   text-transform: uppercase;
   font-weight: 700;
