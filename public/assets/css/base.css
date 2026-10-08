@@ -2837,3 +2837,55 @@ button.btn::-moz-focus-inner {
 [data-page="card"] .setup-thumb__media img:focus-visible {
   outline: none !important;
 }
+
+/* Activate page: bonus pick code selector */
+.pick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+@media (min-width: 680px) {
+  .pick-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.pick-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-width: 0;
+  border: 1px solid var(--ui-panel-border);
+  border-radius: var(--radius);
+  background: var(--ui-panel);
+}
+
+.pick-confirm {
+  max-width: 360px;
+}
+
+.pick-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 7 / 5;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--ui-surface-alt);
+}
+
+.pick-name {
+  font-weight: 600;
+  color: var(--ui-text);
+  overflow-wrap: anywhere;
+}
+
+.pick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-xs);
+}
+
+.pick-actions .btn {
+  flex: 1 1 auto;
+}

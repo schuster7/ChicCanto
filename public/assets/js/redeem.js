@@ -1,6 +1,7 @@
 import { qs, makeTokenFromString } from './utils.js';
 import { ensureCard, saveCard } from './store.js';
 import { getProductBySlug } from './products.js';
+import { getCardTheme } from './card-themes.js';
 
 // Allow markup to evolve without breaking JS.
 // Prefer stable IDs for JS hooks, but support hyphenated variants too.
@@ -172,7 +173,7 @@ async function _fetchJsonWithTimeout(url, options, timeoutMs){
   }
 }
 
-async function apiRedeem(code, init){
+async function apiRedeem(code, init, pick){
   const bases = apiBaseCandidates();
 
   // Keep the UI responsive: don't let any single candidate hang forever.
@@ -187,7 +188,7 @@ async function apiRedeem(code, init){
       const { res, data } = await _fetchJsonWithTimeout(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(init ? { code, init } : { code }),
+        body: JSON.stringify({ code, ...(init ? { init } : {}), ...(pick ? { pick } : {}) }),
       }, TIMEOUT_MS);
 
       if (res.ok && data && data.ok){
@@ -199,6 +200,8 @@ async function apiRedeem(code, init){
         status: res.status || 0,
         errorCode: data && data.errorCode ? data.errorCode : null,
         retryAfterSeconds: data && data.retryAfterSeconds ? data.retryAfterSeconds : null,
+        error: data && typeof data.error === 'string' ? data.error : null,
+        options: data && Array.isArray(data.options) ? data.options : null,
       };
     } catch (e){
       last = {
@@ -419,6 +422,183 @@ function renderMultiCards(result){
   });
 }
 
+// Single card result: store the setup key and go straight to the card setup page.
+function goToSingleCardResult(result, statusChip){
+  const only = result.cards[0];
+  const params = new URLSearchParams();
+  params.set('token', only.token);
+  params.set('setup', only.setup_key);
+  try{ localStorage.setItem(`sc:setup:${only.token}`, String(only.setup_key)); }catch(_e){}
+
+  if (statusChip) setStatusChip(statusChip, 'ok', result.existing ? 'Link retrieved' : 'Activated');
+  window.location.href = '/card/?' + params.toString();
+}
+
+// --- Activate page: bonus pick code selector ---
+
+function isPickRequired(result){
+  return !!result && (result.errorCode === 'PICK_REQUIRED' || result.error === 'PICK_REQUIRED');
+}
+
+function pickThemeName(key, theme){
+  if (theme && (theme.name || theme.label)) return String(theme.name || theme.label);
+  const words = String(key || '').replace(/\d+$/, '').split('-').filter(Boolean).join(' ');
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : 'ChicCanto card';
+}
+
+function buildPickThumb(theme, name){
+  const img = document.createElement('img');
+  img.className = 'pick-thumb';
+  img.alt = name + ' thumbnail';
+  img.loading = 'lazy';
+  if (theme && theme.thumbSrc) img.src = theme.thumbSrc;
+  img.onerror = () => { img.style.visibility = 'hidden'; };
+  return img;
+}
+
+function renderPickSelector(ctx){
+  const wrap = ensureResultsContainer();
+  wrap.innerHTML = '';
+
+  const keys = (Array.isArray(ctx.options) ? ctx.options : [])
+    .map(String)
+    .filter((k) => getCardTheme(k));
+
+  if (!keys.length){
+    if (ctx.msg) ctx.msg.textContent = 'Could not activate right now. Please try again.';
+    return;
+  }
+
+  const intro = document.createElement('div');
+  intro.className = 'small';
+  intro.textContent = 'Your code includes a free digital card. Choose your design below.';
+  wrap.appendChild(intro);
+
+  const grid = document.createElement('div');
+  grid.className = 'pick-grid';
+
+  keys.forEach((key) => {
+    const theme = getCardTheme(key);
+    const name = pickThemeName(key, theme);
+
+    const tile = document.createElement('div');
+    tile.className = 'card pick-tile';
+    tile.appendChild(buildPickThumb(theme, name));
+
+    const title = document.createElement('div');
+    title.className = 'pick-name';
+    title.textContent = name;
+    tile.appendChild(title);
+
+    const actions = document.createElement('div');
+    actions.className = 'pick-actions';
+
+    const choose = document.createElement('button');
+    choose.type = 'button';
+    choose.className = 'btn primary';
+    choose.textContent = 'Choose';
+    choose.addEventListener('click', () => renderPickConfirm(ctx, key));
+    actions.appendChild(choose);
+
+    const preview = document.createElement('a');
+    preview.className = 'btn';
+    preview.href = '/card/?preview=1&card_key=' + encodeURIComponent(key);
+    preview.target = '_blank';
+    preview.rel = 'noopener';
+    preview.textContent = 'Preview';
+    actions.appendChild(preview);
+
+    tile.appendChild(actions);
+    grid.appendChild(tile);
+  });
+
+  wrap.appendChild(grid);
+}
+
+function renderPickConfirm(ctx, key){
+  const wrap = ensureResultsContainer();
+  wrap.innerHTML = '';
+  if (ctx.msg) ctx.msg.textContent = '';
+
+  const theme = getCardTheme(key);
+  const name = pickThemeName(key, theme);
+
+  const tile = document.createElement('div');
+  tile.className = 'card pick-tile pick-confirm';
+  tile.appendChild(buildPickThumb(theme, name));
+
+  const title = document.createElement('div');
+  title.className = 'pick-name';
+  title.textContent = name;
+  tile.appendChild(title);
+
+  const note = document.createElement('div');
+  note.className = 'small';
+  note.textContent = 'This cannot be changed afterwards.';
+  tile.appendChild(note);
+
+  const actions = document.createElement('div');
+  actions.className = 'pick-actions';
+
+  const confirm = document.createElement('button');
+  confirm.type = 'button';
+  confirm.className = 'btn primary';
+  confirm.textContent = 'Confirm';
+
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.className = 'btn';
+  back.textContent = 'Back';
+
+  const setBusy = (busy) => {
+    confirm.disabled = busy;
+    back.disabled = busy;
+    if (ctx.btn) ctx.btn.disabled = busy;
+    confirm.textContent = busy ? 'Activating...' : 'Confirm';
+  };
+
+  back.addEventListener('click', () => renderPickSelector(ctx));
+
+  confirm.addEventListener('click', () => {
+    if (confirm.disabled) return;
+    setBusy(true);
+    if (ctx.msg) ctx.msg.textContent = '';
+    if (ctx.statusChip) setStatusChip(ctx.statusChip, 'warn', 'Checking…');
+
+    apiRedeem(ctx.code, undefined, key)
+      .then((result) => {
+        if (result && result.ok !== false && Array.isArray(result.cards) && result.cards.length === 1){
+          goToSingleCardResult(result, ctx.statusChip);
+          return;
+        }
+        if (result && result.ok !== false && Array.isArray(result.cards) && result.cards.length > 1){
+          setBusy(false);
+          renderMultiCards(result);
+          if (ctx.statusChip) setStatusChip(ctx.statusChip, 'ok', result.existing ? 'Link retrieved' : 'Activated');
+          return;
+        }
+
+        setBusy(false);
+        if (ctx.statusChip) setStatusChip(ctx.statusChip, 'warn', 'Not activated');
+        if (isPickRequired(result)){
+          renderPickSelector({ ...ctx, options: result.options || ctx.options });
+          return;
+        }
+        if (ctx.msg) ctx.msg.textContent = friendlyServerMessage(result);
+      })
+      .catch((err) => {
+        setBusy(false);
+        if (ctx.msg) ctx.msg.textContent = friendlyNetworkMessage(err);
+        if (ctx.statusChip) setStatusChip(ctx.statusChip, 'warn', 'Not activated');
+      });
+  });
+
+  actions.appendChild(confirm);
+  actions.appendChild(back);
+  tile.appendChild(actions);
+  wrap.appendChild(tile);
+}
+
 
 function normalizeActivationCode(raw){
   // Customer-friendly normalization:
@@ -564,6 +744,13 @@ export function bootRedeem(){
             btn.textContent = originalBtnText;
           }
 
+          // Bonus pick code: let the buyer choose a card before anything is created.
+          if (isPickRequired(result)){
+            if (statusChip) setStatusChip(statusChip, 'warn', 'Choose your card');
+            renderPickSelector({ code, options: result.options, msg, statusChip, btn });
+            return;
+          }
+
           // Handle API errors cleanly (no JS crashes, customer-friendly message)
           if (!result || result.ok === false){
             if (msg) msg.textContent = friendlyServerMessage(result);
@@ -572,14 +759,7 @@ export function bootRedeem(){
           }
 
           if (Array.isArray(result.cards) && result.cards.length === 1){
-            const only = result.cards[0];
-            const params = new URLSearchParams();
-            params.set('token', only.token);
-            params.set('setup', only.setup_key);
-            try{ localStorage.setItem(`sc:setup:${only.token}`, String(only.setup_key)); }catch(_e){}
-
-            if (statusChip) setStatusChip(statusChip, 'ok', result.existing ? 'Link retrieved' : 'Activated');
-            window.location.href = '/card/?' + params.toString();
+            goToSingleCardResult(result, statusChip);
             return;
           }
 
@@ -701,6 +881,9 @@ function friendlyServerMessage(result){
   }
   if (result && result.errorCode === 'ALREADY_USED'){
     return 'That activation code has already been used.';
+  }
+  if (result && (result.errorCode === 'INVALID_PICK' || result.error === 'INVALID_PICK')){
+    return 'That card is not available. Please choose another.';
   }
   return 'Could not activate right now. Please try again.';
 }
