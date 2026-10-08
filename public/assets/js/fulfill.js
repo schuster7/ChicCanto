@@ -63,9 +63,30 @@ function resetSelect(selectId){
   syncCustomSelectUI(selectId);
 }
 
+// Bonus pick codes are always a single code: lock quantity to 1 for card_key "pick".
+function applyCardKeyRules(){
+  const keyEl = byId('cardKey');
+  const qtyEl = byId('quantity');
+  if (!keyEl || !qtyEl) return;
+
+  const isPick = String(keyEl.value || '').trim() === 'pick';
+  if (isPick) qtyEl.value = '1';
+  qtyEl.disabled = isPick;
+  syncCustomSelectUI('quantity');
+
+  const root = document.querySelector('.cselect[data-select="#quantity"]');
+  if (root){
+    const btn = root.querySelector('.cselect__btn');
+    if (btn) btn.disabled = isPick;
+    if (isPick) root.classList.remove('is-open');
+    root.style.opacity = isPick ? '0.6' : '';
+  }
+}
+
 function resetFulfillSelections(){
   resetSelect('cardKey');
   resetSelect('quantity');
+  applyCardKeyRules();
 }
 
 function hideVoidPanel(){
@@ -150,7 +171,7 @@ function getOptionTextByValue(selectId, value){
 function collectAssignmentInput(){
   const order_id = String(byId('orderId')?.value || '').trim();
   const card_key = String(byId('cardKey')?.value || '').trim();
-  const quantity = String(byId('quantity')?.value || '').trim();
+  const quantity = card_key === 'pick' ? '1' : String(byId('quantity')?.value || '').trim();
   const buyer_name = String(byId('buyerName')?.value || '').trim() || null;
 
   if (!order_id){
@@ -175,7 +196,7 @@ function collectAssignmentInput(){
     quantity,
     buyer_name,
     card_label: getSelectedOptionText('cardKey') || card_key,
-    quantity_label: getSelectedOptionText('quantity') || quantity,
+    quantity_label: card_key === 'pick' ? '1 card' : (getSelectedOptionText('quantity') || quantity),
   };
 }
 
@@ -469,6 +490,10 @@ export function bootFulfill(){
     el.addEventListener('input', () => { hideAssignConfirmation(); hideVoidPanel(); hideReplacePanel(); });
     el.addEventListener('change', () => { hideAssignConfirmation(); hideVoidPanel(); hideReplacePanel(); });
   });
+
+  const cardKeyEl = byId('cardKey');
+  if (cardKeyEl) cardKeyEl.addEventListener('change', applyCardKeyRules);
+  applyCardKeyRules();
 
   hideAssignConfirmation();
   hideVoidPanel();

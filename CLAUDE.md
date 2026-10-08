@@ -53,6 +53,18 @@ New products require only a new theme entry in `card-themes.js` plus design asse
 | custom-card | message |
 | gender-reveal1 | sequential |
 
+## Bonus pick codes
+Physical Etsy orders include one free digital naughty card. The buyer chooses the design at activation.
+- Physical SKUs are `phys-<card_key>` (base must be one of the six naughty keys). Make.com passes the SKU to POST /assign as `card_key`.
+- /assign issues one `CC-PICK-XXXXXXXX` code instead of a normal code. The `ac:` record has `sku: 'bonus'` and `init.pick` (the six naughty keys, in `PICK_OPTIONS` in `functions/_lib/cards.js`) with no `card_key`.
+- Effective order id is `order_id` + `-bonus` (not added twice). Quantity is always 1. Order records have `card_key: 'pick'` and `bonus: true`.
+- First assignment wins per effective order id. An existing bonus order returns the same code and sends no repeat email unless the request body has `resend: true`. (The digital path still resends its email as before.)
+- /redeem returns HTTP 200 `{ ok: false, error: 'PICK_REQUIRED', options }` for a pick code with no cards, until the client posts `{ code, pick }`. A valid pick mints the card and stores `picked_at` and `picked_card_key` on the `ac:` record. An invalid pick returns 400 `INVALID_PICK`. A redeemed pick code returns its existing card and ignores `pick`.
+- The activate page (`redeem.js`) shows a selector grid with a confirm step ("This cannot be changed afterwards").
+- The manual fulfil option "Free digital card (buyer picks)" sends `card_key: 'pick'` (quantity forced to 1) and works regardless of `BONUS_ENABLED`.
+- `phys-` SKUs are ignored by /assign (200, `skipped: true`, `reason: 'bonus_disabled'`, no KV writes, no email) unless env `BONUS_ENABLED` is exactly the string `true`.
+- /assign also rejects any `card_key` that is not in `KNOWN_CARD_KEYS`, `pick`, or a valid `phys-` SKU (400 before any KV write or email).
+
 ## Known Open Bugs (do not fix until ordered)
 - **isFinal hardcoded in `_onSeqStepScratched`** (~line 1398 of `game-message.js`): `const isFinal = stepIndex === 1`. Must be fixed before adding any sequential product with more than 2 steps.
 - **Token PUT endpoint has no rate limiting.** Low severity.
@@ -75,6 +87,7 @@ New products require only a new theme entry in `card-themes.js` plus design asse
 - `setup_key` never appears in recipient links.
 - Sender-only fields (`configured`, `message`, `title`, `from_line`, `card_style`, `scratch_shape`, `language`, `gender`, `custom_message`, `due_month`) require valid setup key on PUT.
 - Activation codes are locked to one `card_key` and one `order_id`.
+- Bonus pick codes: the allowed card keys are enforced server side (`init.pick` filtered by `PICK_OPTIONS` in /redeem, `KNOWN_CARD_KEYS` and `PICK_OPTIONS` in /assign). The client only sends a suggestion and can never mint a card outside the allowlist.
 
 ## Environment
 | Name | Type | Purpose |
@@ -83,3 +96,4 @@ New products require only a new theme entry in `card-themes.js` plus design asse
 | FULFILL_KEY | Secret | Admin password |
 | FULFILL_SESSION_SECRET | Secret | HMAC key for session cookies |
 | RESEND_API_KEY | Secret | Resend API key for transactional email |
+| BONUS_ENABLED | Variable | Must be exactly `true` for /assign to issue bonus codes for `phys-` SKUs. Unset or any other value skips them. Manual `pick` is not affected. |
