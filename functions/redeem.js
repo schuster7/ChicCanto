@@ -1,7 +1,7 @@
 // Cloudflare Pages Function route: POST /redeem
 // Stores card state in KV and returns the shape the frontend expects.
 
-import { buildNewCard } from './_lib/cards.js';
+import { buildNewCard, PICK_OPTIONS } from './_lib/cards.js';
 
 function json(data, status = 200){
   return new Response(JSON.stringify(data), {
@@ -67,6 +67,13 @@ function sameCardBinding(a, b){
   );
 }
 
+// Bonus pick code (issued by /assign for physical orders): the buyer chooses the card_key at first redeem.
+function isPickCode(record){
+  const init = record && record.init;
+  if (!init || typeof init !== 'object') return false;
+  if (!Array.isArray(init.pick)) return false;
+  return !(typeof init.card_key === 'string' && init.card_key.trim());
+}
 
 const REDEEM_RL_WINDOW_SECONDS = 10 * 60; // 10 minutes
 const REDEEM_RL_MAX_PER_IP = 60;          // per IP per window (generous for real users)
@@ -200,14 +207,31 @@ export async function onRequestPost(context){
     return err('CODE_CARD_MISMATCH', 'This code is linked to a different card type.', 409);
   }
 
+  // Bonus pick code with no cards yet: the buyer must choose one of the allowed card keys.
+  const pickCode = isPickCode(ac);
+  let picked_card_key = null;
+  if (pickCode){
+    const allowed = ac.init.pick.map(String).filter((k) => PICK_OPTIONS.includes(k));
+    const rawPick = body.pick;
+    if (rawPick === undefined || rawPick === null || rawPick === ''){
+      return json({ ok: false, errorCode: 'PICK_REQUIRED', error: 'PICK_REQUIRED', options: allowed });
+    }
+    const pick = typeof rawPick === 'string' ? rawPick.trim() : '';
+    if (!allowed.includes(pick)){
+      return json({ ok: false, errorCode: 'INVALID_PICK', error: 'INVALID_PICK' }, 400);
+    }
+    picked_card_key = pick;
+  }
+
   // Create cards now.
   const tokens = [];
   const cards = [];
 
   // Server-owned init wins; fall back to client init only if inventory doesn't specify.
   // For legacy inventory codes with no bound init, we bind on first successful redeem.
+  // Pick codes use the buyer's validated choice.
   const invInit = boundInit;
-  const finalInit = invInit || requestedInit || init;
+  const finalInit = pickCode ? { card_key: picked_card_key } : (invInit || requestedInit || init);
 
   for (let i = 0; i < quantity; i++){
     const card = buildNewCard({ init: finalInit });
@@ -222,10 +246,11 @@ export async function onRequestPost(context){
     ...ac,
     code,
     sku: sku || ac.sku || null,
-    init: invInit || requestedInit || (ac.init && typeof ac.init === 'object' ? ac.init : null),
+    init: pickCode ? ac.init : (invInit || requestedInit || (ac.init && typeof ac.init === 'object' ? ac.init : null)),
     status: 'redeemed',
     redeemed_at,
     tokens,
+    ...(pickCode ? { picked_at: redeemed_at, picked_card_key } : {}),
   };
   await env.CARDS_KV.put(acKey, JSON.stringify(updated));
 
