@@ -77,3 +77,21 @@ export function buildNewCard({ init } = {}){
     scratched_fields: null,
   };
 }
+
+// Naughty cards a bonus ("pick") code may activate as.
+export const PICK_OPTIONS = [
+  'men-novice1',
+  'men-advanced1',
+  'women-novice1',
+  'women-advanced1',
+  'men-novice-birthday1',
+  'women-novice-birthday1',
+];
+
+// Every card_key POST /assign accepts for a normal (digital) order.
+export const KNOWN_CARD_KEYS = [
+  ...PICK_OPTIONS,
+  'custom-card',
+  'gender-reveal1',
+  'baby-name1',
+];

@@ -1,4 +1,5 @@
 import { verifySessionCookie, verifyApiKey } from './_lib/auth.js';
+import { PICK_OPTIONS, KNOWN_CARD_KEYS } from './_lib/cards.js';
 
 // Cloudflare Pages Function route: POST /assign
 // Assigns activation code(s) to an Etsy order, server-side.
@@ -57,6 +58,7 @@ function cardKeyToCodePrefix(card_key){
     'custom-card': 'CC-CUSTOM',
     'gender-reveal1': 'CC-GENDER',
     'baby-name1': 'CC-NAME1',
+    'pick': 'CC-PICK',
   };
   return MAP[k] || 'CC-CARD';
 }
@@ -66,7 +68,8 @@ function escHtml(s){
   return String(s).replace(/[&<>"]/g, (c) => map[c.charCodeAt(0)] || c);
 }
 
-function buildHtmlEmail({ greetingHtml, introLine, codeBlocks, faq }){
+function buildHtmlEmail({ greetingHtml, introLine, codeBlocks, faq, variant }){
+  const buttonText = variant === 'bonus' ? 'Choose your card' : 'Activate your card';
   const codeBlocksHtml = codeBlocks.map((item) => {
     const label = item.label
       ? `<p style="margin:0 0 6px;font-size:13px;color:#888;text-align:center;">${escHtml(item.label)}</p>`
@@ -77,7 +80,7 @@ function buildHtmlEmail({ greetingHtml, introLine, codeBlocks, faq }){
       `<span style="font-family:'Courier New',Courier,monospace;font-size:22px;font-weight:bold;letter-spacing:0.12em;color:#2c2420;">${escHtml(item.code)}</span>` +
       `</div></div>` +
       `<div style="text-align:center;margin:12px 0 20px;">` +
-      `<a href="${item.link}" style="background:#2c2420;color:#ffffff;padding:14px 32px;border-radius:50px;font-size:16px;font-weight:600;text-decoration:none;display:inline-block;">Activate your card</a>` +
+      `<a href="${item.link}" style="background:#2c2420;color:#ffffff;padding:14px 32px;border-radius:50px;font-size:16px;font-weight:600;text-decoration:none;display:inline-block;">${buttonText}</a>` +
       `</div>` +
       `<p style="margin:0 0 24px;text-align:center;font-size:12px;color:#999;">Or copy this link into your browser:<br/>` +
       `<a href="${item.link}" style="color:#999;word-break:break-all;">${item.link}</a></p>`;
@@ -108,7 +111,7 @@ function buildHtmlEmail({ greetingHtml, introLine, codeBlocks, faq }){
     `</table></td></tr></table></body></html>`;
 }
 
-function buildMessage({ codes, origin, buyerName, buyerEmail }){
+function buildMessage({ codes, origin, buyerName, buyerEmail, variant }){
   const base = `${origin}/`;
   const faq = `${base}faq/`;
 
@@ -125,7 +128,50 @@ function buildMessage({ codes, origin, buyerName, buyerEmail }){
   let text;
   let html;
 
-  if (list.length <= 1){
+  if (variant === 'bonus'){
+    const assignedCode = list[0] || '';
+    const activationLink = buildActivationLink(assignedCode);
+
+    text =
+`${greeting}
+
+Thanks for your order, and welcome to ChicCanto.
+
+Your free digital card is included with your physical order. Choose your design when you activate. Your physical card ships separately.
+
+Your activation code: ${assignedCode}
+
+Quick start (recommended):
+Open this link and your code will be filled in automatically:
+
+${activationLink}
+
+Manual option:
+1. Open: ${base}
+2. Paste your activation code, choose your card and follow the steps on screen
+
+This is quick, private, and works on both phone and desktop.
+
+Sharing tip (important):
+Use the recipient link you get after setup. It opens an "Open" page first, because scratching does not work inside Messenger or Instagram's in-app browser. The page will guide them to open it in their browser.
+
+Need the link again later? Just redeem the same code.
+
+Need help?
+FAQ: ${faq}
+
+Have fun,
+ChicCanto`;
+
+    html = buildHtmlEmail({
+      greetingHtml,
+      introLine: 'Your free digital card is included with your physical order. Choose your design when you activate.',
+      codeBlocks: [{ code: assignedCode, link: activationLink }],
+      faq,
+      variant,
+    });
+
+  } else if (list.length <= 1){
     const assignedCode = list[0] || '';
     const activationLink = buildActivationLink(assignedCode);
 
@@ -325,6 +371,124 @@ async function sendActivationEmail(env, { buyerEmail, messageHtml, subject }){
   }
 }
 
+async function assignBonusOrder(env, { order_id: rawOrderId, buyer_name, buyer_email, origin, resend }){
+  // One free 'pick' code per physical order, stored under its own order id so it never
+  // collides with a digital assignment for the same Etsy order.
+  const order_id = rawOrderId.endsWith('-bonus') ? rawOrderId : `${rawOrderId}-bonus`;
+  const card_key = 'pick';
+  const quantity = 1;
+  const subject = 'Your free digital ChicCanto card is ready';
+
+  const orderKey = buildOrderKey(order_id, card_key, quantity);
+  const orderIndexKey = buildOrderIndexKey(order_id);
+
+  // First assignment wins, same as the digital path.
+  let existingOrder = await getJsonKV(env, orderIndexKey);
+  if (isInactiveOrderRecord(existingOrder)) existingOrder = null;
+  if (!existingOrder){
+    existingOrder = await getJsonKV(env, orderKey);
+    if (isInactiveOrderRecord(existingOrder)) existingOrder = null;
+  }
+
+  if (existingOrder && typeof existingOrder === 'object' && Array.isArray(existingOrder.codes) && existingOrder.codes.length){
+    const codes = existingOrder.codes.map(String);
+    const existing_card_key = String(existingOrder.card_key || card_key);
+    const existing_quantity = Number(existingOrder.quantity || quantity || codes.length || 1);
+    const assignment_conflict = (existing_card_key !== card_key) || (existing_quantity !== quantity);
+    const assignmentState = await inspectAssignmentState(env, codes);
+    const msg = buildMessage({ codes, origin, buyerName: buyer_name || existingOrder.buyer_name || '', buyerEmail: buyer_email, variant: 'bonus' });
+
+    // Unlike the digital path, only resend the email when explicitly asked.
+    let email_sent;
+    let email_error;
+    if (resend && buyer_email && env.RESEND_API_KEY){
+      const emailResult = await sendActivationEmail(env, { buyerEmail: buyer_email, messageHtml: msg.html, subject });
+      email_sent = !!emailResult.ok;
+      if (!emailResult.ok && emailResult.error) email_error = emailResult.error;
+    }
+
+    return json({
+      ok: true,
+      existing: true,
+      bonus: true,
+      assignment_conflict,
+      can_void_unactivated: !!assignmentState.can_void_unactivated,
+      assignment_state: assignmentState.assignment_state,
+      order_id,
+      card_key: existing_card_key,
+      quantity: existing_quantity,
+      requested_card_key: card_key,
+      requested_quantity: quantity,
+      codes,
+      etsy_message: msg.text,
+      message_text: msg.text,
+      message_html: msg.html,
+      ...(buyer_email ? { buyer_email } : {}),
+      ...(email_sent !== undefined ? { email_sent } : {}),
+      ...(email_error ? { email_error } : {}),
+    });
+  }
+
+  let code = '';
+  try{
+    code = await generateUniqueCode(env, cardKeyToCodePrefix(card_key));
+  } catch {
+    return json({ ok: false, error: 'Could not generate a new code. Try again.' }, 500);
+  }
+
+  const acRec = {
+    code,
+    sku: 'bonus',
+    status: 'assigned',
+    order_id,
+    buyer_name: buyer_name || null,
+    assigned_at: new Date().toISOString(),
+    bundle_index: null,
+    init: { pick: [...PICK_OPTIONS] },
+  };
+  await env.CARDS_KV.put(`ac:${code}`, JSON.stringify(acRec));
+
+  const codes = [code];
+  const orderRec = {
+    order_id,
+    card_key,
+    quantity,
+    codes,
+    buyer_name: buyer_name || null,
+    status: 'assigned',
+    assigned_at: new Date().toISOString(),
+    bonus: true,
+  };
+  await env.CARDS_KV.put(orderKey, JSON.stringify(orderRec));
+  await env.CARDS_KV.put(orderIndexKey, JSON.stringify(orderRec));
+
+  const msg = buildMessage({ codes, origin, buyerName: buyer_name, buyerEmail: buyer_email, variant: 'bonus' });
+
+  let email_sent;
+  let email_error;
+  if (buyer_email && env.RESEND_API_KEY){
+    const emailResult = await sendActivationEmail(env, { buyerEmail: buyer_email, messageHtml: msg.html, subject });
+    email_sent = !!emailResult.ok;
+    if (!emailResult.ok && emailResult.error) email_error = emailResult.error;
+  }
+
+  return json({
+    ok: true,
+    existing: false,
+    bonus: true,
+    order_id,
+    card_key,
+    quantity,
+    codes,
+    etsy_message: msg.text,
+    message_text: msg.text,
+    message_html: msg.html,
+    ...(buyer_email ? { buyer_email } : {}),
+    ...(email_sent !== undefined ? { email_sent } : {}),
+    ...(email_error ? { email_error } : {}),
+  });
+}
+
 export async function onRequestPost(context){
   const { request, env } = context;
 
@@ -363,7 +527,35 @@ export async function onRequestPost(context){
     return json({ ok: false, error: 'Missing card_key.' }, 400);
   }
 
+  // Routing: physical SKUs (phys-<card_key>) and manual 'pick' become a free bonus code.
+  // Everything else must be a known card_key. Runs before any KV access or email.
+  let isBonus = false;
+  if (card_key.startsWith('phys-')){
+    const base = card_key.slice('phys-'.length);
+    if (!PICK_OPTIONS.includes(base)){
+      return json({ ok: false, error: 'Unknown physical SKU.' }, 400);
+    }
+    if (env.BONUS_ENABLED !== 'true'){
+      return json({ ok: true, skipped: true, reason: 'bonus_disabled', order_id }, 200);
+    }
+    isBonus = true;
+  } else if (card_key === 'pick'){
+    isBonus = true;
+  } else if (!KNOWN_CARD_KEYS.includes(card_key)){
+    return json({ ok: false, error: 'Unknown card_key.' }, 400);
+  }
+
   const origin = new URL(request.url).origin;
+
+  if (isBonus){
+    return assignBonusOrder(env, {
+      order_id,
+      buyer_name,
+      buyer_email,
+      origin,
+      resend: body.resend === true,
+    });
+  }
 
   // Assignment policy: first assignment wins per order_id.
   // We still keep the composite key for support/idempotency history, but `order:${order_id}` is canonical.
