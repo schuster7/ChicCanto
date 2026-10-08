@@ -31,7 +31,12 @@ function normalizeCardKey(raw){
   // Etsy digital SKUs may be written as digi-<card_key>. Strip the prefix once, here,
   // so every later step (allowlist, KV keys, code prefix, email) sees the plain key.
   const k = String(raw || '').trim();
-  return /^digi-/i.test(k) ? k.slice('digi-'.length).trim() : k;
+  if (!/^digi-/i.test(k)) return k;
+  const stripped = k.slice('digi-'.length).trim();
+  // digi- is only for digital keys. Keep the original value for pick and phys- so the
+  // allowlist rejects it as an unknown card_key (these must never be reached via digi-).
+  if (stripped === 'pick' || stripped.startsWith('phys-')) return k;
+  return stripped;
 }
 
 function normalizeQuantity(raw){
