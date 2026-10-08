@@ -55,6 +55,7 @@ New products require only a new theme entry in `card-themes.js` plus design asse
 
 ## Bonus pick codes
 Physical Etsy orders include one free digital naughty card. The buyer chooses the design at activation.
+- Digital SKUs may be written as `<card_key>` or `digi-<card_key>`; the `digi-` prefix is stripped in /assign before any other check.
 - Physical SKUs are `phys-<card_key>` (base must be one of the six naughty keys). Make.com passes the SKU to POST /assign as `card_key`.
 - /assign issues one `CC-PICK-XXXXXXXX` code instead of a normal code. The `ac:` record has `sku: 'bonus'` and `init.pick` (the six naughty keys, in `PICK_OPTIONS` in `functions/_lib/cards.js`) with no `card_key`.
 - Effective order id is `order_id` + `-bonus` (not added twice). Quantity is always 1. Order records have `card_key: 'pick'` and `bonus: true`.

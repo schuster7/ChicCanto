@@ -28,7 +28,10 @@ function normalizeOrderId(raw){
 }
 
 function normalizeCardKey(raw){
-  return String(raw || '').trim();
+  // Etsy digital SKUs may be written as digi-<card_key>. Strip the prefix once, here,
+  // so every later step (allowlist, KV keys, code prefix, email) sees the plain key.
+  const k = String(raw || '').trim();
+  return /^digi-/i.test(k) ? k.slice('digi-'.length).trim() : k;
 }
 
 function normalizeQuantity(raw){
